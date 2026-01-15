@@ -14,15 +14,51 @@ birdbird - Bird feeder video analysis pipeline. See README.md for full project d
 
 ## Development Commands
 
-*To be added once tech stack is chosen.*
+```bash
+# Install in development mode
+pip install -e .
+
+# Run the filter command
+birdbird filter /path/to/clips --confidence 0.3 --sample-fps 1.0
+
+# Test with limited clips
+birdbird filter /path/to/clips --limit 10
+```
 
 ## Architecture
 
-*To be documented as codebase develops.*
+```
+src/birdbird/
+├── __init__.py      # Package metadata
+├── cli.py           # Typer CLI entry point
+├── detector.py      # BirdDetector class (YOLOv8-nano, COCO bird class)
+└── filter.py        # filter_clips() - batch processing logic
+```
+
+**Detection approach**: Sample frames at configurable FPS (default 1fps), run YOLOv8-nano, check for COCO class 14 (bird) above confidence threshold.
+
+## M1 Implementation Plan
+
+### Status: Tested on 50 clips (34% detection rate), full batch pending
+
+**Completed:**
+- [x] Project structure (pyproject.toml, hatchling build)
+- [x] BirdDetector class with YOLOv8-nano
+- [x] Dual-class detection: bird (0.2 conf) + person (0.3 conf) for close-ups
+- [x] Weighted frame sampling: 5 frames in first 1s, then 1fps
+- [x] CLI with configurable confidence thresholds
+- [x] Batch filter with progress bar and detection rate stats
+- [x] Tested on 50 clips: 34% detection rate, spot-checked true positives
+
+**Next session TODOs:**
+- [ ] Run on full batch (498 clips) - expect ~19 minutes
+- [ ] Review results and spot-check a few more clips
+- [ ] Consider adding .venv to .gitignore
+- [ ] Update milestone tracker when M1 is confirmed complete
 
 ## Milestone Tracker
 
-- [ ] M1: Bird detection filter
+- [ ] M1: Bird detection filter (in progress)
 - [ ] M2: Highlights reel v1
 - [ ] M3: Frame capture
 - [ ] M4: Species detection

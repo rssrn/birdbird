@@ -1,0 +1,16 @@
+# Virtual environment
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# YOLO model weights (downloaded automatically)
+*.pt
+
+# IDE
+.idea/
+.vscode/
