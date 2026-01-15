@@ -2,6 +2,8 @@
 
 Automated bird feeder video analysis pipeline. Processes motion-triggered clips from a bird feeder camera to identify bird species, generate highlight reels, and produce summary reports.
 
+First used with a "Wilde & Oakes Bird Feeder with Smart Camera" set to capture 10-second clips. 
+
 ## Quickstart
 
 ```bash
