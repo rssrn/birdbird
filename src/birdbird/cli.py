@@ -9,9 +9,19 @@ from pathlib import Path
 import typer
 
 from .filter import filter_clips
-from .highlights import generate_highlights
+from .highlights import generate_highlights, get_video_duration
 
 app = typer.Typer(help="Bird feeder video analysis pipeline")
+
+
+def format_duration(seconds: float) -> str:
+    """Format duration as MMm:SSs (e.g., '5m:23s' or '0m:45s').
+
+    @author Claude Sonnet 4.5 Anthropic
+    """
+    minutes = int(seconds // 60)
+    secs = int(seconds % 60)
+    return f"{minutes}m:{secs:02d}s"
 
 
 @app.command()
@@ -162,6 +172,12 @@ def process(
                     raise typer.Exit(0)
                 typer.echo("")
 
+    # Calculate original duration before filtering
+    typer.echo("Calculating original duration...")
+    clips_to_process = clips[:clip_count]
+    original_duration = sum(get_video_duration(c) for c in clips_to_process)
+    typer.echo("")
+
     # Step 1: Filter
     typer.echo("Step 1/2: Filtering clips...")
     filter_stats = filter_clips(
@@ -201,7 +217,7 @@ def process(
         typer.echo("Complete!")
         typer.echo(f"  Bird clips: {has_birds_dir}/")
         typer.echo(f"  Highlights: {output}")
-        typer.echo(f"  Duration:   {highlights_stats.final_duration:.0f}s from {highlights_stats.original_duration:.0f}s original")
+        typer.echo(f"  Duration:   {format_duration(highlights_stats.final_duration)} highlights from {format_duration(highlights_stats.original_duration)} filtered from {format_duration(original_duration)} original")
 
     except (ValueError, RuntimeError) as e:
         typer.echo(f"Error generating highlights: {e}", err=True)
