@@ -77,11 +77,13 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 |---|-----------|-------------|--------|
 | M1 | Bird detection filter | Discard clips without birds (eliminate wind false positives) | Done |
 | M2 | Highlights reel v1 | Concatenate segments with bird activity with crossfade transitions | Done |
-| M3 | Frame capture | Extract in-focus bird frames with timestamps | |
+| M2.1 | Highlights reel captions | Add match type (e.g. bird or human) with confidence level within highlights reel, adjacent to existing timestamp|
+| M2.2 | Publish highlights reel to web - maybe using cloudflare R2 for the blob and static cloudflare worker page to frame it |
+| M3 | Highlight images | Extract some nice-looking in-focus bird frames with timestamps | |
 | M4 | Species detection | Identify species, generate timeline summary with frame captures | |
-| M5 | Email or static web report | Automated summary reports via email | |
+| M5 | Email or static web report | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material | |
 | M6 | Highlights reel v2 | Curated "best action" clips | |
-| M7 | Cloud storage | S3 storage for frames/clips, database backend | |
+| M7 | Structured storage | database backend to get stats/graphs on species counts, times usually seen, etc | |
 
 ## Other Feature Ideas
 | # | Feature | Description |
