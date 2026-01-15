@@ -2,6 +2,23 @@
 
 Automated bird feeder video analysis pipeline. Processes motion-triggered clips from a bird feeder camera to identify bird species, generate highlight reels, and produce summary reports.
 
+## Quickstart
+
+```bash
+# Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install in development mode
+pip install -e .
+
+# Run bird detection filter on a directory of clips
+birdbird /path/to/clips
+
+# Test with limited clips first
+birdbird /path/to/clips --limit 10
+```
+
 ## Problem
 
 A bird feeder camera captures 10-second AVI clips on motion detection, but:

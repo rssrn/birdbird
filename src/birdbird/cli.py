@@ -24,7 +24,13 @@ def filter(
         typer.echo(f"Error: {input_dir} is not a directory", err=True)
         raise typer.Exit(1)
 
-    typer.echo(f"Processing clips in {input_dir}")
+    # Count clips and estimate duration (~2.3s per clip based on benchmarks)
+    clips = sorted(input_dir.glob("*.avi"))
+    clip_count = min(len(clips), limit) if limit else len(clips)
+    est_seconds = clip_count * 2.3
+    est_minutes = est_seconds / 60
+
+    typer.echo(f"Processing {clip_count} clips in {input_dir} (estimated {est_minutes:.1f} minutes)")
     typer.echo(f"Settings: bird_conf={bird_confidence}, person_conf={person_confidence}")
 
     stats = filter_clips(
