@@ -3,11 +3,20 @@
 @author Claude Opus 4.5 Anthropic
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
 import numpy as np
 from ultralytics import YOLO
+
+
+@dataclass
+class Detection:
+    """Details of a bird detection."""
+    timestamp: float
+    detection_type: str  # "bird" or "person"
+    confidence: float
 
 
 class BirdDetector:
@@ -34,6 +43,18 @@ class BirdDetector:
         Returns:
             True if bird or person detected with sufficient confidence
         """
+        return self.detect_in_frame_detailed(frame) is not None
+
+    def detect_in_frame_detailed(self, frame: np.ndarray, timestamp: float = 0.0) -> Detection | None:
+        """Check if a frame contains a bird and return detection details.
+
+        Args:
+            frame: BGR image as numpy array
+            timestamp: Timestamp of this frame in the video
+
+        Returns:
+            Detection with type and confidence, or None if no detection
+        """
         results = self.model(frame, verbose=False)
         for result in results:
             boxes = result.boxes
@@ -41,14 +62,26 @@ class BirdDetector:
                 continue
             for cls, conf in zip(boxes.cls, boxes.conf):
                 cls_id = int(cls)
-                if cls_id == self.BIRD_CLASS_ID and conf >= self.bird_confidence:
-                    return True
-                if cls_id == self.PERSON_CLASS_ID and conf >= self.person_confidence:
-                    return True
-        return False
+                conf_val = float(conf)
+                if cls_id == self.BIRD_CLASS_ID and conf_val >= self.bird_confidence:
+                    return Detection(timestamp, "bird", conf_val)
+                if cls_id == self.PERSON_CLASS_ID and conf_val >= self.person_confidence:
+                    return Detection(timestamp, "person", conf_val)
+        return None
 
     def detect_in_video(self, video_path: Path) -> bool:
         """Check if a video contains birds by sampling frames.
+
+        Args:
+            video_path: Path to video file
+
+        Returns:
+            True if any sampled frame contains a bird
+        """
+        return self.detect_in_video_detailed(video_path) is not None
+
+    def detect_in_video_detailed(self, video_path: Path) -> Detection | None:
+        """Check if a video contains birds and return first detection details.
 
         Uses weighted sampling: ~4 samples in first second (where motion
         triggered), then 1fps for the remainder.
@@ -57,11 +90,11 @@ class BirdDetector:
             video_path: Path to video file
 
         Returns:
-            True if any sampled frame contains a bird
+            Detection with timestamp, type, and confidence, or None if no bird found
         """
         cap = cv2.VideoCapture(str(video_path))
         if not cap.isOpened():
-            return False
+            return None
 
         video_fps = cap.get(cv2.CAP_PROP_FPS)
         first_second_frames = int(video_fps)  # frames in first second
@@ -80,11 +113,13 @@ class BirdDetector:
                 interval = early_interval if frame_count < first_second_frames else late_interval
 
                 if frame_count % interval == 0:
-                    if self.detect_in_frame(frame):
-                        return True
+                    timestamp = frame_count / video_fps
+                    detection = self.detect_in_frame_detailed(frame, timestamp)
+                    if detection:
+                        return detection
 
                 frame_count += 1
         finally:
             cap.release()
 
-        return False
+        return None

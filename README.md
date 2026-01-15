@@ -12,11 +12,14 @@ source .venv/bin/activate
 # Install in development mode
 pip install -e .
 
-# Run bird detection filter on a directory of clips
-birdbird /path/to/clips
+# Filter clips to keep only those with birds (~2s per clip)
+birdbird filter /path/to/clips
 
 # Test with limited clips first
-birdbird /path/to/clips --limit 10
+birdbird filter /path/to/clips --limit 10
+
+# Generate a highlights reel from filtered clips
+birdbird highlights /path/to/clips/has_birds/
 ```
 
 ## Technical Overview
@@ -27,7 +30,8 @@ birdbird /path/to/clips --limit 10
 src/birdbird/
 ├── cli.py           # Typer CLI entry point
 ├── detector.py      # BirdDetector class (YOLOv8-nano)
-└── filter.py        # Batch processing logic
+├── filter.py        # Batch filtering logic
+└── highlights.py    # Highlights reel generation
 ```
 
 ### Detection Approach
@@ -48,7 +52,8 @@ This allows processing ~10s clips in ~2.3 seconds while catching brief bird appe
 
 ### Output
 
-Clips containing detected birds are copied to a `has_birds/` subdirectory within the input directory.
+- **Filter**: Clips containing detected birds are copied to a `has_birds/` subdirectory
+- **Highlights**: MP4 reel concatenating bird activity segments with crossfade transitions
 
 ## Problem
 
@@ -67,15 +72,15 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 
 ## Milestones
 
-| # | Milestone | Description |
-|---|-----------|-------------|
-| M1 | Bird detection filter | Discard clips without birds (eliminate wind false positives) |
-| M2 | Highlights reel v1 | Concatenate segments with bird activity using improved motion detection |
-| M3 | Frame capture | Extract in-focus bird frames with timestamps |
-| M4 | Species detection | Identify species, generate timeline summary with frame captures |
-| M5 | Email or static web report | Automated summary reports via email |
-| M6 | Highlights reel v2 | Curated "best action" clips |
-| M7 | Cloud storage | S3 storage for frames/clips, database backend |
+| # | Milestone | Description | Status |
+|---|-----------|-------------|--------|
+| M1 | Bird detection filter | Discard clips without birds (eliminate wind false positives) | Done |
+| M2 | Highlights reel v1 | Concatenate segments with bird activity with crossfade transitions | Done |
+| M3 | Frame capture | Extract in-focus bird frames with timestamps | |
+| M4 | Species detection | Identify species, generate timeline summary with frame captures | |
+| M5 | Email or static web report | Automated summary reports via email | |
+| M6 | Highlights reel v2 | Curated "best action" clips | |
+| M7 | Cloud storage | S3 storage for frames/clips, database backend | |
 
 ## Other Feature Ideas
 | # | Feature | Description |
