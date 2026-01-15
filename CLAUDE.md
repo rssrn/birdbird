@@ -15,14 +15,23 @@ birdbird - Bird feeder video analysis pipeline. See README.md for full project d
 ## Development Commands
 
 ```bash
+# Setup: Create and activate virtual environment (recommended)
+python3 -m venv .venv
+source .venv/bin/activate  # On Linux/Mac
+# .venv\Scripts\activate   # On Windows
+
 # Install in development mode
 pip install -e .
 
-# Run the filter command (saves detections.json for highlights)
+# Run commands (if using venv without activating, prefix with .venv/bin/)
 birdbird filter /path/to/clips
+# Or: .venv/bin/birdbird filter /path/to/clips
 
 # Generate highlights reel from filtered clips
 birdbird highlights /path/to/clips/has_birds/
+
+# Run filter + highlights in one step (clears existing has_birds with --force)
+birdbird process /path/to/clips --force
 
 # Test with limited clips
 birdbird filter /path/to/clips --limit 10
