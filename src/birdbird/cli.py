@@ -3,6 +3,7 @@
 @author Claude Opus 4.5 Anthropic
 """
 
+import shutil
 from pathlib import Path
 
 import typer
@@ -112,6 +113,7 @@ def process(
     buffer_after: float = typer.Option(1.0, "--buffer-after", help="Seconds after last bird detection"),
     crossfade: float = typer.Option(0.5, "--crossfade", "-x", help="Crossfade transition duration"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
+    force: bool = typer.Option(False, "--force", "-f", help="Clear existing has_birds directory without prompting"),
 ) -> None:
     """Filter clips and generate highlights reel in one step."""
     if not input_dir.is_dir():
@@ -128,6 +130,37 @@ def process(
     typer.echo(f"Processing {clip_count} clips (estimated {est_minutes:.1f} minutes total)")
     typer.echo(f"Settings: bird_conf={bird_confidence}, person_conf={person_confidence}")
     typer.echo("")
+
+    # Check if has_birds directory already exists with content
+    has_birds_dir = input_dir / "has_birds"
+    if has_birds_dir.exists():
+        existing_clips = list(has_birds_dir.glob("*.avi"))
+        if existing_clips:
+            if force:
+                typer.echo(f"Clearing existing {has_birds_dir} ({len(existing_clips)} clips)...")
+                shutil.rmtree(has_birds_dir)
+                typer.echo("")
+            else:
+                typer.echo(f"Warning: {has_birds_dir} already exists with {len(existing_clips)} clips")
+                typer.echo("This will mix old and new results, which may cause cache mismatches.")
+                typer.echo("")
+                typer.echo("Options:")
+                typer.echo("  1. Clear and start fresh (recommended)")
+                typer.echo("  2. Continue anyway (may have issues)")
+                typer.echo("  3. Cancel")
+                typer.echo("")
+
+                choice = typer.prompt("Choose option", type=int, default=1)
+
+                if choice == 1:
+                    typer.echo(f"Removing {has_birds_dir}...")
+                    shutil.rmtree(has_birds_dir)
+                elif choice == 2:
+                    typer.echo("Continuing with existing directory (results may be unpredictable)")
+                else:
+                    typer.echo("Cancelled")
+                    raise typer.Exit(0)
+                typer.echo("")
 
     # Step 1: Filter
     typer.echo("Step 1/2: Filtering clips...")
