@@ -46,6 +46,15 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | M6 | Highlights reel v2 | Curated "best action" clips |
 | M7 | Cloud storage | S3 storage for frames/clips, database backend |
 
+## Other Feature Ideas
+| # | Feature | Description |
+|---|-----------|-------------|
+| F1 | Other objects | If other misc objects are detected with a
+separate confidence threshold, note those.  Might get some squirrels,
+cats, etc. |
+
+
+
 ## Input Format
 
 - **Source**: Bird feeder camera with motion detection
