@@ -12,13 +12,14 @@ source .venv/bin/activate
 # Install in development mode
 pip install -e .
 
-# Filter clips to keep only those with birds (~2s per clip)
-birdbird filter /path/to/clips
+# Process clips: filter + generate highlights in one step
+birdbird process /path/to/clips
 
 # Test with limited clips first
-birdbird filter /path/to/clips --limit 10
+birdbird process /path/to/clips --limit 10
 
-# Generate a highlights reel from filtered clips
+# Or run steps separately:
+birdbird filter /path/to/clips
 birdbird highlights /path/to/clips/has_birds/
 ```
 
