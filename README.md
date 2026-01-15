@@ -19,6 +19,37 @@ birdbird /path/to/clips
 birdbird /path/to/clips --limit 10
 ```
 
+## Technical Overview
+
+### Architecture
+
+```
+src/birdbird/
+├── cli.py           # Typer CLI entry point
+├── detector.py      # BirdDetector class (YOLOv8-nano)
+└── filter.py        # Batch processing logic
+```
+
+### Detection Approach
+
+Uses **YOLOv8-nano** pre-trained on [COCO](https://cocodataset.org/) (Common Objects in Context), a dataset with 80 object categories including birds. This allows detection without custom training:
+
+- **Bird detection**: COCO class 14 (bird) with confidence threshold 0.2
+- **Close-up detection**: COCO class 0 (person) with confidence threshold 0.3 — large birds filling the frame are sometimes misclassified as "person" by YOLO, so we accept these as bird detections
+
+### Frame Sampling Strategy
+
+To balance speed and accuracy, frames are sampled with weighted density:
+
+- **First second**: ~4 samples (every 0.25s) — captures the motion trigger event
+- **Remaining duration**: 1 sample per second — catches birds that land after initial motion
+
+This allows processing ~10s clips in ~2.3 seconds while catching brief bird appearances.
+
+### Output
+
+Clips containing detected birds are copied to a `has_birds/` subdirectory within the input directory.
+
 ## Problem
 
 A bird feeder camera captures 10-second AVI clips on motion detection, but:
