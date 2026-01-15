@@ -90,11 +90,7 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 ## Other Feature Ideas
 | # | Feature | Description |
 |---|-----------|-------------|
-| F1 | Other objects | If other misc objects are detected with a
-separate confidence threshold, note those.  Might get some squirrels,
-cats, etc. |
-
-
+| F1 | Other objects | If other misc objects are detected with a separate confidence threshold, note those.  Might get some squirrels, cats, etc. |
 
 ## Input Format
 
