@@ -239,16 +239,16 @@ def concatenate_with_crossfade(
         inputs.extend(["-i", str(f)])
 
     # Build filter chain for crossfades
-    # For n clips, we need n-1 xfade operations
-    filter_parts = []
+    # For n clips, we need n-1 xfade and acrossfade operations
+    video_filters = []
+    audio_filters = []
     n = len(segment_files)
 
     # Get durations of each segment for offset calculation
     durations = [get_video_duration(f) for f in segment_files]
 
-    # First xfade: [0:v][1:v]xfade -> v0
-    # Second xfade: [v0][2:v]xfade -> v1
-    # etc.
+    # Build video crossfades: [0:v][1:v]xfade -> v0, [v0][2:v]xfade -> v1, etc.
+    # Build audio crossfades: [0:a][1:a]acrossfade -> a0, [a0][2:a]acrossfade -> a1, etc.
 
     cumulative_duration = durations[0]
     for i in range(1, n):
@@ -257,26 +257,31 @@ def concatenate_with_crossfade(
             offset = 0
 
         if i == 1:
-            prev_label = "0:v"
+            prev_v_label = "0:v"
+            prev_a_label = "0:a"
         else:
-            prev_label = f"v{i-2}"
+            prev_v_label = f"v{i-2}"
+            prev_a_label = f"a{i-2}"
 
-        curr_label = f"{i}:v"
-        out_label = f"v{i-1}" if i < n - 1 else "vout"
+        curr_v_label = f"{i}:v"
+        curr_a_label = f"{i}:a"
+        out_v_label = f"v{i-1}" if i < n - 1 else "vout"
+        out_a_label = f"a{i-1}" if i < n - 1 else "aout"
 
-        filter_parts.append(
-            f"[{prev_label}][{curr_label}]xfade=transition=fade:duration={crossfade_duration}:offset={offset}[{out_label}]"
+        # Video xfade with offset
+        video_filters.append(
+            f"[{prev_v_label}][{curr_v_label}]xfade=transition=fade:duration={crossfade_duration}:offset={offset}[{out_v_label}]"
+        )
+
+        # Audio acrossfade (duration only, no offset needed)
+        audio_filters.append(
+            f"[{prev_a_label}][{curr_a_label}]acrossfade=d={crossfade_duration}:c1=tri:c2=tri[{out_a_label}]"
         )
 
         # Update cumulative duration (subtract crossfade overlap)
         cumulative_duration += durations[i] - crossfade_duration
 
-    # Audio: amerge or just take from first stream
-    # For simplicity, concatenate audio without crossfade
-    audio_inputs = "".join(f"[{i}:a]" for i in range(n))
-    filter_parts.append(f"{audio_inputs}concat=n={n}:v=0:a=1[aout]")
-
-    filter_complex = ";".join(filter_parts)
+    filter_complex = ";".join(video_filters + audio_filters)
 
     cmd = [
         "ffmpeg", "-y",
@@ -294,7 +299,9 @@ def concatenate_with_crossfade(
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        # Fall back to simple concat without crossfade on error
+        # Print error and fall back to simple concat without crossfade
+        print(f"Warning: Crossfade failed, falling back to simple concatenation")
+        print(f"FFmpeg error: {result.stderr}")
         return concatenate_simple(segment_files, output_path)
     return True
 
