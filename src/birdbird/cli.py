@@ -8,8 +8,9 @@ from pathlib import Path
 
 import typer
 
-from .filter import filter_clips
+from .filter import filter_clips, load_detections
 from .highlights import generate_highlights, get_video_duration
+from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata
 
 app = typer.Typer(help="Bird feeder video analysis pipeline")
 
@@ -221,6 +222,120 @@ def process(
 
     except (ValueError, RuntimeError) as e:
         typer.echo(f"Error generating highlights: {e}", err=True)
+        raise typer.Exit(1)
+
+
+@app.command()
+def frames(
+    input_dir: Path = typer.Argument(..., help="Directory containing filtered clips (has_birds/)"),
+    output_dir: Path = typer.Option(None, "--output", "-o", help="Output directory (default: input_dir/frames/)"),
+    top_n: int = typer.Option(20, "--top-n", "-n", help="Number of top frames to extract"),
+    bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
+    person_confidence: float = typer.Option(0.3, "--person-conf", "-p", help="Min confidence for person detection"),
+    limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
+) -> None:
+    """Extract and rank best bird frames from filtered clips.
+
+    @author Claude Sonnet 4.5 Anthropic
+    """
+    if not input_dir.is_dir():
+        typer.echo(f"Error: {input_dir} is not a directory", err=True)
+        raise typer.Exit(1)
+
+    if output_dir is None:
+        output_dir = input_dir / "frames"
+
+    output_dir.mkdir(exist_ok=True)
+
+    # Check for detections.json
+    detections_file = input_dir / "detections.json"
+    if not detections_file.exists():
+        typer.echo(f"Error: No detections.json found in {input_dir}", err=True)
+        typer.echo("Run 'birdbird filter' first to generate detection metadata.", err=True)
+        raise typer.Exit(1)
+
+    # Load and count detections
+    detections = load_detections(input_dir)
+    clip_count = len(detections) if limit is None else min(len(detections), limit)
+
+    # Estimate duration (~0.5s per frame for scoring)
+    est_seconds = clip_count * 0.5
+    est_minutes = est_seconds / 60
+
+    typer.echo(f"Extracting frames from {clip_count} clips (estimated {est_minutes:.1f} minutes)")
+    typer.echo(f"Settings: bird_conf={bird_confidence}, person_conf={person_confidence}, top_n={top_n}")
+    typer.echo("")
+
+    # Track total wall clock time
+    import time
+    start_time = time.perf_counter()
+
+    # Scoring weights (tunable parameters)
+    weights = {
+        "bird_size": 0.25,    # Large birds are more visually impressive
+        "sharpness": 0.30,    # Sharp focus important for quality
+        "confidence": 0.25,   # Detection confidence
+        "position": 0.20,     # Binary penalty for edge-clipped birds
+    }
+
+    # Extract and score
+    from .detector import BirdDetector
+    detector = BirdDetector(
+        bird_confidence=bird_confidence,
+        person_confidence=person_confidence,
+    )
+
+    try:
+        scored_frames, timing_stats = extract_and_score_frames(
+            input_dir=input_dir,
+            detector=detector,
+            weights=weights,
+            limit=limit,
+        )
+
+        if not scored_frames:
+            typer.echo("No frames found to score", err=True)
+            raise typer.Exit(1)
+
+        # Save top N frames
+        typer.echo("Saving top frames...")
+        saved_paths = save_top_frames(
+            frames=scored_frames,
+            input_dir=input_dir,
+            output_dir=output_dir,
+            top_n=top_n,
+        )
+
+        # Save metadata
+        metadata_path = output_dir / "frame_scores.json"
+        save_frame_metadata(
+            frames=scored_frames[:top_n],
+            timing_stats=timing_stats,
+            output_path=metadata_path,
+            config={"weights": weights, "top_n": top_n},
+        )
+
+        # Calculate total time
+        elapsed_seconds = time.perf_counter() - start_time
+        elapsed_formatted = format_duration(elapsed_seconds)
+
+        # Output results
+        typer.echo("")
+        typer.echo("Results:")
+        typer.echo(f"  Frames scored:    {len(scored_frames)}")
+        typer.echo(f"  Top frames saved: {top_n}")
+        typer.echo(f"  Output dir:       {output_dir}/")
+        typer.echo(f"  Total time:       {elapsed_formatted}")
+        typer.echo("")
+        typer.echo("Timing per frame:")
+        typer.echo(f"  Confidence:  {timing_stats['confidence_ms_per_frame']:.1f}ms")
+        typer.echo(f"  Sharpness:   {timing_stats['sharpness_ms_per_frame']:.1f}ms")
+        typer.echo(f"  Bird size:   {timing_stats['bird_size_ms_per_frame']:.1f}ms")
+        typer.echo(f"  Position:    {timing_stats['position_ms_per_frame']:.1f}ms")
+        typer.echo(f"  Total:       {timing_stats['total_ms_per_frame']:.1f}ms")
+
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
 
 

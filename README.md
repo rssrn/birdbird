@@ -17,12 +17,16 @@ pip install -e .
 # Process clips: filter + generate highlights in one step
 birdbird process /path/to/clips
 
+# Extract top-quality bird frames
+birdbird frames /path/to/clips/has_birds/
+
 # Test with limited clips first
 birdbird process /path/to/clips --limit 10
 
 # Or run steps separately:
 birdbird filter /path/to/clips
 birdbird highlights /path/to/clips/has_birds/
+birdbird frames /path/to/clips/has_birds/ --top-n 20
 ```
 
 ## Technical Overview
@@ -34,7 +38,8 @@ src/birdbird/
 ├── cli.py           # Typer CLI entry point
 ├── detector.py      # BirdDetector class (YOLOv8-nano)
 ├── filter.py        # Batch filtering logic
-└── highlights.py    # Highlights reel generation
+├── highlights.py    # Highlights reel generation
+└── frames.py        # Quality-based frame extraction and ranking
 ```
 
 ### Detection Approach
@@ -57,6 +62,7 @@ This allows processing ~10s clips in ~2.3 seconds while catching brief bird appe
 
 - **Filter**: Clips containing detected birds are copied to a `has_birds/` subdirectory
 - **Highlights**: MP4 reel concatenating bird activity segments with crossfade transitions
+- **Frames**: Top-N JPEG frames ranked by multi-factor quality score (confidence, sharpness, bird size, position)
 
 ## Problem
 
@@ -81,7 +87,7 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | M2 | Highlights reel v1 | Concatenate segments with bird activity with crossfade transitions | Done |
 | M2.1 | Highlights reel captions | Add match type (e.g. bird or human) with confidence level within highlights reel, adjacent to existing timestamp|
 | M2.2 | Publish highlights reel to web - maybe using cloudflare R2 for the blob and static cloudflare worker page to frame it |
-| M3 | Highlight images | Extract some nice-looking in-focus bird frames with timestamps | |
+| M3 | Highlight images | Extract some nice-looking in-focus bird frames with timestamps | Done |
 | M4 | Species detection | Identify species, generate timeline summary with frame captures | |
 | M5 | Email or static web report | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material | |
 | M6 | Highlights reel v2 | Curated "best action" clips | |
