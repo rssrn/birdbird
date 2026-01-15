@@ -73,7 +73,7 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | M2 | Highlights reel v1 | Concatenate segments with bird activity using improved motion detection |
 | M3 | Frame capture | Extract in-focus bird frames with timestamps |
 | M4 | Species detection | Identify species, generate timeline summary with frame captures |
-| M5 | Email report | Automated summary reports via email |
+| M5 | Email or static web report | Automated summary reports via email |
 | M6 | Highlights reel v2 | Curated "best action" clips |
 | M7 | Cloud storage | S3 storage for frames/clips, database backend |
 
