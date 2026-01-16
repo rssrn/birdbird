@@ -20,7 +20,7 @@ _hardware_encoder_cache = None
 
 
 def detect_hardware_encoder() -> str | None:
-    """Detect available hardware H.264 encoder.
+    """Detect available hardware H.264 encoder by actually testing it.
 
     Returns encoder name (e.g., 'h264_qsv', 'h264_vaapi') or None.
 
@@ -44,8 +44,22 @@ def detect_hardware_encoder() -> str | None:
 
         for encoder in preferred_encoders:
             if encoder in result.stdout:
-                _hardware_encoder_cache = encoder
-                return encoder
+                # Actually test if the encoder works
+                test_cmd = [
+                    'ffmpeg', '-hide_banner',
+                    '-f', 'lavfi', '-i', 'testsrc=duration=0.1:size=640x480:rate=30',
+                    '-c:v', encoder,
+                    '-f', 'null', '-'
+                ]
+                test_result = subprocess.run(
+                    test_cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if test_result.returncode == 0:
+                    _hardware_encoder_cache = encoder
+                    return encoder
 
     except (subprocess.TimeoutExpired, FileNotFoundError):
         pass
