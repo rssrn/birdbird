@@ -107,3 +107,19 @@ src/birdbird/
 - Website repo: `/home/ross/src/birdbird-website/` (auto-deploys to Cloudflare on push to main)
 - Deployment URL: https://birdbird.rossarn.workers.dev/
 - Next steps: Copy viewer.html to birdbird-website, configure R2 base URL, push to deploy
+
+## TODOs
+
+**Evaluate Person Detection Feature**
+- **Context**: Person detection (COCO class 0) was added to catch close-up birds misclassified as "person". However, it may be causing more false positives (garden decorations) than catching legitimate birds.
+- **Task**: Review clips that were included via person detection to determine hit rate:
+  1. Extract all clips from a batch where `detection_type == "person"` in `detections.json`
+  2. Manually review each clip to count: (a) actual birds, (b) false positives
+  3. Calculate hit rate: actual_birds / total_person_detections
+  4. Decision: If hit rate is low (<30%), consider removing person detection entirely
+- **Example batch**: `/home/ross/BIRDS/20220116/` has 136 person detections (confidence 0.30-0.63)
+- **Known false positive**: Clips 1509211200-1509251100 (5 clips, ~23s in highlights) detected decorations as "person" at 0.326-0.394 confidence
+- **Command to extract person-detected clips**:
+  ```bash
+  cat detections.json | jq -r 'to_entries[] | select(.value.detection_type == "person") | .key'
+  ```
