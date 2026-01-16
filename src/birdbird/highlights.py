@@ -15,6 +15,45 @@ from .detector import BirdDetector
 from .filter import load_detections
 
 
+# Cache for hardware encoder availability
+_hardware_encoder_cache = None
+
+
+def detect_hardware_encoder() -> str | None:
+    """Detect available hardware H.264 encoder.
+
+    Returns encoder name (e.g., 'h264_qsv', 'h264_vaapi') or None.
+
+    @author Claude Sonnet 4.5 Anthropic
+    """
+    global _hardware_encoder_cache
+
+    if _hardware_encoder_cache is not None:
+        return _hardware_encoder_cache
+
+    # Priority order: Intel QSV > VAAPI > V4L2
+    preferred_encoders = ['h264_qsv', 'h264_vaapi', 'h264_v4l2m2m']
+
+    try:
+        result = subprocess.run(
+            ['ffmpeg', '-hide_banner', '-encoders'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        for encoder in preferred_encoders:
+            if encoder in result.stdout:
+                _hardware_encoder_cache = encoder
+                return encoder
+
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    _hardware_encoder_cache = None
+    return None
+
+
 @dataclass
 class Segment:
     """A segment of video containing bird activity."""
@@ -176,52 +215,126 @@ def _binary_search_entry(cap: cv2.VideoCapture, detector: BirdDetector,
     return first_seen
 
 
-def extract_segment(segment: Segment, output_path: Path) -> bool:
+def extract_segment(
+    segment: Segment,
+    output_path: Path,
+    threads: int = 2,
+    optimize_web: bool = False,
+) -> bool:
     """Extract a segment from a video using ffmpeg.
 
     Args:
         segment: Segment to extract
         output_path: Where to save the extracted segment
+        threads: Max ffmpeg threads to use
+        optimize_web: If True, optimize for web (1080p @ 24fps, CRF 23)
 
     Returns:
         True if successful
+
+    @author Claude Sonnet 4.5 Anthropic
     """
+    hw_encoder = detect_hardware_encoder()
+
+    # Choose encoder and quality settings
+    if hw_encoder:
+        encoder = hw_encoder
+        # Hardware encoders use different quality scales
+        if hw_encoder == 'h264_qsv':
+            # QSV uses -global_quality 1-51 (lower is better)
+            quality_opts = ["-global_quality", "23" if optimize_web else "18"]
+        elif hw_encoder in ['h264_vaapi', 'h264_v4l2m2m']:
+            # VAAPI/V4L2 use -qp scale
+            quality_opts = ["-qp", "23" if optimize_web else "18"]
+        else:
+            quality_opts = []
+    else:
+        encoder = "libx264"
+        quality_opts = [
+            "-preset", "fast",
+            "-crf", "23" if optimize_web else "18",
+        ]
+
+    # Build base command
     cmd = [
         "ffmpeg", "-y",
+        "-threads", str(threads),
         "-ss", str(segment.start_time),
         "-i", str(segment.clip_path),
         "-t", str(segment.duration),
-        "-c:v", "libx264",
-        "-preset", "fast",
-        "-crf", "18",
+    ]
+
+    # Add video filter for web optimization (preserve aspect ratio, just reduce framerate)
+    if optimize_web:
+        cmd.extend(["-vf", "fps=24"])
+
+    # Add encoding options
+    cmd.extend([
+        "-c:v", encoder,
+        *quality_opts,
         "-c:a", "aac",
         "-loglevel", "error",
         str(output_path),
-    ]
-    result = subprocess.run(cmd, capture_output=True)
+    ])
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    # If hardware encoding failed, log and try falling back to software
+    if result.returncode != 0 and hw_encoder:
+        if result.stderr:
+            print(f"\nHardware encoding failed for {segment.clip_path.name}: {result.stderr[:200]}")
+        # Try again with libx264
+        cmd_fallback = [
+            "ffmpeg", "-y",
+            "-threads", str(threads),
+            "-ss", str(segment.start_time),
+            "-i", str(segment.clip_path),
+            "-t", str(segment.duration),
+        ]
+
+        if optimize_web:
+            cmd_fallback.extend(["-vf", "fps=24"])
+
+        cmd_fallback.extend([
+            "-c:v", "libx264",
+            "-preset", "fast",
+            "-crf", "23" if optimize_web else "18",
+            "-c:a", "aac",
+            "-loglevel", "error",
+            str(output_path),
+        ])
+
+        result = subprocess.run(cmd_fallback, capture_output=True, text=True)
+
+    if result.returncode != 0 and result.stderr:
+        # Print first error for debugging
+        print(f"\nWarning: ffmpeg error for {segment.clip_path.name}: {result.stderr[:200]}")
+
     return result.returncode == 0
 
 
-def concatenate_with_crossfade(
+def concatenate_segments(
     segment_files: list[Path],
     output_path: Path,
-    crossfade_duration: float = 0.5,
+    threads: int = 2,
 ) -> bool:
-    """Concatenate video segments with crossfade transitions.
+    """Concatenate video segments using simple concat (no transitions).
 
     Args:
         segment_files: List of video files to concatenate
         output_path: Where to save the final video
-        crossfade_duration: Duration of crossfade in seconds
+        threads: Max ffmpeg threads to use (not used for copy mode)
 
     Returns:
         True if successful
+
+    @author Claude Sonnet 4.5 Anthropic
     """
     if not segment_files:
         return False
 
     if len(segment_files) == 1:
-        # Just copy the single segment
+        # Single segment - just copy
         cmd = [
             "ffmpeg", "-y",
             "-i", str(segment_files[0]),
@@ -232,82 +345,7 @@ def concatenate_with_crossfade(
         result = subprocess.run(cmd, capture_output=True)
         return result.returncode == 0
 
-    # Build complex filter for crossfade
-    # This uses the xfade filter between consecutive clips
-    inputs = []
-    for f in segment_files:
-        inputs.extend(["-i", str(f)])
-
-    # Build filter chain for crossfades
-    # For n clips, we need n-1 xfade and acrossfade operations
-    video_filters = []
-    audio_filters = []
-    n = len(segment_files)
-
-    # Get durations of each segment for offset calculation
-    durations = [get_video_duration(f) for f in segment_files]
-
-    # Build video crossfades: [0:v][1:v]xfade -> v0, [v0][2:v]xfade -> v1, etc.
-    # Build audio crossfades: [0:a][1:a]acrossfade -> a0, [a0][2:a]acrossfade -> a1, etc.
-
-    cumulative_duration = durations[0]
-    for i in range(1, n):
-        offset = cumulative_duration - crossfade_duration
-        if offset < 0:
-            offset = 0
-
-        if i == 1:
-            prev_v_label = "0:v"
-            prev_a_label = "0:a"
-        else:
-            prev_v_label = f"v{i-2}"
-            prev_a_label = f"a{i-2}"
-
-        curr_v_label = f"{i}:v"
-        curr_a_label = f"{i}:a"
-        out_v_label = f"v{i-1}" if i < n - 1 else "vout"
-        out_a_label = f"a{i-1}" if i < n - 1 else "aout"
-
-        # Video xfade with offset
-        video_filters.append(
-            f"[{prev_v_label}][{curr_v_label}]xfade=transition=fade:duration={crossfade_duration}:offset={offset}[{out_v_label}]"
-        )
-
-        # Audio acrossfade (duration only, no offset needed)
-        audio_filters.append(
-            f"[{prev_a_label}][{curr_a_label}]acrossfade=d={crossfade_duration}:c1=tri:c2=tri[{out_a_label}]"
-        )
-
-        # Update cumulative duration (subtract crossfade overlap)
-        cumulative_duration += durations[i] - crossfade_duration
-
-    filter_complex = ";".join(video_filters + audio_filters)
-
-    cmd = [
-        "ffmpeg", "-y",
-        *inputs,
-        "-filter_complex", filter_complex,
-        "-map", "[vout]",
-        "-map", "[aout]",
-        "-c:v", "libx264",
-        "-preset", "fast",
-        "-crf", "18",
-        "-c:a", "aac",
-        "-loglevel", "error",
-        str(output_path),
-    ]
-
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        # Print error and fall back to simple concat without crossfade
-        print(f"Warning: Crossfade failed, falling back to simple concatenation")
-        print(f"FFmpeg error: {result.stderr}")
-        return concatenate_simple(segment_files, output_path)
-    return True
-
-
-def concatenate_simple(segment_files: list[Path], output_path: Path) -> bool:
-    """Simple concatenation without transitions (fallback)."""
+    # Multiple segments - concat using demuxer (very fast, no re-encoding)
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
         for seg_file in segment_files:
             f.write(f"file '{seg_file}'\n")
@@ -334,7 +372,9 @@ def generate_highlights(
     person_confidence: float = 0.3,
     buffer_before: float = 1.0,
     buffer_after: float = 1.0,
-    crossfade_duration: float = 0.5,
+    threads: int = 2,
+    optimize_web: bool = False,
+    original_duration: float | None = None,
 ) -> HighlightsStats:
     """Generate a highlights reel from bird clips.
 
@@ -345,14 +385,27 @@ def generate_highlights(
         person_confidence: Confidence threshold for person detection
         buffer_before: Seconds to include before first bird detection
         buffer_after: Seconds to include after last bird detection (bird-free)
-        crossfade_duration: Duration of crossfade transitions
+        threads: Max ffmpeg threads to use (default 2 for low-power systems)
+        optimize_web: If True, optimize for web viewing (preserve aspect ratio @ 24fps, CRF 23)
+        original_duration: Optional pre-calculated original duration (if None, calculates from input_dir)
 
     Returns:
         HighlightsStats with duration information
+
+    @author Claude Sonnet 4.5 Anthropic
     """
     clips = sorted(input_dir.glob("*.avi"))
     if not clips:
         raise ValueError(f"No .avi clips found in {input_dir}")
+
+    # Detect hardware encoder once at start
+    hw_encoder = detect_hardware_encoder()
+    if hw_encoder:
+        print(f"Using hardware encoder: {hw_encoder}")
+    else:
+        print(f"Using software encoder: libx264")
+
+    print(f"FFmpeg thread limit: {threads}")
 
     # Try to load cached detection data from filter step
     cached_detections = load_detections(input_dir)
@@ -365,8 +418,9 @@ def generate_highlights(
         person_confidence=person_confidence,
     )
 
-    # Calculate original duration
-    original_duration = sum(get_video_duration(c) for c in clips)
+    # Calculate original duration if not provided
+    if original_duration is None:
+        original_duration = sum(get_video_duration(c) for c in clips)
 
     # Find all segments
     all_segments: list[Segment] = []
@@ -394,17 +448,15 @@ def generate_highlights(
 
         for i, segment in enumerate(tqdm(all_segments, desc="Extracting segments")):
             seg_path = Path(tmpdir) / f"segment_{i:04d}.mp4"
-            if extract_segment(segment, seg_path):
+            if extract_segment(segment, seg_path, threads, optimize_web):
                 segment_files.append(seg_path)
 
         if not segment_files:
             raise ValueError("Failed to extract any segments")
 
-        # Concatenate with crossfade
-        print("Concatenating segments with crossfade...")
-        success = concatenate_with_crossfade(
-            segment_files, output_path, crossfade_duration
-        )
+        # Concatenate segments (simple concat, no transitions)
+        print("Concatenating segments...")
+        success = concatenate_segments(segment_files, output_path, threads)
 
         if not success:
             raise RuntimeError("Failed to concatenate segments")

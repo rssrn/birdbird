@@ -27,7 +27,72 @@ birdbird process /path/to/clips --limit 10
 birdbird filter /path/to/clips
 birdbird highlights /path/to/clips/has_birds/
 birdbird frames /path/to/clips/has_birds/ --top-n 20
+
+# Optional: Publish to web (requires R2 setup - see below)
+birdbird publish /path/to/clips
 ```
+
+## Setup
+
+### Cloudflare R2 Configuration (Optional - for Publishing)
+
+To publish highlights to the web, configure Cloudflare R2:
+
+1. **Create R2 bucket** in Cloudflare dashboard:
+   - Navigate to R2 in left sidebar
+   - Click "Create bucket"
+   - Name it `birdbird-highlights`
+
+2. **Generate R2 API token**:
+   - In R2 section, click "Manage R2 API Tokens"
+   - Click "Create API Token"
+   - Name: `birdbird-upload`
+   - Permissions: Object Read & Write for your bucket
+   - Save the Access Key ID and Secret Access Key (you won't see the secret again!)
+
+3. **Find your Account ID**:
+   - Visible in R2 dashboard sidebar or in the URL
+
+4. **Create config file**:
+   ```bash
+   mkdir -p ~/.birdbird
+   nano ~/.birdbird/cloudflare.json
+   ```
+
+   Paste and fill in your values:
+   ```json
+   {
+     "r2_access_key_id": "YOUR_ACCESS_KEY_ID",
+     "r2_secret_access_key": "YOUR_SECRET_ACCESS_KEY",
+     "r2_bucket_name": "birdbird-highlights",
+     "r2_account_id": "YOUR_ACCOUNT_ID",
+     "r2_endpoint": "https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com"
+   }
+   ```
+
+5. **Secure the file**:
+   ```bash
+   chmod 600 ~/.birdbird/cloudflare.json
+   ```
+
+6. **Configure R2 bucket for public access**:
+   - In Cloudflare R2 dashboard, select your bucket
+   - Go to Settings → Public Access
+   - Enable "Allow Access" and note the public R2.dev URL (e.g., `https://pub-xxxxx.r2.dev`)
+   - This URL will be used in the viewer HTML
+
+7. **Set up the web viewer** (one-time):
+   - Copy the viewer template to your website repo:
+     ```bash
+     cp src/birdbird/templates/viewer.html /path/to/your/website/index.html
+     ```
+   - Edit `index.html` and replace `YOUR_R2_PUBLIC_URL_HERE` with your R2 public URL
+   - Deploy to your web host (Cloudflare Pages, GitHub Pages, etc.)
+
+8. **Test publishing**:
+   ```bash
+   birdbird publish /path/to/clips
+   ```
 
 ## Technical Overview
 
@@ -97,6 +162,7 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | # | Feature | Description |
 |---|-----------|-------------|
 | F1 | Other objects | If other misc objects are detected with a separate confidence threshold, note those.  Might get some squirrels, cats, etc. |
+| F2 | Upload progress reporting | Add progress bar/percentage for R2 uploads in publish command (especially for large video files) |
 
 ## Input Format
 

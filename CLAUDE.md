@@ -42,6 +42,9 @@ birdbird frames /path/to/clips/has_birds/ --top-n 50
 # Test with limited clips
 birdbird filter /path/to/clips --limit 10
 birdbird frames /path/to/clips/has_birds/ --limit 5 --top-n 10
+
+# Publish highlights to Cloudflare R2
+birdbird publish /path/to/clips
 ```
 
 ## Architecture
@@ -53,7 +56,10 @@ src/birdbird/
 ├── detector.py      # BirdDetector class (YOLOv8-nano, COCO bird class)
 ├── filter.py        # filter_clips() - batch processing, saves detections.json
 ├── highlights.py    # generate_highlights() - segment extraction + concatenation
-└── frames.py        # extract_and_score_frames() - quality-based frame ranking
+├── frames.py        # extract_and_score_frames() - quality-based frame ranking
+├── publish.py       # publish_to_r2() - R2 upload with batch management
+└── templates/
+    └── viewer.html  # Static web viewer template
 ```
 
 **Detection approach**: Weighted frame sampling (4x in first second, then 1fps), YOLOv8-nano for COCO class 14 (bird) and class 0 (person, for close-ups).
@@ -61,6 +67,8 @@ src/birdbird/
 **Highlights approach**: Binary search for segment boundaries using cached detection timestamps from filter step. Crossfade transitions via ffmpeg.
 
 **Frames approach**: Multi-factor scoring (confidence, sharpness, bird size, position) with weighted combination. Extracts top-N frames ranked by quality. Timing instrumentation tracks ms/frame for each factor.
+
+**Publish approach**: Uploads highlights.mp4 + top 3 frames to Cloudflare R2 with YYYYMMDD-NN batch naming. Maintains latest.json index for web viewer. Prompts before deleting old batches (>5). Static HTML viewer fetches from R2 via client-side JavaScript.
 
 ## Milestone Tracker
 
@@ -71,3 +79,14 @@ src/birdbird/
 - [ ] M5: Email report
 - [ ] M6: Highlights reel v2
 - [ ] M7: Cloud storage
+
+## Saved Plans
+
+**M2.2: Publish Highlights to Cloudflare R2 + Workers**
+- Plan file: `/home/ross/.claude/plans/idempotent-bouncing-thimble.md`
+- Status: Implemented
+- Summary: Upload highlights.mp4 + top 3 frames to R2 with static web viewer
+- Implementation: `publish.py` module, `birdbird publish` command, `templates/viewer.html`
+- Website repo: `/home/ross/src/birdbird-website/` (auto-deploys to Cloudflare on push to main)
+- Deployment URL: https://birdbird.rossarn.workers.dev/
+- Next steps: Copy viewer.html to birdbird-website, configure R2 base URL, push to deploy
