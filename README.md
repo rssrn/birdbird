@@ -163,6 +163,7 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 |---|-----------|-------------|
 | F1 | Other objects | If other misc objects are detected with a separate confidence threshold, note those.  Might get some squirrels, cats, etc. |
 | F2 | Upload progress reporting | Add progress bar/percentage for R2 uploads in publish command (especially for large video files) |
+| F3 | Corrupted input file handling | Improve detection and handling of corrupted MJPEG frames (camera recording issues, SD card errors). Could validate files before processing, skip severely corrupted clips, or log warnings for manual review. |
 
 ## Input Format
 
