@@ -82,6 +82,23 @@ src/birdbird/
 
 ## Saved Plans
 
+**M2.1: Highlights Reel Captions**
+- Status: Planned (not yet implemented)
+- Summary: Add detection metadata overlay to highlight segments showing match type and confidence
+- Requirements:
+  - **Placement**: Top-left corner (existing camera timestamp is bottom-left)
+  - **Font**: Match style and size of embedded camera timestamp (white text with black shadow)
+  - **Format**: "Bird 85%" (detection type + confidence percentage)
+  - **Multiple detections**: Show both if present, highest confidence first
+    - Example: "Bird 85% • Person 45%"
+  - **Always visible**: Display throughout entire segment duration
+- Implementation considerations:
+  - Enhance `Segment` dataclass to include `detection_type` and `detection_confidence`
+  - Update `find_bird_segments()` to track and return detection metadata
+  - Modify `extract_segment()` to add ffmpeg drawtext filter with detection info
+  - May need to track multiple detections per segment (bird + person)
+- Sample frame reference: `/home/ross/BIRDS/20220114/1112062500.avi` shows existing timestamp style
+
 **M2.2: Publish Highlights to Cloudflare R2 + Workers**
 - Plan file: `/home/ross/.claude/plans/idempotent-bouncing-thimble.md`
 - Status: Implemented
