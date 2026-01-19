@@ -70,11 +70,10 @@ def calculate_bird_size(detector: BirdDetector, frame: np.ndarray) -> float:
             class_id = int(box.cls[0])
             conf = float(box.conf[0])
 
-            # Check if it's a bird or person detection above threshold
+            # Check if it's a bird detection above threshold
             is_bird = (class_id == detector.BIRD_CLASS_ID and conf >= detector.bird_confidence)
-            is_person = (class_id == detector.PERSON_CLASS_ID and conf >= detector.person_confidence)
 
-            if is_bird or is_person:
+            if is_bird:
                 # Get bbox coordinates (xyxy format)
                 x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
                 bbox_width = x2 - x1
@@ -115,11 +114,10 @@ def calculate_position(detector: BirdDetector, frame: np.ndarray) -> float:
             class_id = int(box.cls[0])
             conf = float(box.conf[0])
 
-            # Check if it's a bird or person detection above threshold
+            # Check if it's a bird detection above threshold
             is_bird = (class_id == detector.BIRD_CLASS_ID and conf >= detector.bird_confidence)
-            is_person = (class_id == detector.PERSON_CLASS_ID and conf >= detector.person_confidence)
 
-            if is_bird or is_person:
+            if is_bird:
                 # Get bbox coordinates
                 x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
 

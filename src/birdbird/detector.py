@@ -15,7 +15,6 @@ from ultralytics import YOLO
 class Detection:
     """Details of a bird detection."""
     timestamp: float
-    detection_type: str  # "bird" or "person"
     confidence: float
 
 
@@ -23,25 +22,22 @@ class BirdDetector:
     """Detects birds in images using YOLOv8-nano."""
 
     BIRD_CLASS_ID = 14  # COCO class ID for 'bird'
-    PERSON_CLASS_ID = 0  # COCO class ID for 'person' (close-up birds often misclassified)
 
     def __init__(
         self,
         bird_confidence: float = 0.2,
-        person_confidence: float = 0.3,
     ):
         self.bird_confidence = bird_confidence
-        self.person_confidence = person_confidence
         self.model = YOLO("yolov8n.pt")
 
     def detect_in_frame(self, frame: np.ndarray) -> bool:
-        """Check if a frame contains a bird (or person, which may be a close-up bird).
+        """Check if a frame contains a bird.
 
         Args:
             frame: BGR image as numpy array
 
         Returns:
-            True if bird or person detected with sufficient confidence
+            True if bird detected with sufficient confidence
         """
         return self.detect_in_frame_detailed(frame) is not None
 
@@ -53,7 +49,7 @@ class BirdDetector:
             timestamp: Timestamp of this frame in the video
 
         Returns:
-            Detection with type and confidence, or None if no detection
+            Detection with timestamp and confidence, or None if no detection
         """
         results = self.model(frame, verbose=False)
         for result in results:
@@ -64,9 +60,7 @@ class BirdDetector:
                 cls_id = int(cls)
                 conf_val = float(conf)
                 if cls_id == self.BIRD_CLASS_ID and conf_val >= self.bird_confidence:
-                    return Detection(timestamp, "bird", conf_val)
-                if cls_id == self.PERSON_CLASS_ID and conf_val >= self.person_confidence:
-                    return Detection(timestamp, "person", conf_val)
+                    return Detection(timestamp, conf_val)
         return None
 
     def detect_in_video(self, video_path: Path) -> bool:

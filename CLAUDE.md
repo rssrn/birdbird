@@ -62,7 +62,7 @@ src/birdbird/
     └── viewer.html  # Static web viewer template
 ```
 
-**Detection approach**: Weighted frame sampling (4x in first second, then 1fps), YOLOv8-nano for COCO class 14 (bird) and class 0 (person, for close-ups).
+**Detection approach**: Weighted frame sampling (4x in first second, then 1fps), YOLOv8-nano for COCO class 14 (bird).
 
 **Highlights approach**: Binary search for segment boundaries using cached detection timestamps from filter step. Crossfade transitions via ffmpeg.
 
@@ -84,19 +84,16 @@ src/birdbird/
 
 **M2.1: Highlights Reel Captions**
 - Status: Planned (not yet implemented)
-- Summary: Add detection metadata overlay to highlight segments showing match type and confidence
+- Summary: Add detection confidence overlay to highlight segments
 - Requirements:
   - **Placement**: Top-left corner (existing camera timestamp is bottom-left)
   - **Font**: Match style and size of embedded camera timestamp (white text with black shadow)
-  - **Format**: "Bird 85%" (detection type + confidence percentage)
-  - **Multiple detections**: Show both if present, highest confidence first
-    - Example: "Bird 85% • Person 45%"
+  - **Format**: "Bird 85%" (confidence percentage)
   - **Always visible**: Display throughout entire segment duration
 - Implementation considerations:
-  - Enhance `Segment` dataclass to include `detection_type` and `detection_confidence`
+  - Enhance `Segment` dataclass to include `detection_confidence`
   - Update `find_bird_segments()` to track and return detection metadata
   - Modify `extract_segment()` to add ffmpeg drawtext filter with detection info
-  - May need to track multiple detections per segment (bird + person)
 - Sample frame reference: `/home/ross/BIRDS/20220114/1112062500.avi` shows existing timestamp style
 
 **M2.2: Publish Highlights to Cloudflare R2 + Workers**
@@ -108,18 +105,3 @@ src/birdbird/
 - Deployment URL: https://birdbird.rossarn.workers.dev/
 - Next steps: Copy viewer.html to birdbird-website, configure R2 base URL, push to deploy
 
-## TODOs
-
-**Evaluate Person Detection Feature**
-- **Context**: Person detection (COCO class 0) was added to catch close-up birds misclassified as "person". However, it may be causing more false positives (garden decorations) than catching legitimate birds.
-- **Task**: Review clips that were included via person detection to determine hit rate:
-  1. Extract all clips from a batch where `detection_type == "person"` in `detections.json`
-  2. Manually review each clip to count: (a) actual birds, (b) false positives
-  3. Calculate hit rate: actual_birds / total_person_detections
-  4. Decision: If hit rate is low (<30%), consider removing person detection entirely
-- **Example batch**: `/home/ross/BIRDS/20220116/` has 136 person detections (confidence 0.30-0.63)
-- **Known false positive**: Clips 1509211200-1509251100 (5 clips, ~23s in highlights) detected decorations as "person" at 0.326-0.394 confidence
-- **Command to extract person-detected clips**:
-  ```bash
-  cat detections.json | jq -r 'to_entries[] | select(.value.detection_type == "person") | .key'
-  ```

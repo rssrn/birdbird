@@ -18,7 +18,6 @@ DETECTIONS_FILE = "detections.json"
 def filter_clips(
     input_dir: Path,
     bird_confidence: float = 0.2,
-    person_confidence: float = 0.3,
     limit: int | None = None,
 ) -> dict:
     """Filter clips to keep only those containing birds.
@@ -29,7 +28,6 @@ def filter_clips(
     Args:
         input_dir: Directory containing .avi clips
         bird_confidence: Minimum confidence threshold for bird detection
-        person_confidence: Minimum confidence for person detection (close-up birds)
         limit: Maximum number of clips to process (for testing)
 
     Returns:
@@ -45,7 +43,6 @@ def filter_clips(
 
     detector = BirdDetector(
         bird_confidence=bird_confidence,
-        person_confidence=person_confidence,
     )
 
     stats = {"total": len(clips), "with_birds": 0, "filtered_out": 0}
@@ -62,7 +59,6 @@ def filter_clips(
             # Save detection metadata
             detections[clip_path.name] = {
                 "first_bird": detection.timestamp,
-                "detection_type": detection.detection_type,
                 "confidence": round(detection.confidence, 3),
             }
         else:

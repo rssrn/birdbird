@@ -383,7 +383,6 @@ def generate_highlights(
     input_dir: Path,
     output_path: Path,
     bird_confidence: float = 0.2,
-    person_confidence: float = 0.3,
     buffer_before: float = 1.0,
     buffer_after: float = 1.0,
     threads: int = 2,
@@ -396,7 +395,6 @@ def generate_highlights(
         input_dir: Directory containing .avi clips (already filtered for birds)
         output_path: Where to save the highlights MP4
         bird_confidence: Confidence threshold for bird detection
-        person_confidence: Confidence threshold for person detection
         buffer_before: Seconds to include before first bird detection
         buffer_after: Seconds to include after last bird detection (bird-free)
         threads: Max ffmpeg threads to use (default 2 for low-power systems)
@@ -429,7 +427,6 @@ def generate_highlights(
 
     detector = BirdDetector(
         bird_confidence=bird_confidence,
-        person_confidence=person_confidence,
     )
 
     # Calculate original duration if not provided

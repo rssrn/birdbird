@@ -30,7 +30,6 @@ def format_duration(seconds: float) -> str:
 def filter(
     input_dir: Path = typer.Argument(..., help="Directory containing .avi clips"),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
-    person_confidence: float = typer.Option(0.3, "--person-conf", "-p", help="Min confidence for person detection (close-up birds)"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
 ) -> None:
     """Filter clips to keep only those containing birds."""
@@ -45,12 +44,11 @@ def filter(
     est_minutes = est_seconds / 60
 
     typer.echo(f"Processing {clip_count} clips in {input_dir} (estimated {est_minutes:.1f} minutes)")
-    typer.echo(f"Settings: bird_conf={bird_confidence}, person_conf={person_confidence}")
+    typer.echo(f"Settings: bird_conf={bird_confidence}")
 
     stats = filter_clips(
         input_dir,
         bird_confidence=bird_confidence,
-        person_confidence=person_confidence,
         limit=limit,
     )
 
@@ -69,7 +67,6 @@ def highlights(
     input_dir: Path = typer.Argument(..., help="Directory containing .avi clips (pre-filtered for birds)"),
     output: Path = typer.Option(None, "--output", "-o", help="Output MP4 path (default: input_dir/highlights.mp4)"),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
-    person_confidence: float = typer.Option(0.3, "--person-conf", "-p", help="Min confidence for person detection"),
     buffer_before: float = typer.Option(1.0, "--buffer-before", help="Seconds before first bird detection"),
     buffer_after: float = typer.Option(1.0, "--buffer-after", help="Seconds after last bird detection (bird-free time)"),
     threads: int = typer.Option(2, "--threads", "-t", help="Max ffmpeg threads (default 2 for low-power systems)"),
@@ -95,14 +92,13 @@ def highlights(
 
     quality_mode = "highest quality" if highest_quality else "web optimized"
     typer.echo(f"Generating highlights from {clip_count} clips (estimated {est_minutes:.1f} minutes)")
-    typer.echo(f"Settings: bird_conf={bird_confidence}, person_conf={person_confidence}, buffer_before={buffer_before}s, buffer_after={buffer_after}s, threads={threads}, quality={quality_mode}")
+    typer.echo(f"Settings: bird_conf={bird_confidence}, buffer_before={buffer_before}s, buffer_after={buffer_after}s, threads={threads}, quality={quality_mode}")
 
     try:
         stats = generate_highlights(
             input_dir=input_dir,
             output_path=output,
             bird_confidence=bird_confidence,
-            person_confidence=person_confidence,
             buffer_before=buffer_before,
             buffer_after=buffer_after,
             threads=threads,
@@ -127,7 +123,6 @@ def process(
     input_dir: Path = typer.Argument(..., help="Directory containing .avi clips"),
     output: Path = typer.Option(None, "--output", "-o", help="Output MP4 path (default: input_dir/has_birds/highlights.mp4)"),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
-    person_confidence: float = typer.Option(0.3, "--person-conf", "-p", help="Min confidence for person detection"),
     buffer_before: float = typer.Option(1.0, "--buffer-before", help="Seconds before first bird detection"),
     buffer_after: float = typer.Option(1.0, "--buffer-after", help="Seconds after last bird detection"),
     threads: int = typer.Option(2, "--threads", "-t", help="Max ffmpeg threads (default 2 for low-power systems)"),
@@ -152,7 +147,7 @@ def process(
     est_minutes = est_seconds / 60
 
     typer.echo(f"Processing {clip_count} clips (estimated {est_minutes:.1f} minutes total)")
-    typer.echo(f"Settings: bird_conf={bird_confidence}, person_conf={person_confidence}")
+    typer.echo(f"Settings: bird_conf={bird_confidence}")
     typer.echo("")
 
     # Check if has_birds directory already exists with content
@@ -197,7 +192,6 @@ def process(
     filter_stats = filter_clips(
         input_dir,
         bird_confidence=bird_confidence,
-        person_confidence=person_confidence,
         limit=limit,
     )
 
@@ -221,7 +215,6 @@ def process(
             input_dir=has_birds_dir,
             output_path=output,
             bird_confidence=bird_confidence,
-            person_confidence=person_confidence,
             buffer_before=buffer_before,
             buffer_after=buffer_after,
             threads=threads,
@@ -246,7 +239,6 @@ def frames(
     output_dir: Path = typer.Option(None, "--output", "-o", help="Output directory (default: input_dir/frames/)"),
     top_n: int = typer.Option(20, "--top-n", "-n", help="Number of top frames to extract"),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
-    person_confidence: float = typer.Option(0.3, "--person-conf", "-p", help="Min confidence for person detection"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
 ) -> None:
     """Extract and rank best bird frames from filtered clips.
@@ -278,7 +270,7 @@ def frames(
     est_minutes = est_seconds / 60
 
     typer.echo(f"Extracting frames from {clip_count} clips (estimated {est_minutes:.1f} minutes)")
-    typer.echo(f"Settings: bird_conf={bird_confidence}, person_conf={person_confidence}, top_n={top_n}")
+    typer.echo(f"Settings: bird_conf={bird_confidence}, top_n={top_n}")
     typer.echo("")
 
     # Track total wall clock time
@@ -297,7 +289,6 @@ def frames(
     from .detector import BirdDetector
     detector = BirdDetector(
         bird_confidence=bird_confidence,
-        person_confidence=person_confidence,
     )
 
     try:
