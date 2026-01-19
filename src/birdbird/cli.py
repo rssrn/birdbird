@@ -306,6 +306,7 @@ def frames(
     top_n: int = typer.Option(20, "--top-n", "-n", help="Number of top frames to extract"),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
+    force: bool = typer.Option(False, "--force", "-f", help="Clear existing frames without prompting"),
 ) -> None:
     """Extract and rank best bird frames from filtered clips.
 
@@ -317,6 +318,46 @@ def frames(
 
     if output_dir is None:
         output_dir = input_dir / "frames"
+
+    # Check if frames directory already exists with content
+    if output_dir.exists():
+        existing_frames = list(output_dir.glob("frame_*.jpg"))
+        if existing_frames:
+            if force:
+                typer.echo(f"Clearing existing frames from {output_dir} ({len(existing_frames)} frames)...")
+                for frame_file in existing_frames:
+                    frame_file.unlink()
+                # Also remove metadata if it exists
+                metadata_file = output_dir / "frame_scores.json"
+                if metadata_file.exists():
+                    metadata_file.unlink()
+                typer.echo("")
+            else:
+                typer.echo(f"Warning: {output_dir} already exists with {len(existing_frames)} frames")
+                typer.echo("")
+                typer.echo("Options:")
+                typer.echo("  1. Clear and re-extract (recommended)")
+                typer.echo("  2. Continue anyway (may mix old and new frames)")
+                typer.echo("  3. Cancel")
+                typer.echo("")
+
+                choice = typer.prompt("Choose option", type=int, default=1)
+
+                if choice == 1:
+                    typer.echo(f"Removing existing frames from {output_dir}...")
+                    for frame_file in existing_frames:
+                        frame_file.unlink()
+                    # Also remove metadata if it exists
+                    metadata_file = output_dir / "frame_scores.json"
+                    if metadata_file.exists():
+                        metadata_file.unlink()
+                    typer.echo("")
+                elif choice == 2:
+                    typer.echo("Continuing with existing directory (results may be unpredictable)")
+                    typer.echo("")
+                else:
+                    typer.echo("Cancelled")
+                    raise typer.Exit(0)
 
     output_dir.mkdir(exist_ok=True)
 
