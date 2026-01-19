@@ -2,7 +2,34 @@
 
 Automated bird feeder video analysis pipeline. Processes motion-triggered clips from a bird feeder camera to identify bird species, generate highlight reels, and produce summary reports.
 
-First used with a "Wilde & Oakes Bird Feeder with Smart Camera" set to capture 10-second clips. 
+First used with a "Wilde & Oakes Bird Feeder with Smart Camera" set to capture 10-second clips.
+
+## Dependencies
+
+### System Requirements
+
+- **Python 3.10+** - Core runtime
+- **ffmpeg** - Video processing (segment extraction, concatenation, encoding)
+  ```bash
+  # Ubuntu/Debian
+  sudo apt install ffmpeg
+
+  # macOS
+  brew install ffmpeg
+
+  # Verify installation
+  ffmpeg -version
+  ```
+
+### Python Packages
+
+Installed automatically via `pip install -e .`:
+
+- **ultralytics** (≥8.0.0) - YOLOv8 object detection model
+- **opencv-python** (≥4.8.0) - Video/image processing
+- **typer** (≥0.9.0) - CLI framework
+- **tqdm** (≥4.66.0) - Progress bars
+- **boto3** (≥1.42.0) - AWS/R2 SDK for cloud publishing (optional)
 
 ## Quickstart
 
@@ -14,11 +41,8 @@ source .venv/bin/activate
 # Install in development mode
 pip install -e .
 
-# Process clips: filter + generate highlights in one step
+# Process clips: filter + highlights + frames in one step
 birdbird process /path/to/clips
-
-# Extract top-quality bird frames
-birdbird frames /path/to/clips/has_birds/
 
 # Test with limited clips first
 birdbird process /path/to/clips --limit 10
@@ -111,8 +135,7 @@ src/birdbird/
 
 Uses **YOLOv8-nano** pre-trained on [COCO](https://cocodataset.org/) (Common Objects in Context), a dataset with 80 object categories including birds. This allows detection without custom training:
 
-- **Bird detection**: COCO class 14 (bird) with confidence threshold 0.2
-- **Close-up detection**: COCO class 0 (person) with confidence threshold 0.3 — large birds filling the frame are sometimes misclassified as "person" by YOLO, so we accept these as bird detections
+- **Bird detection**: COCO class 14 (bird) with default confidence threshold 0.2 (configurable via `--bird-conf`)
 
 ### Frame Sampling Strategy
 
