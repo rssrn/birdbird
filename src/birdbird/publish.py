@@ -33,7 +33,7 @@ def create_r2_client(config: dict):
 def list_batches(s3_client, bucket_name: str) -> list[str]:
     """List all batch IDs from R2, sorted newest first.
 
-    Returns: ["20250115-01", "20250114-01", ...]
+    Returns: ["20220114_01", "20220113_01", ...]
 
     @author Claude Sonnet 4.5 Anthropic
     """
@@ -49,12 +49,12 @@ def list_batches(s3_client, bucket_name: str) -> list[str]:
         batch_ids = []
         if 'CommonPrefixes' in response:
             for prefix in response['CommonPrefixes']:
-                # prefix['Prefix'] looks like 'batches/20250115-01/'
+                # prefix['Prefix'] looks like 'batches/20220114_01/'
                 path_parts = prefix['Prefix'].rstrip('/').split('/')
                 if len(path_parts) == 2:
                     batch_ids.append(path_parts[1])
 
-        # Sort descending (newest first) - lexicographic works for YYYYMMDD-NN
+        # Sort descending (newest first) - lexicographic works for YYYYMMDD_NN
         batch_ids.sort(reverse=True)
         return batch_ids
 
@@ -66,35 +66,40 @@ def list_batches(s3_client, bucket_name: str) -> list[str]:
 
 
 def generate_batch_id(s3_client, bucket_name: str, original_date: str) -> str:
-    """Generate next batch ID for upload date.
+    """Generate next batch ID for original data date.
 
-    Format: YYYYMMDD-NN where NN is sequence (01, 02, ...)
-    Uses today's date for YYYYMMDD, increments NN if multiple uploads same day.
+    Format: YYYYMMDD_NN where NN is sequence (01, 02, ...)
+    Uses original data date (from folder name) for YYYYMMDD, increments NN if multiple versions exist.
 
     @author Claude Sonnet 4.5 Anthropic
     """
-    # Get today's date in YYYYMMDD format
-    today = datetime.now(timezone.utc).strftime('%Y%m%d')
+    # Convert original_date from "YYYY-MM-DD" or "unknown" to "YYYYMMDD"
+    if original_date == "unknown":
+        # Fallback to today's date if we couldn't parse the folder name
+        date_prefix = datetime.now(timezone.utc).strftime('%Y%m%d')
+    else:
+        # Remove hyphens: "2022-01-14" -> "20220114"
+        date_prefix = original_date.replace('-', '')
 
     # List existing batches with same date prefix
     all_batches = list_batches(s3_client, bucket_name)
-    same_day_batches = [b for b in all_batches if b.startswith(today)]
+    same_date_batches = [b for b in all_batches if b.startswith(date_prefix)]
 
-    if not same_day_batches:
-        return f"{today}-01"
+    if not same_date_batches:
+        return f"{date_prefix}_01"
 
     # Find max sequence number
     max_seq = 0
-    for batch_id in same_day_batches:
+    for batch_id in same_date_batches:
         try:
-            seq = int(batch_id.split('-')[1])
+            seq = int(batch_id.split('_')[1])
             max_seq = max(max_seq, seq)
         except (IndexError, ValueError):
             continue
 
     # Increment sequence
     next_seq = max_seq + 1
-    return f"{today}-{next_seq:02d}"
+    return f"{date_prefix}_{next_seq:02d}"
 
 
 def get_highlights_duration(video_path: Path) -> float:
