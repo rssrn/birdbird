@@ -10,6 +10,7 @@ First used with a "Wilde & Oakes Bird Feeder with Smart Camera" set to capture 1
 
 - **Python 3.10+** - Core runtime
 - **ffmpeg** - Video processing (segment extraction, concatenation, encoding)
+
   ```bash
   # Ubuntu/Debian
   sudo apt install ffmpeg
@@ -63,11 +64,13 @@ birdbird publish /path/to/clips
 To publish highlights to the web, configure Cloudflare R2:
 
 1. **Create R2 bucket** in Cloudflare dashboard:
+
    - Navigate to R2 in left sidebar
    - Click "Create bucket"
    - Name it `birdbird-highlights`
 
 2. **Generate R2 API token**:
+
    - In R2 section, click "Manage R2 API Tokens"
    - Click "Create API Token"
    - Name: `birdbird-upload`
@@ -75,15 +78,18 @@ To publish highlights to the web, configure Cloudflare R2:
    - Save the Access Key ID and Secret Access Key (you won't see the secret again!)
 
 3. **Find your Account ID**:
+
    - Visible in R2 dashboard sidebar or in the URL
 
 4. **Create config file**:
+
    ```bash
    mkdir -p ~/.birdbird
    nano ~/.birdbird/cloudflare.json
    ```
 
    Paste and fill in your values:
+
    ```json
    {
      "r2_access_key_id": "YOUR_ACCESS_KEY_ID",
@@ -95,17 +101,20 @@ To publish highlights to the web, configure Cloudflare R2:
    ```
 
 5. **Secure the file**:
+
    ```bash
    chmod 600 ~/.birdbird/cloudflare.json
    ```
 
 6. **Configure R2 bucket for public access**:
+
    - In Cloudflare R2 dashboard, select your bucket
    - Go to Settings → Public Access
    - Enable "Allow Access" and note the public R2.dev URL (e.g., `https://pub-xxxxx.r2.dev`)
    - This URL will be used in the viewer HTML
 
 7. **Set up the web viewer** (one-time):
+
    - Copy the viewer template to your website repo:
      ```bash
      cp src/birdbird/templates/viewer.html /path/to/your/website/index.html
@@ -155,6 +164,7 @@ This allows processing ~10s clips in ~2.3 seconds while catching brief bird appe
 ## Problem
 
 A bird feeder camera captures 10-second AVI clips on motion detection, but:
+
 - High false-positive rate (wind triggers recording)
 - No species identification
 - Manual review of hundreds of clips is impractical
@@ -169,29 +179,32 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 
 ## Milestones
 
-| # | Milestone | Description | Status |
-|---|-----------|-------------|--------|
-| M1 | Bird detection filter | Discard clips without birds (eliminate wind false positives) | Done |
-| M2 | Highlights reel v1 | Concatenate segments with bird activity with crossfade transitions | Done |
-| M2.1 | Highlights reel captions | Add match type (e.g. bird or human) with confidence level within highlights reel, adjacent to existing timestamp|
+| #    | Milestone                                                                                                             | Description                                                                                                      | Status |
+| ---- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ |
+| M1   | Bird detection filter                                                                                                 | Discard clips without birds (eliminate wind false positives)                                                     | Done   |
+| M2   | Highlights reel v1                                                                                                    | Concatenate segments with bird activity with crossfade transitions                                               | Done   |
+| M2.1 | Highlights reel captions                                                                                              | Add match type (e.g. bird or human) with confidence level within highlights reel, adjacent to existing timestamp |
 | M2.2 | Publish highlights reel to web - maybe using cloudflare R2 for the blob and static cloudflare worker page to frame it |
-| M3 | Highlight images | Extract some nice-looking in-focus bird frames with timestamps | Done |
-| M4 | Species detection | Identify species, generate timeline summary with frame captures | |
-| M5 | Email or static web report | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material | |
-| M6 | Highlights reel v2 | Curated "best action" clips | |
-| M7 | Structured storage | database backend to get stats/graphs on species counts, times usually seen, etc | |
+| M3   | Highlight images                                                                                                      | Extract some nice-looking in-focus bird frames with timestamps                                                   | Done   |
+| M4   | Visual species detection                                                                                              | Identify species, generate timeline summary with frame captures                                                  |        |
+| M5   | Email or static web report                                                                                            | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material                                      |        |
+| M6   | Highlights reel v2                                                                                                    | Curated "best action" clips                                                                                      |        |
+| M7   | Structured storage                                                                                                    | database backend to get stats/graphs on species counts, times usually seen, etc                                  |        |
 
 ## Other Feature Ideas
-| # | Feature | Description |
-|---|-----------|-------------|
-| F1 | Other objects | If other misc objects are detected with a separate confidence threshold, note those.  Might get some squirrels, cats, etc. |
-| F2 | Upload progress reporting | Add progress bar/percentage for R2 uploads in publish command (especially for large video files) |
-| F3 | Corrupted input file handling | Improve detection and handling of corrupted MJPEG frames (camera recording issues, SD card errors). Could validate files before processing, skip severely corrupted clips, or log warnings for manual review. |
-| F4 | Multiple bird detection | Detect and count multiple birds in a single frame. Currently returns first detection only. Would enable richer captions (e.g., "2 Birds 85%, 72%"), social behavior tracking, and better statistics. |
+
+| #   | Feature                       | Description                                                                                                                                                                                                   |
+| --- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1  | Other objects                 | If other misc objects are detected with a separate confidence threshold, note those. Might get some squirrels, cats, etc.                                                                                     |
+| F2  | Upload progress reporting     | Add progress bar/percentage for R2 uploads in publish command (especially for large video files)                                                                                                              |
+| F3  | Corrupted input file handling | Improve detection and handling of corrupted MJPEG frames (camera recording issues, SD card errors). Could validate files before processing, skip severely corrupted clips, or log warnings for manual review. |
+| F4  | Multiple bird detection       | Detect and count multiple birds in a single frame. Currently returns first detection only. Would enable richer captions (e.g., "2 Birds 85%, 72%"), social behavior tracking, and better statistics.          |
+| F5  | Audio species detection       | Add species detection from audio track, probably using BirdNet.                                                                                                                                               |
+| F6  | Credits page                  | Links to other projects/modules we are using, including licensing info                                                                                                                                        |
 
 ## Input Format
 
 - **Source**: Bird feeder camera with motion detection
 - **Format**: AVI (MJPEG, 1440x1080, 30fps, ~10 seconds, ~27MB each)
 - **Filename**: `MMDDHHmmss.avi` (timestamp when clip was captured)
-- **Batches**: Downloaded every few days into dated directories (e.g., `20220114/`)
+- **Batches**: Downloaded every few days into dated directories (e.g., `20260114/`)
