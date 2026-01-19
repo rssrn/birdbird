@@ -126,11 +126,12 @@ def process(
     buffer_before: float = typer.Option(1.0, "--buffer-before", help="Seconds before first bird detection"),
     buffer_after: float = typer.Option(1.0, "--buffer-after", help="Seconds after last bird detection"),
     threads: int = typer.Option(2, "--threads", "-t", help="Max ffmpeg threads (default 2 for low-power systems)"),
+    top_n: int = typer.Option(20, "--top-n", "-n", help="Number of top frames to extract"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
     force: bool = typer.Option(False, "--force", "-f", help="Clear existing has_birds directory without prompting"),
     highest_quality: bool = typer.Option(False, "--highest-quality", help="Use highest quality (1440x1080 @ 30fps, larger file)"),
 ) -> None:
-    """Filter clips and generate highlights reel in one step.
+    """Filter clips, generate highlights reel, and extract top frames in one step.
 
     By default, optimizes for web viewing (1440x1080 @ 24fps, smaller files).
     Use --highest-quality for maximum quality (30fps, larger files).
@@ -139,15 +140,15 @@ def process(
         typer.echo(f"Error: {input_dir} is not a directory", err=True)
         raise typer.Exit(1)
 
-    # Estimate total time: ~2.3s filter + ~5s highlights per clip with birds (~30% detection rate)
+    # Estimate total time: ~2.3s filter + ~5s highlights + ~0.5s frames per clip with birds (~30% detection rate)
     clips = sorted(input_dir.glob("*.avi"))
     clip_count = min(len(clips), limit) if limit else len(clips)
     est_bird_clips = int(clip_count * 0.3)  # Assume ~30% have birds
-    est_seconds = clip_count * 2.3 + est_bird_clips * 5
+    est_seconds = clip_count * 2.3 + est_bird_clips * (5 + 0.5)
     est_minutes = est_seconds / 60
 
     typer.echo(f"Processing {clip_count} clips (estimated {est_minutes:.1f} minutes total)")
-    typer.echo(f"Settings: bird_conf={bird_confidence}")
+    typer.echo(f"Settings: bird_conf={bird_confidence}, top_n={top_n}")
     typer.echo("")
 
     # Check if has_birds directory already exists with content
@@ -188,7 +189,7 @@ def process(
     typer.echo("")
 
     # Step 1: Filter
-    typer.echo("Step 1/2: Filtering clips...")
+    typer.echo("Step 1/3: Filtering clips...")
     filter_stats = filter_clips(
         input_dir,
         bird_confidence=bird_confidence,
@@ -200,11 +201,11 @@ def process(
     typer.echo("")
 
     if filter_stats['with_birds'] == 0:
-        typer.echo("No birds detected - skipping highlights generation")
+        typer.echo("No birds detected - skipping highlights and frames generation")
         raise typer.Exit(0)
 
     # Step 2: Highlights
-    typer.echo("Step 2/2: Generating highlights...")
+    typer.echo("Step 2/3: Generating highlights...")
     has_birds_dir = input_dir / "has_birds"
 
     if output is None:
@@ -223,13 +224,78 @@ def process(
         )
 
         typer.echo("")
-        typer.echo("Complete!")
-        typer.echo(f"  Bird clips: {has_birds_dir}/")
-        typer.echo(f"  Highlights: {output}")
         typer.echo(f"  Duration:   {format_duration(highlights_stats.final_duration)} highlights from {format_duration(highlights_stats.bird_clips_duration)} filtered from {format_duration(original_duration)} original")
+        typer.echo("")
 
     except (ValueError, RuntimeError) as e:
         typer.echo(f"Error generating highlights: {e}", err=True)
+        raise typer.Exit(1)
+
+    # Step 3: Extract frames
+    typer.echo("Step 3/3: Extracting top frames...")
+
+    frames_dir = has_birds_dir / "frames"
+    frames_dir.mkdir(exist_ok=True)
+
+    # Track total wall clock time for frames
+    import time
+    start_time = time.perf_counter()
+
+    # Scoring weights (tunable parameters)
+    weights = {
+        "bird_size": 0.25,    # Large birds are more visually impressive
+        "sharpness": 0.30,    # Sharp focus important for quality
+        "confidence": 0.25,   # Detection confidence
+        "position": 0.20,     # Binary penalty for edge-clipped birds
+    }
+
+    # Extract and score
+    from .detector import BirdDetector
+    from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata
+
+    detector = BirdDetector(
+        bird_confidence=bird_confidence,
+    )
+
+    try:
+        scored_frames, timing_stats = extract_and_score_frames(
+            input_dir=has_birds_dir,
+            detector=detector,
+            weights=weights,
+            limit=None,  # Process all clips from filter step
+        )
+
+        if not scored_frames:
+            typer.echo("  No frames found to score")
+        else:
+            # Save top N frames
+            saved_paths = save_top_frames(
+                frames=scored_frames,
+                input_dir=has_birds_dir,
+                output_dir=frames_dir,
+                top_n=top_n,
+            )
+
+            # Save metadata
+            metadata_path = frames_dir / "frame_scores.json"
+            save_frame_metadata(
+                frames=scored_frames[:top_n],
+                timing_stats=timing_stats,
+                output_path=metadata_path,
+                config={"weights": weights, "top_n": top_n},
+            )
+
+            elapsed_seconds = time.perf_counter() - start_time
+            typer.echo(f"  Extracted {len(saved_paths)} frames in {format_duration(elapsed_seconds)}")
+
+        typer.echo("")
+        typer.echo("Complete!")
+        typer.echo(f"  Bird clips: {has_birds_dir}/")
+        typer.echo(f"  Highlights: {output}")
+        typer.echo(f"  Frames:     {frames_dir}/")
+
+    except ValueError as e:
+        typer.echo(f"Error extracting frames: {e}", err=True)
         raise typer.Exit(1)
 
 
