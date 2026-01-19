@@ -389,20 +389,36 @@ def publish_to_r2(
     # Normalize path
     input_dir = Path(input_dir)
 
+    # Handle case where user passed has_birds/ directly instead of parent
+    if input_dir.name == "has_birds":
+        # User passed has_birds/ directly, use parent directory
+        input_dir = input_dir.parent
+        typer.echo(f"Note: Using parent directory {input_dir}")
+        typer.echo("")
+
     # Check for has_birds subdirectory
     has_birds_dir = input_dir / "has_birds"
     if not has_birds_dir.is_dir():
-        raise ValueError(f"has_birds/ subdirectory not found in {input_dir}")
+        raise ValueError(
+            f"has_birds/ subdirectory not found in {input_dir}\n"
+            f"       Run 'birdbird process' or 'birdbird filter' first to create has_birds/"
+        )
 
     # Validate highlights.mp4 exists
     highlights_path = has_birds_dir / "highlights.mp4"
     if not highlights_path.exists():
-        raise ValueError(f"highlights.mp4 not found in {has_birds_dir}")
+        raise ValueError(
+            f"highlights.mp4 not found in {has_birds_dir}\n"
+            f"       Run 'birdbird highlights {has_birds_dir}' or 'birdbird process {input_dir}' first"
+        )
 
     # Validate frames directory and files
     frames_dir = has_birds_dir / "frames"
     if not frames_dir.is_dir():
-        raise ValueError(f"frames/ subdirectory not found in {has_birds_dir}")
+        raise ValueError(
+            f"frames/ subdirectory not found in {has_birds_dir}\n"
+            f"       Run 'birdbird frames {has_birds_dir}' first to extract frames"
+        )
 
     frame_scores_path = frames_dir / "frame_scores.json"
     if not frame_scores_path.exists():
