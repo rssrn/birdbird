@@ -8,10 +8,12 @@ from pathlib import Path
 
 import typer
 
+from .config import get_location
 from .filter import filter_clips, load_detections
 from .highlights import generate_highlights, get_video_duration
 from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata
 from .publish import publish_to_r2
+from .songs import analyze_songs, save_song_detections
 
 app = typer.Typer(help="Bird feeder video analysis pipeline")
 
@@ -519,6 +521,126 @@ def publish(
         raise typer.Exit(1)
     except Exception as e:
         typer.echo(f"Error publishing to R2: {e}", err=True)
+        raise typer.Exit(1)
+
+
+@app.command()
+def songs(
+    input_dir: Path = typer.Argument(..., help="Directory containing .avi clips"),
+    output: Path = typer.Option(None, "--output", "-o", help="Output JSON path (default: input_dir/songs.json)"),
+    song_confidence: float = typer.Option(0.5, "--song-conf", "-s", help="Min confidence for song detection (0.0-1.0)"),
+    lat: float = typer.Option(None, "--lat", help="Latitude for species filtering (default: from config)"),
+    lon: float = typer.Option(None, "--lon", help="Longitude for species filtering (default: from config)"),
+    song_threads: int = typer.Option(2, "--song-threads", help="CPU threads for BirdNET"),
+    limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing songs.json without prompting"),
+) -> None:
+    """Detect bird songs in clips using BirdNET.
+
+    Extracts audio from AVI files and analyzes for bird vocalizations.
+    Produces a JSON file listing all detections with species, confidence,
+    and timestamps.
+
+    Location can be set in ~/.birdbird/config.json or via --lat/--lon flags.
+
+    @author Claude Opus 4.5 Anthropic
+    """
+    if not input_dir.is_dir():
+        typer.echo(f"Error: {input_dir} is not a directory", err=True)
+        raise typer.Exit(1)
+
+    if output is None:
+        output = input_dir / "songs.json"
+
+    # Check if output file already exists
+    if output.exists():
+        if force:
+            typer.echo(f"Removing existing {output}...")
+            output.unlink()
+            typer.echo("")
+        else:
+            typer.echo(f"Warning: {output} already exists")
+            typer.echo("")
+            typer.echo("Options:")
+            typer.echo("  1. Remove and re-analyze (recommended)")
+            typer.echo("  2. Cancel")
+            typer.echo("")
+
+            choice = typer.prompt("Choose option", type=int, default=1)
+
+            if choice == 1:
+                typer.echo(f"Removing {output}...")
+                output.unlink()
+                typer.echo("")
+            else:
+                typer.echo("Cancelled")
+                raise typer.Exit(0)
+
+    # Apply config defaults for location if not provided on CLI
+    if lat is None and lon is None:
+        config_lat, config_lon = get_location()
+        if config_lat is not None and config_lon is not None:
+            lat, lon = config_lat, config_lon
+
+    # Validate location args (both or neither after config applied)
+    if (lat is None) != (lon is None):
+        typer.echo("Error: --lat and --lon must both be provided for location filtering", err=True)
+        raise typer.Exit(1)
+
+    # Count clips
+    clips = sorted(input_dir.glob("*.avi"))
+    clip_count = min(len(clips), limit) if limit else len(clips)
+
+    typer.echo(f"Analyzing bird songs in {clip_count} clips from {input_dir}")
+    typer.echo(f"Settings: song_conf={song_confidence}, song_threads={song_threads}")
+    if lat is not None and lon is not None:
+        # Check if location came from config (compare with config values)
+        config_lat, config_lon = get_location()
+        from_config = (lat == config_lat and lon == config_lon)
+        source = " (from config)" if from_config else ""
+        typer.echo(f"Location filter: lat={lat}, lon={lon}{source}")
+    typer.echo("")
+
+    import time
+    start_time = time.perf_counter()
+
+    try:
+        results = analyze_songs(
+            input_dir=input_dir,
+            min_confidence=song_confidence,
+            lat=lat,
+            lon=lon,
+            threads=song_threads,
+            limit=limit,
+        )
+
+        # Save results
+        save_song_detections(results, output)
+
+        elapsed_seconds = time.perf_counter() - start_time
+
+        typer.echo("")
+        typer.echo("Results:")
+        typer.echo(f"  Files processed:    {results['summary']['files_processed']}")
+        typer.echo(f"  Files with songs:   {results['summary']['files_with_detections']}")
+        typer.echo(f"  Total detections:   {results['summary']['total_detections']}")
+        typer.echo(f"  Unique species:     {results['summary']['unique_species']}")
+        typer.echo(f"  Processing time:    {format_duration(elapsed_seconds)}")
+        typer.echo(f"  Output:             {output}")
+
+        if results['summary']['species_list']:
+            typer.echo("")
+            typer.echo("Species detected:")
+            for species in results['summary']['species_list'][:10]:  # Show top 10
+                typer.echo(f"  - {species}")
+            if len(results['summary']['species_list']) > 10:
+                typer.echo(f"  ... and {len(results['summary']['species_list']) - 10} more")
+
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
+    except Exception as e:
+        typer.echo(f"Error analyzing songs: {e}", err=True)
         raise typer.Exit(1)
 
 

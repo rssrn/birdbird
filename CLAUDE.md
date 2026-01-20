@@ -47,6 +47,10 @@ birdbird frames /path/to/clips/has_birds/ --limit 5 --top-n 10
 # Publish highlights to Cloudflare R2
 birdbird publish /path/to/clips
 
+# Detect bird songs using BirdNET (standalone step)
+birdbird songs /path/to/clips
+birdbird songs /path/to/clips --min-conf 0.3 --limit 10
+
 # Preview viewer changes locally (before deploying)
 python preview_viewer.py
 # Then open: http://localhost:8000/viewer.html
@@ -59,11 +63,13 @@ python preview_viewer.py
 src/birdbird/
 ├── __init__.py      # Package metadata
 ├── cli.py           # Typer CLI entry point
+├── config.py        # load_config() - reads ~/.birdbird/config.json
 ├── detector.py      # BirdDetector class (YOLOv8-nano, COCO bird class)
 ├── filter.py        # filter_clips() - batch processing, saves detections.json
 ├── highlights.py    # generate_highlights() - segment extraction + concatenation
 ├── frames.py        # extract_and_score_frames() - quality-based frame ranking
 ├── publish.py       # publish_to_r2() - R2 upload with batch management
+├── songs.py         # analyze_songs() - BirdNET audio analysis for bird vocalizations
 └── templates/
     ├── viewer.html  # Static web viewer template
     └── credits.html # Credits page listing dependencies and licenses
@@ -80,6 +86,11 @@ src/birdbird/
 **Publish approach**: Uploads highlights.mp4 + top 3 frames to Cloudflare R2 with YYYYMMDD-NN batch naming. Maintains latest.json index for web viewer. Prompts before deleting old batches (>5). Static HTML viewer fetches from R2 via client-side JavaScript.
 
 **Viewer development**: Use `preview_viewer.py` to test viewer changes locally without deploying. Server runs on localhost:8000 and proxies R2 requests to avoid CORS. Viewer auto-detects localhost and uses proxy. After confirming changes, copy to birdbird-website repo and push to deploy.
+
+**Songs approach**: Extracts audio from AVI files to temporary WAV files (ffmpeg), runs BirdNET-Analyzer for bird vocalization detection. Outputs songs.json with all detections including species (common/scientific names), confidence, filename, and timestamps. Configurable confidence threshold (default 0.25). Location filtering available via --lat/--lon for regional species filtering.
+
+**Configuration**: User settings stored in `~/.birdbird/config.json`. Currently supports:
+- `location.lat` / `location.lon` - Default coordinates for BirdNET species filtering (can be overridden with --lat/--lon CLI flags)
 
 ## Milestone Tracker
 

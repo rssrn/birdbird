@@ -31,6 +31,7 @@ Installed automatically via `pip install -e .`:
 - **typer** (≥0.9.0) - CLI framework
 - **tqdm** (≥4.66.0) - Progress bars
 - **boto3** (≥1.42.0) - AWS/R2 SDK for cloud publishing (optional)
+- **birdnet-analyzer** (≥2.4.0) - Bird song detection from audio
 
 ## Quickstart
 
@@ -53,11 +54,36 @@ birdbird filter /path/to/clips
 birdbird highlights /path/to/clips/has_birds/
 birdbird frames /path/to/clips/has_birds/ --top-n 20
 
+# Detect bird songs from audio (standalone step)
+birdbird songs /path/to/clips
+
 # Optional: Publish to web (requires R2 setup - see below)
 birdbird publish /path/to/clips
 ```
 
 ## Setup
+
+### General Configuration
+
+Create a config file at `~/.birdbird/config.json` for user-specific settings:
+
+```bash
+mkdir -p ~/.birdbird
+nano ~/.birdbird/config.json
+```
+
+```json
+{
+  "location": {
+    "lat": 51.35,
+    "lon": -2.15
+  }
+}
+```
+
+**Supported settings:**
+
+- `location.lat` / `location.lon` - Default coordinates for BirdNET species filtering in the `songs` command. Speeds up analysis by limiting to species found in your region. Can be overridden with `--lat`/`--lon` CLI flags.
 
 ### Cloudflare R2 Configuration (Optional - for Publishing)
 
@@ -134,10 +160,13 @@ To publish highlights to the web, configure Cloudflare R2:
 ```
 src/birdbird/
 ├── cli.py           # Typer CLI entry point
+├── config.py        # User config loading (~/.birdbird/config.json)
 ├── detector.py      # BirdDetector class (YOLOv8-nano)
 ├── filter.py        # Batch filtering logic
+├── frames.py        # Quality-based frame extraction and ranking
 ├── highlights.py    # Highlights reel generation
-└── frames.py        # Quality-based frame extraction and ranking
+├── publish.py       # R2 upload with batch management
+└── songs.py         # BirdNET audio analysis
 ```
 
 ### Detection Approach
@@ -160,6 +189,7 @@ This allows processing ~10s clips in ~2.3 seconds while catching brief bird appe
 - **Filter**: Clips containing detected birds are copied to a `has_birds/` subdirectory
 - **Highlights**: MP4 reel concatenating bird activity segments with crossfade transitions
 - **Frames**: Top-N JPEG frames ranked by multi-factor quality score (confidence, sharpness, bird size, position)
+- **Songs**: JSON file with bird vocalizations detected by BirdNET (species, confidence, timestamps)
 
 ## Problem
 
