@@ -199,7 +199,7 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | F2  | Upload progress reporting     | Add progress bar/percentage for R2 uploads in publish command (especially for large video files)                                                                                                              |
 | F3  | Corrupted input file handling | Improve detection and handling of corrupted MJPEG frames (camera recording issues, SD card errors). Could validate files before processing, skip severely corrupted clips, or log warnings for manual review. |
 | F4  | Multiple bird detection       | Detect and count multiple birds in a single frame. Currently returns first detection only. Would enable richer captions (e.g., "2 Birds 85%, 72%"), social behavior tracking, and better statistics.          |
-| F5  | Audio species detection       | Add species detection from audio track, probably using BirdNet.                                                                                                                                               |
+| F5  | Audio species detection       | Add species detection from audio track, probably using BirdNet.  Perhaps publish selected audio clips.                                                                                                                                             |
 | F6  | Credits page                  | Links to other projects/modules we are using, including licensing info                                                                                                                                        |
 
 ## Input Format
