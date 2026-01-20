@@ -8,9 +8,10 @@ birdbird - Bird feeder video analysis pipeline. See README.md for full project d
 
 ## Input Data
 
-- Sample batch: `/home/ross/BIRDS/20220114/` (498 clips)
+- Sample batch: `/home/ross/BIRDS/20260114/` (498 clips)
 - Format: AVI (MJPEG 1440x1080 30fps), ~10s duration, ~27MB each
-- Filename convention: `MMDDHHmmss.avi` encodes capture timestamp
+- Filename convention: `DDHHmmss00.avi` (day + time; month/year from parent directory name)
+- **Note**: Camera timestamps may be incorrect if device clock was reset; treat directory name as source of truth
 
 ## Development Commands
 
@@ -82,6 +83,17 @@ src/birdbird/
 
 ## Saved Plans
 
+**Viewer UI Improvements & Date Ranges**
+- Plan file: `/home/ross/.claude/plans/birdbird-viewer-ui-improvements.md`
+- Status: Planned (not yet implemented)
+- Summary: Make viewer less technical, add multi-day date range support
+- Key changes:
+  - Fix filename format docs (actual: `DDHHmmss00.avi`, not `MMDDHHmmss.avi`)
+  - Extract date ranges from clip filenames in publish.py
+  - Update metadata to include `start_date` and `end_date`
+  - Simplify UI: remove technical details, show human-readable dates ("Jan 14-16")
+- Context: Current batches already span multiple days but only show folder date
+
 **M2.1: Highlights Reel Captions**
 - Status: Planned (not yet implemented)
 - Summary: Add detection confidence overlay to highlight segments
@@ -94,7 +106,7 @@ src/birdbird/
   - Enhance `Segment` dataclass to include `detection_confidence`
   - Update `find_bird_segments()` to track and return detection metadata
   - Modify `extract_segment()` to add ffmpeg drawtext filter with detection info
-- Sample frame reference: `/home/ross/BIRDS/20220114/1112062500.avi` shows existing timestamp style
+- Sample frame reference: `/home/ross/BIRDS/20260114/1112062500.avi` shows existing timestamp style
 
 **M2.2: Publish Highlights to Cloudflare R2 + Workers**
 - Plan file: `/home/ross/.claude/plans/idempotent-bouncing-thimble.md`

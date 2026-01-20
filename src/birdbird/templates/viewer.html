@@ -326,15 +326,7 @@
                 img.alt = `Top bird frame ${index + 1}`;
                 img.loading = 'lazy';
 
-                const info = document.createElement('div');
-                info.className = 'frame-info';
-                info.innerHTML = `
-                    Clip: ${frame.clip} @ ${frame.timestamp.toFixed(1)}s |
-                    Score: <span class="score">${frame.combined_score.toFixed(3)}</span>
-                `;
-
                 frameDiv.appendChild(img);
-                frameDiv.appendChild(info);
                 framesContainer.appendChild(frameDiv);
             });
 
@@ -347,12 +339,17 @@
             const metadataContainer = document.getElementById('metadata-container');
             metadataContainer.innerHTML = '';
 
+            // Format date range from start_date and end_date (fall back to original_date if not present)
+            const dateRangeText = formatDateRangeFull(
+                metadata.start_date || metadata.original_date,
+                metadata.end_date || metadata.original_date
+            );
+
             const metadataItems = [
-                { label: 'Batch ID', value: metadata.batch_id },
-                { label: 'Original Date', value: metadata.original_date },
+                { label: 'Date', value: dateRangeText },
                 { label: 'Clips Processed', value: metadata.clip_count },
                 { label: 'Highlights Duration', value: formatDuration(metadata.highlights_duration) },
-                { label: 'Uploaded', value: new Date(metadata.uploaded).toLocaleDateString() },
+                { label: 'Uploaded', value: formatShortDate(metadata.uploaded) },
             ];
 
             metadataItems.forEach(item => {
@@ -375,7 +372,12 @@
                 allBatches.forEach(batch => {
                     const link = document.createElement('a');
                     link.className = 'archive-link' + (batch.id === currentBatchId ? ' current' : '');
-                    link.textContent = batch.id;
+
+                    // Use date range for link text instead of batch ID
+                    link.textContent = formatDateRangeShort(
+                        batch.start_date || batch.original_date,
+                        batch.end_date || batch.original_date
+                    );
 
                     if (batch.id !== currentBatchId) {
                         link.href = `?batch=${batch.id}`;
@@ -390,6 +392,68 @@
             const minutes = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${minutes}m ${secs}s`;
+        }
+
+        function formatShortDate(isoDateString) {
+            // Format as "19 Jan 2026"
+            const date = new Date(isoDateString);
+            const day = date.getDate();
+            const month = date.toLocaleDateString('en-GB', { month: 'short' });
+            const year = date.getFullYear();
+            return `${day} ${month} ${year}`;
+        }
+
+        function formatDateRangeFull(startDateStr, endDateStr) {
+            // Format date range for metadata section:
+            // - Single day: "16 January 2026"
+            // - Multi-day same month: "14-16 January 2026"
+            // - Cross month: "31 January - 2 February 2026"
+
+            const startDate = new Date(startDateStr + 'T00:00:00');
+            const endDate = new Date(endDateStr + 'T00:00:00');
+
+            const startDay = startDate.getDate();
+            const endDay = endDate.getDate();
+            const startMonth = startDate.toLocaleDateString('en-GB', { month: 'long' });
+            const endMonth = endDate.toLocaleDateString('en-GB', { month: 'long' });
+            const year = startDate.getFullYear();
+
+            if (startDateStr === endDateStr) {
+                // Single day
+                return `${startDay} ${startMonth} ${year}`;
+            } else if (startMonth === endMonth) {
+                // Same month
+                return `${startDay}-${endDay} ${startMonth} ${year}`;
+            } else {
+                // Different months
+                return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${year}`;
+            }
+        }
+
+        function formatDateRangeShort(startDateStr, endDateStr) {
+            // Format date range for archive links (no year):
+            // - Single day: "19 Jan"
+            // - Same month: "17-19 Jan"
+            // - Different months: "31 Jan-2 Feb"
+
+            const startDate = new Date(startDateStr + 'T00:00:00');
+            const endDate = new Date(endDateStr + 'T00:00:00');
+
+            const startDay = startDate.getDate();
+            const endDay = endDate.getDate();
+            const startMonth = startDate.toLocaleDateString('en-GB', { month: 'short' });
+            const endMonth = endDate.toLocaleDateString('en-GB', { month: 'short' });
+
+            if (startDateStr === endDateStr) {
+                // Single day
+                return `${startDay} ${startMonth}`;
+            } else if (startMonth === endMonth) {
+                // Same month
+                return `${startDay}-${endDay} ${startMonth}`;
+            } else {
+                // Different months
+                return `${startDay} ${startMonth}-${endDay} ${endMonth}`;
+            }
         }
 
         // Load batch on page load

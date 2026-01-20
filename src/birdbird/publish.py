@@ -149,6 +149,123 @@ def extract_original_date(input_dir: Path) -> str:
     return "unknown"
 
 
+def extract_date_range(has_birds_dir: Path, original_date: str) -> tuple[str, str]:
+    """Extract date range from clip filenames with timestamp validation.
+
+    Scans ALL clip filenames in the parent directory (not just has_birds) to determine
+    the actual date range. Validates that the directory date falls within the filename
+    date range as a sanity check (camera clock may be incorrect if device was reset).
+
+    Args:
+        has_birds_dir: Path to has_birds/ directory (parent dir will be scanned)
+        original_date: Date from directory name (format "YYYY-MM-DD" or "unknown")
+
+    Returns:
+        Tuple of (start_date, end_date) as "YYYY-MM-DD" strings.
+        If validation fails or cannot parse, returns (original_date, original_date).
+
+    Examples:
+        Valid timestamps:
+        - Clips: 1411354000.avi, 1611595900.avi
+        - Folder: 20260116
+        - Directory day (16) is within filename range (14-16)
+        - Returns: ("2026-01-14", "2026-01-16")
+
+        Invalid timestamps (camera clock reset):
+        - Clips: 0112345600.avi, 0323595900.avi
+        - Folder: 20260119
+        - Directory day (19) is NOT in filename range (1-3)
+        - Returns: ("2026-01-19", "2026-01-19")
+
+    @author Claude Sonnet 4.5 Anthropic
+    """
+    # If we couldn't parse the directory date, return single date
+    if original_date == "unknown":
+        return (original_date, original_date)
+
+    # Parse directory date
+    try:
+        dir_date = datetime.strptime(original_date, "%Y-%m-%d")
+        dir_day = dir_date.day
+        year = dir_date.year
+        month = dir_date.month
+    except ValueError:
+        return (original_date, original_date)
+
+    # Scan all .avi files in PARENT directory (not just has_birds)
+    # This gives us the full date range of the batch, even if some days had no birds
+    parent_dir = has_birds_dir.parent
+    avi_files = list(parent_dir.glob("*.avi"))
+    if not avi_files:
+        # No clips found, return single date
+        return (original_date, original_date)
+
+    # Extract days from filenames (format: DDHHmmss00.avi)
+    filename_days = []
+    for avi_path in avi_files:
+        filename = avi_path.name
+        if len(filename) >= 10 and filename[0:2].isdigit():
+            try:
+                day = int(filename[0:2])
+                if 1 <= day <= 31:  # Basic sanity check
+                    filename_days.append(day)
+            except ValueError:
+                continue
+
+    if not filename_days:
+        # Couldn't parse any filenames, return single date
+        return (original_date, original_date)
+
+    # Find min/max days from filenames
+    min_day = min(filename_days)
+    max_day = max(filename_days)
+
+    # Validate: Check if directory day falls within filename day range
+    # Handle month boundaries: if min_day > max_day, clips span month boundary
+    # (e.g., days 30, 31, 01, 02 would have min_day=30, max_day=2)
+    if min_day <= max_day:
+        # Normal case: days within same month
+        day_range_valid = min_day <= dir_day <= max_day
+    else:
+        # Month boundary case: check if dir_day is >= min_day (end of prev month)
+        # or <= max_day (start of current month)
+        day_range_valid = (dir_day >= min_day) or (dir_day <= max_day)
+
+    # If validation fails, fall back to single directory date
+    if not day_range_valid:
+        return (original_date, original_date)
+
+    # Validation passed - construct date range from filename days
+    # Handle month boundary case
+    if min_day > max_day:
+        # Clips span month boundary (e.g., Dec 31 - Jan 2)
+        # min_day is in previous month, max_day is in current month
+        try:
+            # Calculate previous month
+            if month == 1:
+                prev_month = 12
+                prev_year = year - 1
+            else:
+                prev_month = month - 1
+                prev_year = year
+
+            start_date = datetime(prev_year, prev_month, min_day).strftime("%Y-%m-%d")
+            end_date = datetime(year, month, max_day).strftime("%Y-%m-%d")
+            return (start_date, end_date)
+        except ValueError:
+            # Invalid date construction, fall back
+            return (original_date, original_date)
+    else:
+        # Normal case: all days within same month
+        try:
+            start_date = datetime(year, month, min_day).strftime("%Y-%m-%d")
+            end_date = datetime(year, month, max_day).strftime("%Y-%m-%d")
+            return (start_date, end_date)
+        except ValueError:
+            # Invalid date construction, fall back
+            return (original_date, original_date)
+
+
 def upload_batch(
     s3_client,
     bucket_name: str,
@@ -157,6 +274,7 @@ def upload_batch(
     frames_dir: Path,
     clip_count: int,
     original_date: str,
+    has_birds_dir: Path,
 ) -> dict:
     """Upload all batch assets to R2.
 
@@ -164,6 +282,9 @@ def upload_batch(
 
     @author Claude Sonnet 4.5 Anthropic
     """
+    # Extract date range from clip filenames with validation
+    start_date, end_date = extract_date_range(has_birds_dir, original_date)
+
     # Read frame_scores.json to get top 3 frame info
     frame_scores_path = frames_dir / "frame_scores.json"
     with open(frame_scores_path) as f:
@@ -236,6 +357,8 @@ def upload_batch(
         'batch_id': batch_id,
         'uploaded': uploaded_at,
         'original_date': original_date,
+        'start_date': start_date,
+        'end_date': end_date,
         'clip_count': clip_count,
         'highlights_duration': round(highlights_duration, 2),
         'top_frames': top_frames_metadata
@@ -461,6 +584,7 @@ def publish_to_r2(
         frames_dir=frames_dir,
         clip_count=clip_count,
         original_date=original_date,
+        has_birds_dir=has_birds_dir,
     )
 
     # Update latest.json

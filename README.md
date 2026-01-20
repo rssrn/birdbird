@@ -206,5 +206,5 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 
 - **Source**: Bird feeder camera with motion detection
 - **Format**: AVI (MJPEG, 1440x1080, 30fps, ~10 seconds, ~27MB each)
-- **Filename**: `MMDDHHmmss.avi` (timestamp when clip was captured)
+- **Filename**: `DDHHmmss00.avi` (day + time; month/year from parent directory name)
 - **Batches**: Downloaded every few days into dated directories (e.g., `20260114/`)
