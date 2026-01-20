@@ -81,6 +81,8 @@
             border-bottom: 1px solid #e9ecef;
             vertical-align: top;
         }
+        .icon-col { width: 32px; text-align: center; vertical-align: middle; }
+        .favicon-img { width: 16px; height: 16px; display: inline-block; vertical-align: middle; border-radius: 2px; }
 
         tr:last-child td {
             border-bottom: none;
@@ -136,6 +138,7 @@
             th, td {
                 padding: 8px;
             }
+            img:not([src]), img[src=""] { visibility: hidden; }
         }
     </style>
 </head>
@@ -156,82 +159,94 @@
             <table>
                 <thead>
                     <tr>
+                        <th class="icon-col"></th>
                         <th style="width: 25%">Project</th>
                         <th style="width: 50%">Purpose</th>
                         <th style="width: 25%">License</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="credits-body">
                     <tr>
-                        <th colspan="3" class="section-header">Core ML & Computer Vision</th>
+                        <th colspan="4" class="section-header">Core ML & Computer Vision</th>
                     </tr>
                     <tr>
+                        <td class="icon-col"><a href="https://docs.ultralytics.com/models/yolov8/"></a></a></td>
                         <td><a href="https://github.com/ultralytics/ultralytics" target="_blank">YOLOv8</a></td>
                         <td>State-of-the-art object detection model for real-time bird detection</td>
                         <td><a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank">AGPL-3.0</a></td>
                     </tr>
                     <tr>
+                        <td class="icon-col"></td>
                         <td><a href="https://cocodataset.org/" target="_blank">COCO Dataset</a></td>
                         <td>Pre-trained model weights for object detection including bird class</td>
                         <td><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a></td>
                     </tr>
                     <tr>
+                        <td class="icon-col"></td>
                         <td><a href="https://opencv.org/" target="_blank">OpenCV</a></td>
                         <td>Video frame extraction, image processing, and quality analysis</td>
                         <td><a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a></td>
                     </tr>
 
                     <tr>
-                        <th colspan="3" class="section-header">Video Processing</th>
+                        <th colspan="4" class="section-header">Video Processing</th>
                     </tr>
                     <tr>
+                        <td class="icon-col"></td>
                         <td><a href="https://ffmpeg.org/" target="_blank">FFmpeg</a></td>
                         <td>Video segment extraction, concatenation, and crossfade transitions</td>
                         <td><a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html" target="_blank">LGPL 2.1+</a></td>
                     </tr>
 
                     <tr>
-                        <th colspan="3" class="section-header">Python Libraries</th>
+                        <th colspan="4" class="section-header">Python Libraries</th>
                     </tr>
                     <tr>
+                        <td class="icon-col"><a href="https://typer.tiangolo.com/"></a></td>
                         <td><a href="https://github.com/fastapi/typer" target="_blank">Typer</a></td>
                         <td>Command-line interface framework with intuitive argument parsing</td>
                         <td><a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a></td>
                     </tr>
                     <tr>
+                        <td class="icon-col"><a href="https://tqdm.github.io/"></a></td>
                         <td><a href="https://github.com/tqdm/tqdm" target="_blank">tqdm</a></td>
                         <td>Progress bars for batch processing operations</td>
                         <td><a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a> / <a href="https://www.mozilla.org/en-US/MPL/2.0/" target="_blank">MPL 2.0</a></td>
                     </tr>
                     <tr>
+                        <td class="icon-col"><a href="https://aws.amazon.com/"></a></td>
                         <td><a href="https://github.com/boto/boto3" target="_blank">boto3</a></td>
                         <td>AWS SDK for Python, used for Cloudflare R2 object storage uploads</td>
                         <td><a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a></td>
                     </tr>
                     <tr>
+                        <td class="icon-col"></td>
                         <td><a href="https://www.python.org/" target="_blank">Python</a></td>
                         <td>Programming language runtime and standard library</td>
                         <td><a href="https://docs.python.org/3/license.html" target="_blank">PSF License</a></td>
                     </tr>
 
                     <tr>
-                        <th colspan="3" class="section-header">Infrastructure & Hosting</th>
+                        <th colspan="4" class="section-header">Infrastructure & Hosting</th>
                     </tr>
                     <tr>
+                        <td class="icon-col"></td>
                         <td><a href="https://www.cloudflare.com/products/r2/" target="_blank">Cloudflare R2</a></td>
                         <td>S3-compatible object storage for highlights and frame images</td>
                         <td>Commercial Service</td>
                     </tr>
                     <tr>
+                        <td class="icon-col"></td>
                         <td><a href="https://workers.cloudflare.com/" target="_blank">Cloudflare Workers</a></td>
                         <td>Serverless platform for hosting the web viewer application</td>
                         <td>Commercial Service</td>
                     </tr>
 
                     <tr>
-                        <th colspan="3" class="section-header">This Project</th>
+                        <th colspan="4" class="section-header">This Project</th>
                     </tr>
                     <tr>
+                        <td class="icon-col"></td>
                         <td><a href="https://github.com/rssrn/birdbird" target="_blank">birdbird</a></td>
                         <td>Bird feeder video analysis pipeline and web viewer</td>
                         <td><a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPL-3.0</a></td>
@@ -244,5 +259,50 @@
             Made with appreciation for the open source community
         </footer>
     </div>
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+            const rows = document.querySelectorAll('#credits-body tr');
+
+            rows.forEach(row => {
+                const iconCell = row.querySelector('.icon-col');
+                const mainLink = row.querySelector('td:nth-child(2) a');
+                
+                if (!iconCell) return;
+
+                const overrideLink = iconCell.querySelector('a');
+                let targetUrl = null;
+                let targetContainer = null;
+
+                // 1. Check for Override (<a> tag exists in icon-col)
+                if (overrideLink) {
+                    targetUrl = overrideLink.href;
+                    targetContainer = overrideLink;
+                } 
+                // 2. Check for Default (icon-col is totally empty)
+                else if (iconCell.innerHTML.trim() === "" && mainLink) {
+                    targetUrl = mainLink.href;
+                    targetContainer = iconCell;
+                }
+
+                // If we have a URL and a place to put it, fetch the favicon
+                if (targetUrl && targetContainer) {
+                    try {
+                        const domain = new URL(targetUrl).hostname;
+                        const iconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+                        
+                        const img = document.createElement('img');
+                        img.src = iconUrl;
+                        img.className = 'favicon-img';
+                        img.alt = '';
+                        img.onerror = () => { img.style.display = 'none'; };
+                        
+                        targetContainer.appendChild(img);
+                    } catch (e) {
+                        console.error("Invalid URL:", targetUrl);
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
