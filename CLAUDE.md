@@ -46,6 +46,11 @@ birdbird frames /path/to/clips/has_birds/ --limit 5 --top-n 10
 
 # Publish highlights to Cloudflare R2
 birdbird publish /path/to/clips
+
+# Preview viewer changes locally (before deploying)
+python preview_viewer.py
+# Then open: http://localhost:8000/viewer.html
+# Edit src/birdbird/templates/viewer.html and refresh browser to see changes
 ```
 
 ## Architecture
@@ -71,6 +76,8 @@ src/birdbird/
 
 **Publish approach**: Uploads highlights.mp4 + top 3 frames to Cloudflare R2 with YYYYMMDD-NN batch naming. Maintains latest.json index for web viewer. Prompts before deleting old batches (>5). Static HTML viewer fetches from R2 via client-side JavaScript.
 
+**Viewer development**: Use `preview_viewer.py` to test viewer changes locally without deploying. Server runs on localhost:8000 and proxies R2 requests to avoid CORS. Viewer auto-detects localhost and uses proxy. After confirming changes, copy to birdbird-website repo and push to deploy.
+
 ## Milestone Tracker
 
 - [x] M1: Bird detection filter (498 clips, 29.9% detection rate)
@@ -85,14 +92,17 @@ src/birdbird/
 
 **Viewer UI Improvements & Date Ranges**
 - Plan file: `/home/ross/.claude/plans/birdbird-viewer-ui-improvements.md`
-- Status: Planned (not yet implemented)
-- Summary: Make viewer less technical, add multi-day date range support
-- Key changes:
-  - Fix filename format docs (actual: `DDHHmmss00.avi`, not `MMDDHHmmss.avi`)
-  - Extract date ranges from clip filenames in publish.py
-  - Update metadata to include `start_date` and `end_date`
-  - Simplify UI: remove technical details, show human-readable dates ("Jan 14-16")
-- Context: Current batches already span multiple days but only show folder date
+- Status: Implemented
+- Summary: Made viewer less technical, added multi-day date range support with timestamp validation
+- Implemented changes:
+  - Fixed filename format docs (actual: `DDHHmmss00.avi`, not `MMDDHHmmss.avi`)
+  - Added `extract_date_range()` in publish.py with timestamp validation (scans parent directory)
+  - Validates directory date falls within filename date range; falls back if camera clock incorrect
+  - Metadata includes `start_date` and `end_date` fields
+  - Simplified UI: removed frame captions, batch IDs; shows human-readable dates ("11-14 Jan")
+  - Added location (Holt, Wiltshire) to subtitle
+  - Archive buttons at top with accessible current selection indicator (black border)
+  - Created `update_metadata.py` script to update existing R2 batches without re-upload
 
 **M2.1: Highlights Reel Captions**
 - Status: Planned (not yet implemented)
