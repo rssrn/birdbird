@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credits - Bird Feeder Highlights</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .intro {
+            margin-bottom: 30px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        th.section-header {
+            background: #667eea;
+            color: white;
+            font-size: 1.1em;
+            padding: 15px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .back-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+            margin-bottom: 30px;
+        }
+
+        .back-link:hover {
+            background: #5568d3;
+            text-decoration: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Credits & Acknowledgments</h1>
+            <div class="subtitle">Open source technologies powering birdbird</div>
+        </header>
+
+        <div class="content">
+            <a href="viewer.html" class="back-link">← Back to Highlights</a>
+
+            <div class="intro">
+                <p>Birdbird is built on the shoulders of giants. This project would not be possible without the incredible work of the open source community. We gratefully acknowledge the following projects and their contributors.</p>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%">Project</th>
+                        <th style="width: 50%">Purpose</th>
+                        <th style="width: 25%">License</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th colspan="3" class="section-header">Core ML & Computer Vision</th>
+                    </tr>
+                    <tr>
+                        <td><a href="https://github.com/ultralytics/ultralytics" target="_blank">YOLOv8</a></td>
+                        <td>State-of-the-art object detection model for real-time bird detection</td>
+                        <td><a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank">AGPL-3.0</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="https://cocodataset.org/" target="_blank">COCO Dataset</a></td>
+                        <td>Pre-trained model weights for object detection including bird class</td>
+                        <td><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="https://opencv.org/" target="_blank">OpenCV</a></td>
+                        <td>Video frame extraction, image processing, and quality analysis</td>
+                        <td><a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a></td>
+                    </tr>
+
+                    <tr>
+                        <th colspan="3" class="section-header">Video Processing</th>
+                    </tr>
+                    <tr>
+                        <td><a href="https://ffmpeg.org/" target="_blank">FFmpeg</a></td>
+                        <td>Video segment extraction, concatenation, and crossfade transitions</td>
+                        <td><a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html" target="_blank">LGPL 2.1+</a></td>
+                    </tr>
+
+                    <tr>
+                        <th colspan="3" class="section-header">Python Libraries</th>
+                    </tr>
+                    <tr>
+                        <td><a href="https://github.com/fastapi/typer" target="_blank">Typer</a></td>
+                        <td>Command-line interface framework with intuitive argument parsing</td>
+                        <td><a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="https://github.com/tqdm/tqdm" target="_blank">tqdm</a></td>
+                        <td>Progress bars for batch processing operations</td>
+                        <td><a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a> / <a href="https://www.mozilla.org/en-US/MPL/2.0/" target="_blank">MPL 2.0</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="https://github.com/boto/boto3" target="_blank">boto3</a></td>
+                        <td>AWS SDK for Python, used for Cloudflare R2 object storage uploads</td>
+                        <td><a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="https://www.python.org/" target="_blank">Python</a></td>
+                        <td>Programming language runtime and standard library</td>
+                        <td><a href="https://docs.python.org/3/license.html" target="_blank">PSF License</a></td>
+                    </tr>
+
+                    <tr>
+                        <th colspan="3" class="section-header">Infrastructure & Hosting</th>
+                    </tr>
+                    <tr>
+                        <td><a href="https://www.cloudflare.com/products/r2/" target="_blank">Cloudflare R2</a></td>
+                        <td>S3-compatible object storage for highlights and frame images</td>
+                        <td>Commercial Service</td>
+                    </tr>
+                    <tr>
+                        <td><a href="https://workers.cloudflare.com/" target="_blank">Cloudflare Workers</a></td>
+                        <td>Serverless platform for hosting the web viewer application</td>
+                        <td>Commercial Service</td>
+                    </tr>
+
+                    <tr>
+                        <th colspan="3" class="section-header">This Project</th>
+                    </tr>
+                    <tr>
+                        <td><a href="https://github.com/rssrn/birdbird" target="_blank">birdbird</a></td>
+                        <td>Bird feeder video analysis pipeline and web viewer</td>
+                        <td><a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPL-3.0</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <footer>
+            Made with appreciation for the open source community
+        </footer>
+    </div>
+</body>
+</html>

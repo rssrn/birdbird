@@ -65,8 +65,11 @@ src/birdbird/
 ├── frames.py        # extract_and_score_frames() - quality-based frame ranking
 ├── publish.py       # publish_to_r2() - R2 upload with batch management
 └── templates/
-    └── viewer.html  # Static web viewer template
+    ├── viewer.html  # Static web viewer template
+    └── credits.html # Credits page listing dependencies and licenses
 ```
+
+**Important**: When adding new dependencies to `pyproject.toml`, update `templates/credits.html` with the new library, its purpose, and license information.
 
 **Detection approach**: Weighted frame sampling (4x in first second, then 1fps), YOLOv8-nano for COCO class 14 (bird).
 
