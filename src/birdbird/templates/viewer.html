@@ -665,7 +665,18 @@
                             content.classList.add('hidden');
                         }
                     });
+
+                    // Update archive link hrefs to include current tab
+                    updateArchiveLinks();
                 });
+            });
+        }
+
+        function updateArchiveLinks() {
+            document.querySelectorAll('.archive-link:not(.current)').forEach(link => {
+                const url = new URL(link.href);
+                url.searchParams.set('tab', currentActiveTab);
+                link.href = url.toString();
             });
         }
 
