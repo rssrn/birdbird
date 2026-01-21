@@ -131,13 +131,66 @@
                 padding: 20px;
             }
 
-            table {
-                font-size: 0.9em;
+            /* Hide table header row on mobile */
+            thead tr:first-child {
+                display: none;
             }
 
-            th, td {
-                padding: 8px;
+            /* Section headers remain visible */
+            th.section-header {
+                display: block;
+                margin-top: 20px;
+                border-radius: 6px;
             }
+
+            /* Transform table rows into cards */
+            table, tbody, tr, td {
+                display: block;
+            }
+
+            tr:not(:has(.section-header)) {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+
+            td {
+                padding: 4px 0;
+                border-bottom: none;
+            }
+
+            /* Icon column inline on mobile */
+            .icon-col {
+                display: inline;
+                width: auto;
+                margin-right: 8px;
+            }
+
+            /* Style the project name prominently, inline with icon */
+            td:nth-child(2) {
+                display: inline;
+                font-weight: 600;
+                font-size: 1.05em;
+            }
+
+            /* Style purpose as main text */
+            td:nth-child(3) {
+                color: #666;
+                line-height: 1.4;
+            }
+
+            /* Style license smaller */
+            td:nth-child(4) {
+                font-size: 0.85em;
+                color: #888;
+                margin-top: 6px;
+            }
+
+            td:nth-child(4):empty {
+                display: none;
+            }
+
             img:not([src]), img[src=""] { visibility: hidden; }
         }
     </style>
