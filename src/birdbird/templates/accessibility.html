@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accessibility - Bird Feeder Highlights</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .back-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+            margin-bottom: 30px;
+        }
+
+        .back-link:hover {
+            background: #5568d3;
+            text-decoration: none;
+        }
+
+        h2 {
+            color: #333;
+            margin: 30px 0 15px 0;
+            font-size: 1.4em;
+        }
+
+        h2:first-of-type {
+            margin-top: 0;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            color: #666;
+            line-height: 1.7;
+            margin-bottom: 15px;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .updated {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #999;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Accessibility</h1>
+            <div class="subtitle">Our commitment to inclusive access</div>
+        </header>
+
+        <div class="content">
+            <a href="/" class="back-link" aria-label="Back to Highlights"><span aria-hidden="true">&larr;</span> Back to Highlights</a>
+
+            <h2>Our commitment</h2>
+            <p>This site aims to be accessible to all users. We follow the <a href="https://www.w3.org/WAI/standards-guidelines/wcag/">Web Content Accessibility Guidelines (WCAG) 2.1</a> Level AA where possible.</p>
+
+            <h2>What we've done</h2>
+            <ul>
+                <li>Keyboard navigation for all interactive elements</li>
+                <li>ARIA labels for screen reader compatibility</li>
+                <li>Sufficient colour contrast for text</li>
+                <li>Semantic HTML structure</li>
+                <li>Labels for audio and video controls</li>
+            </ul>
+
+            <h2>Known limitations</h2>
+            <ul>
+                <li>On mobile devices, the credits table loses some screen reader navigation features when reformatted as cards</li>
+            </ul>
+
+            <h2>Feedback</h2>
+            <p>If you encounter accessibility barriers on this site, please <a href="#" id="contact-link">contact the developer</a>.</p>
+
+            <p class="updated">Last updated: January 2026</p>
+        </div>
+
+        <footer>
+            <a href="/">Highlights</a> |
+            <a href="credits.html">Credits</a>
+        </footer>
+    </div>
+
+    <script>
+        // Obfuscated email to reduce spam harvesting
+        (function() {
+            var u = 'rossarn+birdbird';
+            var d = 'gmail.com';
+            var link = document.getElementById('contact-link');
+            link.href = 'mai' + 'lto:' + u + '@' + d;
+        })();
+    </script>
+</body>
+</html>
