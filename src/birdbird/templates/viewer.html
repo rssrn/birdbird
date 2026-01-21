@@ -361,6 +361,16 @@
             text-align: right;
         }
 
+        .song-clip-player {
+            height: 28px;
+            min-width: 140px;
+            max-width: 160px;
+        }
+
+        .song-clip-spacer {
+            min-width: 140px;
+        }
+
         .no-audio-message {
             text-align: center;
             padding: 40px 20px;
@@ -602,8 +612,8 @@
                 });
             }
 
-            // Load audio data for Audio tab
-            loadAndRenderAudio(metadata.batch_id);
+            // Load audio data for Audio tab (pass song_clips for player)
+            loadAndRenderAudio(metadata.batch_id, metadata.song_clips || []);
 
             // Restore previously active tab (for batch switching)
             restoreActiveTab();
@@ -661,8 +671,14 @@
             });
         }
 
-        async function loadAndRenderAudio(batchId) {
+        async function loadAndRenderAudio(batchId, songClips) {
             const audioContainer = document.getElementById('audio-stats-container');
+
+            // Build clip map: common_name -> filename
+            const clipMap = new Map();
+            songClips.forEach(clip => {
+                clipMap.set(clip.common_name, clip.filename);
+            });
 
             try {
                 const response = await fetch(`${R2_BASE_URL}/batches/${batchId}/songs.json`);
@@ -697,7 +713,7 @@
 
                 const maxCount = sortedSpecies[0][1].count;
 
-                renderAudioChart(sortedSpecies, maxCount);
+                renderAudioChart(sortedSpecies, maxCount, clipMap, batchId);
 
             } catch (error) {
                 console.error('Error loading audio data:', error);
@@ -705,7 +721,7 @@
             }
         }
 
-        function renderAudioChart(speciesData, maxCount) {
+        function renderAudioChart(speciesData, maxCount, clipMap, batchId) {
             const container = document.getElementById('audio-stats-container');
 
             let html = '<h2>Bird Vocalisations Detected <span style="font-weight: normal; font-size: 0.7em; color: #888;">(with % confidence)</span></h2>';
@@ -724,6 +740,16 @@
                     confidenceText = `${Math.round(minConf * 100)}-${Math.round(maxConf * 100)}%`;
                 }
 
+                // Check if we have a clip for this species
+                const clipFilename = clipMap.get(commonName);
+                let playerHtml;
+                if (clipFilename) {
+                    const clipUrl = `${R2_BASE_URL}/batches/${batchId}/song_clips/${clipFilename}`;
+                    playerHtml = `<audio class="song-clip-player" controls preload="none" src="${clipUrl}"></audio>`;
+                } else {
+                    playerHtml = '<span class="song-clip-spacer"></span>';
+                }
+
                 html += `
                     <div class="species-row">
                         <span class="species-name">${commonName}</span>
@@ -732,6 +758,7 @@
                         </div>
                         <span class="species-count">${count}</span>
                         <span class="species-confidence">${confidenceText}</span>
+                        ${playerHtml}
                     </div>
                 `;
             });
