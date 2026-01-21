@@ -246,6 +246,127 @@
             font-size: 0.9em;
         }
 
+        .tabs {
+            display: flex;
+            gap: 2px;
+            background: #e0e0e0;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 30px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-content {
+            border: 3px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 30px;
+            background: #ffffff;
+        }
+
+        .tab-content.hidden {
+            display: none;
+        }
+
+        .audio-explainer {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.6;
+            border-left: 4px solid #667eea;
+        }
+
+        .audio-stats {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+        }
+
+        .audio-stats h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 1.5em;
+        }
+
+        .species-row {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .species-row:last-child {
+            border-bottom: none;
+        }
+
+        .species-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .species-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .species-count {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .species-confidence {
+            color: #888;
+            font-size: 0.9em;
+            margin-left: 15px;
+        }
+
+        .bar-container {
+            height: 24px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .no-audio-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 1.1em;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2em;
@@ -257,6 +378,17 @@
 
             .metadata-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .tab-button {
+                padding: 10px 16px;
+                font-size: 0.95em;
+            }
+
+            .species-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
             }
         }
     </style>
@@ -277,24 +409,43 @@
                     <div class="archive-list" id="archive-list"></div>
                 </div>
 
-                <!-- Frames will be inserted here -->
-                <div id="frames-container" class="frames-container"></div>
+                <!-- Tab Navigation -->
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="visual">Visual</button>
+                    <button class="tab-button" data-tab="audio">Audio</button>
+                </div>
 
-                <!-- Video player -->
-                <div class="video-container">
-                    <video id="highlights-player" controls preload="metadata">
-                        <source id="video-source" src="" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                    <div class="play-overlay" id="play-overlay">
-                        <div class="play-button"></div>
+                <!-- Visual Tab -->
+                <div class="tab-content" id="visual-tab">
+                    <!-- Frames will be inserted here -->
+                    <div id="frames-container" class="frames-container"></div>
+
+                    <!-- Video player -->
+                    <div class="video-container">
+                        <video id="highlights-player" controls preload="metadata">
+                            <source id="video-source" src="" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="play-overlay" id="play-overlay">
+                            <div class="play-button"></div>
+                        </div>
+                    </div>
+
+                    <!-- Metadata -->
+                    <div class="metadata">
+                        <h2>Batch Information</h2>
+                        <div class="metadata-grid" id="metadata-container"></div>
                     </div>
                 </div>
 
-                <!-- Metadata -->
-                <div class="metadata">
-                    <h2>Batch Information</h2>
-                    <div class="metadata-grid" id="metadata-container"></div>
+                <!-- Audio Tab -->
+                <div class="tab-content hidden" id="audio-tab">
+                    <div class="audio-explainer">
+                        <p>Bird vocalisations are detected from the audio of motion-triggered clips. The sounds may not match the bird visible on camera, and audio is only available during motion-triggered recording periods (not the entire day).</p>
+                    </div>
+                    <div class="audio-stats" id="audio-stats-container">
+                        <!-- Populated by JavaScript -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -319,6 +470,9 @@
         // Get batch ID from URL query parameter (e.g., ?batch=20250116-01)
         const urlParams = new URLSearchParams(window.location.search);
         const requestedBatch = urlParams.get('batch');
+
+        // Track current active tab for persistence across batch changes
+        let currentActiveTab = 'visual';
 
         async function loadBatch(batchId = null) {
             const loadingEl = document.getElementById('loading');
@@ -439,6 +593,145 @@
                     archiveList.appendChild(link);
                 });
             }
+
+            // Load audio data for Audio tab
+            loadAndRenderAudio(metadata.batch_id);
+
+            // Restore previously active tab (for batch switching)
+            restoreActiveTab();
+        }
+
+        function initTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.dataset.tab;
+
+                    // Save current tab for persistence
+                    currentActiveTab = targetTab;
+
+                    // Update button states
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    // Update content visibility
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        if (content.id === `${targetTab}-tab`) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+        }
+
+        function restoreActiveTab() {
+            // Restore the previously active tab after loading new batch
+            const tabButtons = document.querySelectorAll('.tab-button');
+
+            tabButtons.forEach(btn => {
+                if (btn.dataset.tab === currentActiveTab) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                if (content.id === `${currentActiveTab}-tab`) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        async function loadAndRenderAudio(batchId) {
+            const audioContainer = document.getElementById('audio-stats-container');
+
+            try {
+                const response = await fetch(`${R2_BASE_URL}/batches/${batchId}/songs.json`);
+
+                if (!response.ok) {
+                    audioContainer.innerHTML = '<div class="no-audio-message">No audio analysis available for this batch</div>';
+                    return;
+                }
+
+                const songsData = await response.json();
+
+                if (!songsData.detections || songsData.detections.length === 0) {
+                    audioContainer.innerHTML = '<div class="no-audio-message">No bird vocalisations detected</div>';
+                    return;
+                }
+
+                // Aggregate by species
+                const speciesMap = new Map();
+                songsData.detections.forEach(detection => {
+                    const name = detection.common_name;
+                    if (!speciesMap.has(name)) {
+                        speciesMap.set(name, { count: 0, confidences: [] });
+                    }
+                    const species = speciesMap.get(name);
+                    species.count++;
+                    species.confidences.push(detection.confidence);
+                });
+
+                // Sort by count descending
+                const sortedSpecies = Array.from(speciesMap.entries())
+                    .sort((a, b) => b[1].count - a[1].count);
+
+                const maxCount = sortedSpecies[0][1].count;
+
+                renderAudioChart(sortedSpecies, maxCount);
+
+            } catch (error) {
+                console.error('Error loading audio data:', error);
+                audioContainer.innerHTML = '<div class="no-audio-message">Error loading audio data</div>';
+            }
+        }
+
+        function renderAudioChart(speciesData, maxCount) {
+            const container = document.getElementById('audio-stats-container');
+
+            let html = '<h2>Bird Vocalisations Detected <span style="font-weight: normal; font-size: 0.7em; color: #888;">(with % confidence)</span></h2>';
+
+            speciesData.forEach(([commonName, data]) => {
+                const { count, confidences } = data;
+                const barWidth = (count / maxCount) * 100;
+
+                // Format confidence display
+                let confidenceText;
+                if (confidences.length === 1) {
+                    confidenceText = `${Math.round(confidences[0] * 100)}%`;
+                } else if (confidences.length <= 3) {
+                    confidenceText = confidences
+                        .map(c => `${Math.round(c * 100)}%`)
+                        .join(', ');
+                } else {
+                    const minConf = Math.min(...confidences);
+                    const maxConf = Math.max(...confidences);
+                    confidenceText = `${Math.round(minConf * 100)}-${Math.round(maxConf * 100)}%`;
+                }
+
+                html += `
+                    <div class="species-row">
+                        <div class="species-header">
+                            <span class="species-name">${commonName}</span>
+                            <span>
+                                <span class="species-count">${count}</span>
+                                <span class="species-confidence">${confidenceText}</span>
+                            </span>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-fill" style="width: ${barWidth}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
         }
 
         function formatDuration(seconds) {
@@ -534,7 +827,8 @@
             });
         }
 
-        // Load batch on page load
+        // Initialize tabs and load batch on page load
+        initTabs();
         loadBatch(requestedBatch);
     </script>
 </body>
