@@ -336,6 +336,7 @@ def upload_batch(
     original_date: str,
     has_birds_dir: Path,
     songs_path: Path | None = None,
+    song_clips_dir: Path | None = None,
     batch_exists: bool = False,
 ) -> dict:
     """Upload all batch assets to R2.
@@ -344,7 +345,7 @@ def upload_batch(
 
     Returns: metadata dict for this batch
 
-    @author Claude Sonnet 4.5 Anthropic
+    @author Claude Opus 4.5 Anthropic
     """
     uploaded_files = []
     skipped_files = []
@@ -462,6 +463,47 @@ def upload_batch(
             'timestamps_reliable': songs_data.get('timestamps_reliable', True),
         }
 
+    # Upload song clips if available
+    song_clips_metadata = []
+    if song_clips_dir and song_clips_dir.is_dir():
+        clip_files = sorted(song_clips_dir.glob("*.wav"))
+        if clip_files:
+            typer.echo(f"  Checking {len(clip_files)} song clips...")
+
+            # Load songs.json to get clip metadata (species, confidence, etc.)
+            clips_data = {}
+            if songs_path and songs_path.exists():
+                with open(songs_path) as f:
+                    songs_json = json.load(f)
+                    for clip in songs_json.get('clips', []):
+                        clips_data[clip['filename']] = clip
+
+            for clip_file in clip_files:
+                clip_key = f"batches/{batch_id}/song_clips/{clip_file.name}"
+
+                if batch_exists and not should_upload_file(s3_client, bucket_name, clip_key, clip_file):
+                    typer.echo(f"    Skipping {clip_file.name} (unchanged)")
+                    skipped_files.append(f"song_clips/{clip_file.name}")
+                else:
+                    typer.echo(f"    Uploading {clip_file.name}")
+                    with open(clip_file, 'rb') as f:
+                        s3_client.put_object(
+                            Bucket=bucket_name,
+                            Key=clip_key,
+                            Body=f,
+                            ContentType='audio/wav'
+                        )
+                    uploaded_files.append(f"song_clips/{clip_file.name}")
+
+                # Add metadata from songs.json if available
+                clip_info = clips_data.get(clip_file.name, {})
+                song_clips_metadata.append({
+                    'filename': clip_file.name,
+                    'common_name': clip_info.get('common_name', clip_file.stem.replace('_', ' ').title()),
+                    'scientific_name': clip_info.get('scientific_name', ''),
+                    'confidence': clip_info.get('confidence', 0),
+                })
+
     # Create metadata.json
     metadata = {
         'batch_id': batch_id,
@@ -477,6 +519,10 @@ def upload_batch(
     # Add songs summary if available
     if songs_summary:
         metadata['songs'] = songs_summary
+
+    # Add song clips if available
+    if song_clips_metadata:
+        metadata['song_clips'] = song_clips_metadata
 
     # Always upload metadata.json (it's tiny and includes current timestamp)
     typer.echo("  Uploading metadata.json...")
@@ -700,6 +746,19 @@ def publish_to_r2(
     else:
         typer.echo(f"No songs.json found - skipping (run 'birdbird songs {input_dir}' to add)")
         songs_path = None
+
+    # Check for song_clips directory (optional)
+    song_clips_dir = input_dir / "song_clips"
+    if song_clips_dir.is_dir():
+        clip_files = list(song_clips_dir.glob("*.wav"))
+        if clip_files:
+            typer.echo(f"Found {len(clip_files)} song clips - will include in upload")
+        else:
+            typer.echo(f"song_clips/ directory empty - skipping")
+            song_clips_dir = None
+    else:
+        typer.echo(f"No song_clips/ found - skipping")
+        song_clips_dir = None
     typer.echo("")
 
     # Extract original date from directory name
@@ -752,6 +811,7 @@ def publish_to_r2(
         original_date=original_date,
         has_birds_dir=has_birds_dir,
         songs_path=songs_path,
+        song_clips_dir=song_clips_dir,
         batch_exists=batch_exists,
     )
 
