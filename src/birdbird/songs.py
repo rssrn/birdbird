@@ -185,15 +185,73 @@ def parse_dir_date(input_dir: Path) -> datetime | None:
     return None
 
 
+def validate_timestamps(input_dir: Path, dir_date: datetime | None) -> bool:
+    """Check if camera timestamps in filenames are reliable.
+
+    Compares day values from filenames against the directory date.
+    If the directory day doesn't fall within the range of filename days,
+    the camera clock was likely incorrect (e.g., reset after power loss).
+
+    Args:
+        input_dir: Directory containing .avi clips
+        dir_date: Date parsed from directory name
+
+    Returns:
+        True if timestamps appear reliable, False otherwise
+
+    @author Claude Opus 4.5 Anthropic
+    """
+    if dir_date is None:
+        return False
+
+    dir_day = dir_date.day
+
+    # Extract days from filenames (format: DDHHmmss00.avi)
+    avi_files = list(input_dir.glob("*.avi"))
+    if not avi_files:
+        return False
+
+    filename_days = []
+    for avi_path in avi_files:
+        filename = avi_path.name
+        if len(filename) >= 10 and filename[0:2].isdigit():
+            try:
+                day = int(filename[0:2])
+                if 1 <= day <= 31:
+                    filename_days.append(day)
+            except ValueError:
+                continue
+
+    if not filename_days:
+        return False
+
+    min_day = min(filename_days)
+    max_day = max(filename_days)
+
+    # Check if directory day falls within filename day range
+    # Handle month boundaries: if min_day > max_day, clips span month boundary
+    if min_day <= max_day:
+        # Normal case: days within same month
+        return min_day <= dir_day <= max_day
+    else:
+        # Month boundary case: check if dir_day is >= min_day (end of prev month)
+        # or <= max_day (start of current month)
+        return (dir_day >= min_day) or (dir_day <= max_day)
+
+
 def parse_birdnet_csv(
     csv_path: Path,
     source_filename: str,
     dir_date: datetime | None,
+    timestamps_reliable: bool = True,
 ) -> list[SongDetection]:
     """Parse BirdNET CSV output into SongDetection objects.
 
     BirdNET CSV format:
     Start (s),End (s),Scientific name,Common name,Confidence,File
+
+    When timestamps_reliable is False (camera clock was wrong), only the date
+    portion is used (YYYY-MM-DD format) rather than full ISO timestamp.
 
     @author Claude Opus 4.5 Anthropic
     """
@@ -212,19 +270,26 @@ def parse_birdnet_csv(
                 scientific_name = row["Scientific name"]
                 common_name = row["Common name"]
 
-                # Calculate timestamp: file timestamp + detection start time
-                base_timestamp = parse_timestamp_from_filename(
-                    source_filename, dir_date
-                )
-                if base_timestamp:
-                    # Add detection start time to base timestamp
-                    base_dt = datetime.fromisoformat(base_timestamp)
-                    detection_dt = base_dt.replace(
-                        second=base_dt.second + int(start_s)
+                if timestamps_reliable:
+                    # Calculate timestamp: file timestamp + detection start time
+                    base_timestamp = parse_timestamp_from_filename(
+                        source_filename, dir_date
                     )
-                    timestamp = detection_dt.isoformat()
+                    if base_timestamp:
+                        # Add detection start time to base timestamp
+                        base_dt = datetime.fromisoformat(base_timestamp)
+                        detection_dt = base_dt.replace(
+                            second=base_dt.second + int(start_s)
+                        )
+                        timestamp = detection_dt.isoformat()
+                    else:
+                        timestamp = ""
                 else:
-                    timestamp = ""
+                    # Timestamps unreliable - use only date from directory
+                    if dir_date:
+                        timestamp = dir_date.strftime("%Y-%m-%d")
+                    else:
+                        timestamp = ""
 
                 detection = SongDetection(
                     filename=source_filename,
@@ -279,6 +344,11 @@ def analyze_songs(
     # Parse directory date for timestamp reconstruction
     dir_date = parse_dir_date(input_dir)
 
+    # Validate timestamps (camera clock may be wrong)
+    timestamps_reliable = validate_timestamps(input_dir, dir_date)
+    if not timestamps_reliable:
+        print("Note: Camera timestamps appear incorrect, using date only")
+
     # Create temp directory for audio extraction and results
     with tempfile.TemporaryDirectory(prefix="birdbird_songs_") as temp_dir:
         temp_path = Path(temp_dir)
@@ -331,7 +401,9 @@ def analyze_songs(
             csv_filename = f"{wav_path.stem}.BirdNET.results.csv"
             csv_path = results_dir / csv_filename
 
-            detections = parse_birdnet_csv(csv_path, avi_name, dir_date)
+            detections = parse_birdnet_csv(
+                csv_path, avi_name, dir_date, timestamps_reliable
+            )
             all_detections.extend(detections)
 
     # Sort by confidence (highest first)
@@ -350,8 +422,13 @@ def analyze_songs(
     if lat is not None and lon is not None:
         config["location"] = {"lat": lat, "lon": lon}
 
+    # Include date from directory when available
+    date_from_dir = dir_date.strftime("%Y-%m-%d") if dir_date else None
+
     return {
         "config": config,
+        "timestamps_reliable": timestamps_reliable,
+        "date": date_from_dir,
         "detections": [d.to_dict() for d in all_detections],
         "summary": {
             "total_detections": len(all_detections),
