@@ -43,7 +43,7 @@ source .venv/bin/activate
 # Install in development mode
 pip install -e .
 
-# Process clips: filter + highlights + frames in one step
+# Process clips: filter + highlights + frames + songs in one step
 birdbird process /path/to/clips
 
 # Test with limited clips first
@@ -189,7 +189,7 @@ This allows processing ~10s clips in ~2.3 seconds while catching brief bird appe
 - **Filter**: Clips containing detected birds are copied to a `has_birds/` subdirectory
 - **Highlights**: MP4 reel concatenating bird activity segments with crossfade transitions
 - **Frames**: Top-N JPEG frames ranked by multi-factor quality score (confidence, sharpness, bird size, position)
-- **Songs**: JSON file with bird vocalizations detected by BirdNET (species, confidence, timestamps)
+- **Songs**: JSON file with bird vocalizations detected by BirdNET (species, confidence, timestamps), plus normalized audio clips for each species
 
 ## Problem
 
@@ -213,8 +213,8 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | ---- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ |
 | M1   | Bird detection filter                                                                                                 | Discard clips without birds (eliminate wind false positives)                                                     | Done   |
 | M2   | Highlights reel v1                                                                                                    | Concatenate segments with bird activity with crossfade transitions                                               | Done   |
-| M2.1 | Highlights reel captions                                                                                              | Add match type (e.g. bird or human) with confidence level within highlights reel, adjacent to existing timestamp |
-| M2.2 | Publish highlights reel to web - maybe using cloudflare R2 for the blob and static cloudflare worker page to frame it |
+| M2.1 | Highlights reel captions                                                                                              | Add match type (e.g. bird or human) with confidence level within highlights reel, adjacent to existing timestamp |        |
+| M2.2 | Publish highlights to web                                                                                             | Upload to Cloudflare R2 with static web viewer showing video, frames, and audio stats                            | Done   |
 | M3   | Highlight images                                                                                                      | Extract some nice-looking in-focus bird frames with timestamps                                                   | Done   |
 | M4   | Visual species detection                                                                                              | Identify species, generate timeline summary with frame captures                                                  |        |
 | M5   | Email or static web report                                                                                            | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material                                      |        |
@@ -229,7 +229,7 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | F2  | Upload progress reporting     | Add progress bar/percentage for R2 uploads in publish command (especially for large video files)                                                                                                              | Done   |
 | F3  | Corrupted input file handling | Improve detection and handling of corrupted MJPEG frames (camera recording issues, SD card errors). Could validate files before processing, skip severely corrupted clips, or log warnings for manual review. |        |
 | F4  | Multiple bird detection       | Detect and count multiple birds in a single frame. Currently returns first detection only. Would enable richer captions (e.g., "2 Birds 85%, 72%"), social behavior tracking, and better statistics.          |        |
-| F5  | Audio species detection       | Add species detection from audio track, probably using BirdNet.  Perhaps publish selected audio clips.                                                                                                                                             |        |
+| F5  | Audio species detection       | Species detection from audio using BirdNET. Extracts normalized audio clips for each species and publishes to web viewer with playback.                                                                                                           | Done   |
 | F6  | Credits page                  | Links to other projects/modules we are using, including licensing info                                                                                                                                          | Done   |
 
 ## Input Format
