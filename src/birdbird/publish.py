@@ -519,7 +519,10 @@ def update_latest_json(s3_client, bucket_name: str, batch_metadata: dict) -> Non
         'highlights_duration': batch_metadata['highlights_duration']
     }
 
-    # Prepend new batch (newest first)
+    # Remove all existing entries with this batch_id (handles duplicates from old bug)
+    batches = [b for b in batches if b['id'] != batch_metadata['batch_id']]
+
+    # Prepend batch (newest first)
     batches.insert(0, batch_summary)
 
     # Update latest.json
