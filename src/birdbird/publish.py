@@ -48,6 +48,7 @@ def should_upload_file(s3_client, bucket_name: str, key: str, local_path: Path) 
     """Check if local file differs from R2 version.
 
     Compares local file MD5 with R2 object ETag (which is MD5 for single-part uploads).
+    For multipart uploads (ETag contains '-'), compares file size as a heuristic.
     Returns True if file should be uploaded (different or doesn't exist).
 
     @author Claude Sonnet 4.5 Anthropic
@@ -56,11 +57,19 @@ def should_upload_file(s3_client, bucket_name: str, key: str, local_path: Path) 
         # Get existing object metadata
         response = s3_client.head_object(Bucket=bucket_name, Key=key)
         remote_etag = response['ETag'].strip('"')  # Remove quotes from ETag
+        remote_size = response['ContentLength']
 
-        # Calculate local MD5
-        local_md5 = calculate_md5(local_path)
+        # Check if this is a multipart upload (ETag contains hyphen)
+        if '-' in remote_etag:
+            # For multipart uploads, ETag is not simple MD5
+            # Use file size as heuristic (not perfect but fast and good enough)
+            local_size = local_path.stat().st_size
+            return local_size != remote_size  # Upload if sizes differ
+        else:
+            # Single-part upload - ETag is MD5, compare directly
+            local_md5 = calculate_md5(local_path)
+            return local_md5 != remote_etag  # Upload if different
 
-        return local_md5 != remote_etag  # Upload if different
     except ClientError as e:
         if e.response.get('Error', {}).get('Code') == '404':
             return True  # File doesn't exist, upload
