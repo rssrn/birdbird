@@ -225,13 +225,19 @@ def extract_date_range(has_birds_dir: Path, original_date: str) -> tuple[str, st
         If validation fails or cannot parse, returns (original_date, original_date).
 
     Examples:
-        Valid timestamps:
+        Valid timestamps (small span):
         - Clips: 1411354000.avi, 1611595900.avi
         - Folder: 20260116
-        - Directory day (16) is within filename range (14-16)
+        - Directory day (16) is within filename range (14-16), span is 2 days
         - Returns: ("2026-01-14", "2026-01-16")
 
-        Invalid timestamps (camera clock reset):
+        Invalid timestamps (camera clock was wrong then corrected):
+        - Clips: 0312345600.avi (broken clock), 2123595900.avi (correct)
+        - Folder: 20260121
+        - Span is 18 days (3-21), exceeds reasonable threshold
+        - Returns: ("2026-01-21", "2026-01-21")
+
+        Invalid timestamps (directory day not in range):
         - Clips: 0112345600.avi, 0323595900.avi
         - Folder: 20260119
         - Directory day (19) is NOT in filename range (1-3)
@@ -279,6 +285,21 @@ def extract_date_range(has_birds_dir: Path, original_date: str) -> tuple[str, st
     # Find min/max days from filenames
     min_day = min(filename_days)
     max_day = max(filename_days)
+
+    # Check if the span of filename days is reasonable (max 5 days for a typical batch)
+    # If span is too large, some timestamps are likely incorrect (e.g., camera clock was reset mid-batch)
+    MAX_REASONABLE_SPAN = 5
+
+    if min_day <= max_day:
+        span = max_day - min_day
+    else:
+        # Month boundary case: e.g., min_day=30, max_day=2 means span from 30 to 2
+        # Approximate: assume at most ~31 days in a month
+        span = (31 - min_day) + max_day
+
+    if span > MAX_REASONABLE_SPAN:
+        # Span is too large - fall back to single directory date
+        return (original_date, original_date)
 
     # Validate: Check if directory day falls within filename day range
     # Handle month boundaries: if min_day > max_day, clips span month boundary
