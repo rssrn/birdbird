@@ -357,7 +357,7 @@
         .species-confidence {
             color: #888;
             font-size: 0.85em;
-            min-width: 80px;
+            min-width: 65px;
             text-align: right;
         }
 
@@ -718,10 +718,6 @@
                 let confidenceText;
                 if (confidences.length === 1) {
                     confidenceText = `${Math.round(confidences[0] * 100)}%`;
-                } else if (confidences.length <= 3) {
-                    confidenceText = confidences
-                        .map(c => `${Math.round(c * 100)}%`)
-                        .join(', ');
                 } else {
                     const minConf = Math.min(...confidences);
                     const maxConf = Math.max(...confidences);
