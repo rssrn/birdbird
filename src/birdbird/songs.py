@@ -114,6 +114,56 @@ def extract_audio(
     return result.returncode == 0
 
 
+def extract_audio_segment(
+    avi_path: Path,
+    output_path: Path,
+    start_s: float,
+    end_s: float,
+    sample_rate: int = 48000,
+) -> bool:
+    """Extract a specific audio segment from AVI file to WAV format.
+
+    Args:
+        avi_path: Path to source AVI file
+        output_path: Path to output WAV file
+        start_s: Start time in seconds
+        end_s: End time in seconds
+        sample_rate: Sample rate for output
+
+    Returns:
+        True if extraction succeeded, False otherwise
+
+    @author Claude Opus 4.5 Anthropic
+    """
+    duration = end_s - start_s
+    cmd = [
+        "ffmpeg",
+        "-y",  # Overwrite output
+        "-ss",
+        str(start_s),  # Seek to start
+        "-i",
+        str(avi_path),
+        "-t",
+        str(duration),  # Duration
+        "-vn",  # No video
+        "-acodec",
+        "pcm_s16le",  # 16-bit PCM
+        "-ar",
+        str(sample_rate),
+        "-ac",
+        "1",  # Mono
+        str(output_path),
+    ]
+
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+    )
+
+    return result.returncode == 0
+
+
 def parse_timestamp_from_filename(
     filename: str,
     dir_date: datetime | None,
@@ -308,6 +358,75 @@ def parse_birdnet_csv(
     return detections
 
 
+def extract_species_clips(
+    detections: list[SongDetection],
+    input_dir: Path,
+    output_dir: Path,
+) -> list[dict]:
+    """Extract audio clips for the highest confidence detection of each species.
+
+    Args:
+        detections: List of all song detections
+        input_dir: Directory containing source AVI files
+        output_dir: Directory to save audio clips (will be created)
+
+    Returns:
+        List of dicts with clip metadata (species, confidence, filename, etc.)
+
+    @author Claude Opus 4.5 Anthropic
+    """
+    if not detections:
+        return []
+
+    # Group detections by species and find highest confidence for each
+    species_best: dict[str, SongDetection] = {}
+    for detection in detections:
+        species_key = detection.scientific_name
+        if species_key not in species_best:
+            species_best[species_key] = detection
+        elif detection.confidence > species_best[species_key].confidence:
+            species_best[species_key] = detection
+
+    # Create output directory
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Extract clips
+    extracted_clips = []
+    for detection in tqdm(species_best.values(), desc="Extracting song clips"):
+        # Create safe filename from common name
+        safe_name = detection.common_name.lower().replace(" ", "_").replace("'", "")
+        safe_name = "".join(c for c in safe_name if c.isalnum() or c == "_")
+        output_filename = f"{safe_name}.wav"
+        output_path = output_dir / output_filename
+
+        # Find source AVI file
+        source_path = input_dir / detection.filename
+        if not source_path.exists():
+            continue
+
+        # Extract the audio segment
+        success = extract_audio_segment(
+            avi_path=source_path,
+            output_path=output_path,
+            start_s=detection.start_s,
+            end_s=detection.end_s,
+        )
+
+        if success:
+            extracted_clips.append({
+                "filename": output_filename,
+                "common_name": detection.common_name,
+                "scientific_name": detection.scientific_name,
+                "confidence": round(detection.confidence, 4),
+                "source_file": detection.filename,
+                "start_s": detection.start_s,
+                "end_s": detection.end_s,
+                "duration_s": round(detection.end_s - detection.start_s, 2),
+            })
+
+    return extracted_clips
+
+
 def analyze_songs(
     input_dir: Path,
     min_confidence: float = 0.5,
@@ -315,6 +434,7 @@ def analyze_songs(
     lon: float | None = None,
     threads: int = 2,
     limit: int | None = None,
+    extract_clips: bool = True,
 ) -> dict:
     """Analyze bird songs from AVI files using BirdNET.
 
@@ -325,9 +445,10 @@ def analyze_songs(
         lon: Longitude for species filtering (optional)
         threads: Number of CPU threads for BirdNET
         limit: Max clips to process (for testing)
+        extract_clips: Extract audio clips for highest confidence of each species
 
     Returns:
-        Dict with detections, config, and summary
+        Dict with detections, config, summary, and optionally clips
 
     @author Claude Opus 4.5 Anthropic
     """
@@ -425,17 +546,29 @@ def analyze_songs(
     # Include date from directory when available
     date_from_dir = dir_date.strftime("%Y-%m-%d") if dir_date else None
 
+    # Extract audio clips for each species (highest confidence detection)
+    clips_info = []
+    if extract_clips and all_detections:
+        clips_dir = input_dir / "song_clips"
+        clips_info = extract_species_clips(
+            detections=all_detections,
+            input_dir=input_dir,
+            output_dir=clips_dir,
+        )
+
     return {
         "config": config,
         "timestamps_reliable": timestamps_reliable,
         "date": date_from_dir,
         "detections": [d.to_dict() for d in all_detections],
+        "clips": clips_info,
         "summary": {
             "total_detections": len(all_detections),
             "unique_species": len(unique_species),
             "species_list": sorted(unique_species),
             "files_processed": len(avi_files),
             "files_with_detections": len(files_with_detections),
+            "clips_extracted": len(clips_info),
         },
     }
 

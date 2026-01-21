@@ -136,6 +136,7 @@ def process(
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
     force: bool = typer.Option(False, "--force", "-f", help="Clear existing has_birds directory without prompting"),
     highest_quality: bool = typer.Option(False, "--highest-quality", help="Use highest quality (1440x1080 @ 30fps, larger file)"),
+    no_song_clips: bool = typer.Option(False, "--no-song-clips", help="Skip extracting audio clips for each species"),
 ) -> None:
     """Filter clips, generate highlights reel, extract top frames, and analyze songs.
 
@@ -330,13 +331,15 @@ def process(
                 lon=lon,
                 threads=song_threads,
                 limit=limit,
+                extract_clips=not no_song_clips,
             )
 
             # Save results
             save_song_detections(songs_results, songs_output)
 
             songs_elapsed = time.perf_counter() - songs_start
-            typer.echo(f"  Detected {songs_results['summary']['total_detections']} songs ({songs_results['summary']['unique_species']} species) in {format_duration(songs_elapsed)}")
+            clips_msg = f", {songs_results['summary']['clips_extracted']} clips" if not no_song_clips else ""
+            typer.echo(f"  Detected {songs_results['summary']['total_detections']} songs ({songs_results['summary']['unique_species']} species{clips_msg}) in {format_duration(songs_elapsed)}")
             typer.echo("")
 
         except Exception as e:
@@ -350,6 +353,8 @@ def process(
     typer.echo(f"  Frames:     {frames_dir}/")
     if (input_dir / "songs.json").exists():
         typer.echo(f"  Songs:      {input_dir}/songs.json")
+    if (input_dir / "song_clips").exists():
+        typer.echo(f"  Song clips: {input_dir}/song_clips/")
 
 
 @app.command()
@@ -596,12 +601,14 @@ def songs(
     song_threads: int = typer.Option(2, "--song-threads", help="CPU threads for BirdNET"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing songs.json without prompting"),
+    no_song_clips: bool = typer.Option(False, "--no-song-clips", help="Skip extracting audio clips for each species"),
 ) -> None:
     """Detect bird songs in clips using BirdNET.
 
     Extracts audio from AVI files and analyzes for bird vocalizations.
     Produces a JSON file listing all detections with species, confidence,
-    and timestamps.
+    and timestamps. Also extracts audio clips for the highest confidence
+    detection of each species (use --no-song-clips to skip).
 
     Location can be set in ~/.birdbird/config.json or via --lat/--lon flags.
 
@@ -674,6 +681,7 @@ def songs(
             lon=lon,
             threads=song_threads,
             limit=limit,
+            extract_clips=not no_song_clips,
         )
 
         # Save results
@@ -687,8 +695,12 @@ def songs(
         typer.echo(f"  Files with songs:   {results['summary']['files_with_detections']}")
         typer.echo(f"  Total detections:   {results['summary']['total_detections']}")
         typer.echo(f"  Unique species:     {results['summary']['unique_species']}")
+        if not no_song_clips:
+            typer.echo(f"  Audio clips:        {results['summary']['clips_extracted']}")
         typer.echo(f"  Processing time:    {format_duration(elapsed_seconds)}")
         typer.echo(f"  Output:             {output}")
+        if not no_song_clips and results['summary']['clips_extracted'] > 0:
+            typer.echo(f"  Clips:              {input_dir}/song_clips/")
 
         if results['summary']['species_list']:
             typer.echo("")
