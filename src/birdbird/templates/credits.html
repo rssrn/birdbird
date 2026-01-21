@@ -98,6 +98,19 @@
             text-decoration: underline;
         }
 
+        /* Screen-reader-only text */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
         .back-link {
             display: inline-block;
             padding: 10px 20px;
@@ -203,7 +216,7 @@
         </header>
 
         <div class="content">
-            <a href="/" class="back-link">← Back to Highlights</a>
+            <a href="/" class="back-link" aria-label="Back to Highlights"><span aria-hidden="true">←</span> Back to Highlights</a>
 
             <table>
                 <thead>
@@ -337,6 +350,14 @@
     </div>
     <script>
 document.addEventListener('DOMContentLoaded', () => {
+            // Add screen-reader text to external links that open in new tab
+            document.querySelectorAll('a[target="_blank"]').forEach(link => {
+                const srText = document.createElement('span');
+                srText.className = 'visually-hidden';
+                srText.textContent = ' (opens in new tab)';
+                link.appendChild(srText);
+            });
+
             const rows = document.querySelectorAll('#credits-body tr');
 
             rows.forEach(row => {
