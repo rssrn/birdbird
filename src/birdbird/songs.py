@@ -120,6 +120,7 @@ def extract_audio_segment(
     start_s: float,
     end_s: float,
     sample_rate: int = 48000,
+    normalize: bool = True,
 ) -> bool:
     """Extract a specific audio segment from AVI file to WAV format.
 
@@ -129,6 +130,7 @@ def extract_audio_segment(
         start_s: Start time in seconds
         end_s: End time in seconds
         sample_rate: Sample rate for output
+        normalize: Apply dynamic audio normalization to boost quiet audio
 
     Returns:
         True if extraction succeeded, False otherwise
@@ -146,6 +148,13 @@ def extract_audio_segment(
         "-t",
         str(duration),  # Duration
         "-vn",  # No video
+    ]
+
+    # Add audio filter for normalization if requested
+    if normalize:
+        cmd.extend(["-af", "dynaudnorm=f=50:g=3:p=0.95:m=20"])
+
+    cmd.extend([
         "-acodec",
         "pcm_s16le",  # 16-bit PCM
         "-ar",
@@ -153,7 +162,7 @@ def extract_audio_segment(
         "-ac",
         "1",  # Mono
         str(output_path),
-    ]
+    ])
 
     result = subprocess.run(
         cmd,
@@ -362,6 +371,7 @@ def extract_species_clips(
     detections: list[SongDetection],
     input_dir: Path,
     output_dir: Path,
+    normalize: bool = True,
 ) -> list[dict]:
     """Extract audio clips for the highest confidence detection of each species.
 
@@ -369,6 +379,7 @@ def extract_species_clips(
         detections: List of all song detections
         input_dir: Directory containing source AVI files
         output_dir: Directory to save audio clips (will be created)
+        normalize: Apply dynamic audio normalization to boost quiet audio
 
     Returns:
         List of dicts with clip metadata (species, confidence, filename, etc.)
@@ -410,6 +421,7 @@ def extract_species_clips(
             output_path=output_path,
             start_s=detection.start_s,
             end_s=detection.end_s,
+            normalize=normalize,
         )
 
         if success:
