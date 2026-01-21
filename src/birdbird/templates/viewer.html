@@ -429,8 +429,8 @@
         </header>
 
         <div class="content">
-            <div id="loading" class="loading">Loading latest highlights...</div>
-            <div id="error" class="error" style="display: none;"></div>
+            <div id="loading" class="loading" aria-live="polite">Loading latest highlights...</div>
+            <div id="error" class="error" style="display: none;" role="alert"></div>
             <div id="main-content" style="display: none;">
                 <!-- Archive -->
                 <div class="archive" id="archive-section" style="display: none;">
@@ -438,13 +438,13 @@
                 </div>
 
                 <!-- Tab Navigation -->
-                <div class="tabs">
-                    <button class="tab-button active" data-tab="visual">Visual</button>
-                    <button class="tab-button" data-tab="audio">Audio</button>
+                <div class="tabs" role="tablist" aria-label="Content tabs">
+                    <button class="tab-button active" data-tab="visual" role="tab" id="tab-visual" aria-selected="true" aria-controls="visual-tab">Visual</button>
+                    <button class="tab-button" data-tab="audio" role="tab" id="tab-audio" aria-selected="false" aria-controls="audio-tab">Audio</button>
                 </div>
 
                 <!-- Visual Tab -->
-                <div class="tab-content" id="visual-tab">
+                <div class="tab-content" id="visual-tab" role="tabpanel" aria-labelledby="tab-visual">
                     <!-- Frames will be inserted here -->
                     <div id="frames-container" class="frames-container"></div>
 
@@ -454,7 +454,7 @@
                             <source id="video-source" src="" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
-                        <div class="play-overlay" id="play-overlay">
+                        <div class="play-overlay" id="play-overlay" role="button" tabindex="0" aria-label="Play video">
                             <div class="play-button"></div>
                         </div>
                     </div>
@@ -467,7 +467,7 @@
                 </div>
 
                 <!-- Audio Tab -->
-                <div class="tab-content hidden" id="audio-tab">
+                <div class="tab-content hidden" id="audio-tab" role="tabpanel" aria-labelledby="tab-audio">
                     <div class="audio-explainer">
                         <p>Bird vocalisations are detected from the audio of motion-triggered clips. The sounds may not match the bird visible on camera, and audio is only available during motion-triggered recording periods (not the entire day).</p>
                     </div>
@@ -606,7 +606,12 @@
 
                 allBatches.forEach(batch => {
                     const link = document.createElement('a');
-                    link.className = 'archive-link' + (batch.id === currentBatchId ? ' current' : '');
+                    const isCurrent = batch.id === currentBatchId;
+                    link.className = 'archive-link' + (isCurrent ? ' current' : '');
+
+                    if (isCurrent) {
+                        link.setAttribute('aria-current', 'true');
+                    }
 
                     // Use date range for link text instead of batch ID
                     link.textContent = formatDateRangeShort(
@@ -614,7 +619,7 @@
                         batch.end_date || batch.original_date
                     );
 
-                    if (batch.id !== currentBatchId) {
+                    if (!isCurrent) {
                         link.href = `?batch=${batch.id}&tab=${currentActiveTab}`;
                     }
 
@@ -645,8 +650,12 @@
                     history.replaceState(null, '', newUrl);
 
                     // Update button states
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.setAttribute('aria-selected', 'false');
+                    });
                     button.classList.add('active');
+                    button.setAttribute('aria-selected', 'true');
 
                     // Update content visibility
                     document.querySelectorAll('.tab-content').forEach(content => {
@@ -667,8 +676,10 @@
             tabButtons.forEach(btn => {
                 if (btn.dataset.tab === currentActiveTab) {
                     btn.classList.add('active');
+                    btn.setAttribute('aria-selected', 'true');
                 } else {
                     btn.classList.remove('active');
+                    btn.setAttribute('aria-selected', 'false');
                 }
             });
 
@@ -755,7 +766,9 @@
                 let playerHtml;
                 if (clipFilename) {
                     const clipUrl = `${R2_BASE_URL}/batches/${batchId}/song_clips/${clipFilename}`;
-                    playerHtml = `<audio class="song-clip-player" controls preload="none" src="${clipUrl}"></audio>`;
+                    // Escape commonName for use in HTML attribute
+                    const escapedName = commonName.replace(/"/g, '&quot;');
+                    playerHtml = `<audio class="song-clip-player" controls preload="none" src="${clipUrl}" aria-label="${escapedName} song clip"></audio>`;
                 } else {
                     playerHtml = '<span class="song-clip-spacer"></span>';
                 }
@@ -849,10 +862,19 @@
         const videoPlayer = document.getElementById('highlights-player');
 
         if (playOverlay && videoPlayer) {
-            // Hide overlay and play video when clicked
-            playOverlay.addEventListener('click', () => {
+            // Hide overlay and play video when clicked or activated via keyboard
+            function activatePlayOverlay() {
                 playOverlay.classList.add('hidden');
                 videoPlayer.play();
+            }
+
+            playOverlay.addEventListener('click', activatePlayOverlay);
+
+            playOverlay.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    activatePlayOverlay();
+                }
             });
 
             // Show overlay again when video ends or is paused
