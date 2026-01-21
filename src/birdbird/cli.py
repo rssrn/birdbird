@@ -125,15 +125,19 @@ def process(
     input_dir: Path = typer.Argument(..., help="Directory containing .avi clips"),
     output: Path = typer.Option(None, "--output", "-o", help="Output MP4 path (default: input_dir/has_birds/highlights.mp4)"),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
+    song_confidence: float = typer.Option(0.5, "--song-conf", "-s", help="Min confidence for song detection (0.0-1.0)"),
     buffer_before: float = typer.Option(1.0, "--buffer-before", help="Seconds before first bird detection"),
     buffer_after: float = typer.Option(1.0, "--buffer-after", help="Seconds after last bird detection"),
     threads: int = typer.Option(2, "--threads", "-t", help="Max ffmpeg threads (default 2 for low-power systems)"),
+    song_threads: int = typer.Option(2, "--song-threads", help="CPU threads for BirdNET"),
     top_n: int = typer.Option(20, "--top-n", "-n", help="Number of top frames to extract"),
+    lat: float = typer.Option(None, "--lat", help="Latitude for species filtering (default: from config)"),
+    lon: float = typer.Option(None, "--lon", help="Longitude for species filtering (default: from config)"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
     force: bool = typer.Option(False, "--force", "-f", help="Clear existing has_birds directory without prompting"),
     highest_quality: bool = typer.Option(False, "--highest-quality", help="Use highest quality (1440x1080 @ 30fps, larger file)"),
 ) -> None:
-    """Filter clips, generate highlights reel, and extract top frames in one step.
+    """Filter clips, generate highlights reel, extract top frames, and analyze songs.
 
     By default, optimizes for web viewing (1440x1080 @ 24fps, smaller files).
     Use --highest-quality for maximum quality (30fps, larger files).
@@ -191,7 +195,7 @@ def process(
     typer.echo("")
 
     # Step 1: Filter
-    typer.echo("Step 1/3: Filtering clips...")
+    typer.echo("Step 1/4: Filtering clips...")
     filter_stats = filter_clips(
         input_dir,
         bird_confidence=bird_confidence,
@@ -207,7 +211,7 @@ def process(
         raise typer.Exit(0)
 
     # Step 2: Highlights
-    typer.echo("Step 2/3: Generating highlights...")
+    typer.echo("Step 2/4: Generating highlights...")
     has_birds_dir = input_dir / "has_birds"
 
     if output is None:
@@ -234,7 +238,7 @@ def process(
         raise typer.Exit(1)
 
     # Step 3: Extract frames
-    typer.echo("Step 3/3: Extracting top frames...")
+    typer.echo("Step 3/4: Extracting top frames...")
 
     frames_dir = has_birds_dir / "frames"
     frames_dir.mkdir(exist_ok=True)
@@ -291,14 +295,61 @@ def process(
             typer.echo(f"  Extracted {len(saved_paths)} frames in {format_duration(elapsed_seconds)}")
 
         typer.echo("")
-        typer.echo("Complete!")
-        typer.echo(f"  Bird clips: {has_birds_dir}/")
-        typer.echo(f"  Highlights: {output}")
-        typer.echo(f"  Frames:     {frames_dir}/")
 
     except ValueError as e:
         typer.echo(f"Error extracting frames: {e}", err=True)
         raise typer.Exit(1)
+
+    # Step 4: Analyze songs
+    typer.echo("Step 4/4: Analyzing bird songs...")
+
+    # Apply config defaults for location if not provided on CLI
+    if lat is None and lon is None:
+        config_lat, config_lon = get_location()
+        if config_lat is not None and config_lon is not None:
+            lat, lon = config_lat, config_lon
+
+    # Validate location args (both or neither after config applied)
+    if (lat is None) != (lon is None):
+        typer.echo("  Error: --lat and --lon must both be provided for location filtering", err=True)
+        typer.echo("  Skipping songs analysis")
+        typer.echo("")
+    else:
+        songs_output = input_dir / "songs.json"
+
+        # Remove existing songs.json if present
+        if songs_output.exists():
+            songs_output.unlink()
+
+        try:
+            songs_start = time.perf_counter()
+            songs_results = analyze_songs(
+                input_dir=input_dir,
+                min_confidence=song_confidence,
+                lat=lat,
+                lon=lon,
+                threads=song_threads,
+                limit=limit,
+            )
+
+            # Save results
+            save_song_detections(songs_results, songs_output)
+
+            songs_elapsed = time.perf_counter() - songs_start
+            typer.echo(f"  Detected {songs_results['summary']['total_detections']} songs ({songs_results['summary']['unique_species']} species) in {format_duration(songs_elapsed)}")
+            typer.echo("")
+
+        except Exception as e:
+            typer.echo(f"  Error analyzing songs: {e}", err=True)
+            typer.echo("  Continuing without songs data")
+            typer.echo("")
+
+    typer.echo("Complete!")
+    typer.echo(f"  Bird clips: {has_birds_dir}/")
+    typer.echo(f"  Highlights: {output}")
+    typer.echo(f"  Frames:     {frames_dir}/")
+    if (input_dir / "songs.json").exists():
+        typer.echo(f"  Songs:      {input_dir}/songs.json")
 
 
 @app.command()
@@ -458,8 +509,12 @@ def frames(
 def publish(
     input_dir: Path = typer.Argument(..., help="Directory containing has_birds/ (output from process/filter)"),
     config_file: Path = typer.Option("~/.birdbird/cloudflare.json", "--config", "-c", help="Cloudflare config file"),
+    new_batch: bool = typer.Option(False, "--new-batch", "-n", help="Create new batch sequence (for additional footage same day)"),
 ) -> None:
     """Publish highlights and frames to Cloudflare R2.
+
+    By default, replaces existing batch for the same date. Use --new-batch to create
+    a new sequence (e.g., 20260114_02) when you collected additional footage same day.
 
     @author Claude Sonnet 4.5 Anthropic
     """
@@ -501,12 +556,19 @@ def publish(
 
     # Publish
     try:
-        result = publish_to_r2(input_dir, config)
+        result = publish_to_r2(input_dir, config, create_new_batch=new_batch)
 
         typer.echo("")
         typer.echo("Success!")
         typer.echo(f"  Batch ID:    {result['batch_id']}")
-        typer.echo(f"  Files:       {result['uploaded_files']} uploaded")
+
+        if result['batch_replaced']:
+            typer.echo(f"  Re-used:     existing batch")
+
+        typer.echo(f"  Uploaded:    {result['uploaded_files']} file(s)")
+        if result['skipped_files'] > 0:
+            typer.echo(f"  Skipped:     {result['skipped_files']} file(s) (unchanged)")
+
         typer.echo(f"  Clips:       {result['clip_count']}")
         typer.echo(f"  Duration:    {format_duration(result['highlights_duration'])}")
 

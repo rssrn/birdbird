@@ -3,6 +3,7 @@
 @author Claude Sonnet 4.5 Anthropic
 """
 
+import hashlib
 import json
 import subprocess
 from datetime import datetime, timezone
@@ -28,6 +29,42 @@ def create_r2_client(config: dict):
         aws_secret_access_key=config['r2_secret_access_key'],
         region_name='auto',  # R2 uses 'auto' for region
     )
+
+
+def calculate_md5(file_path: Path) -> str:
+    """Calculate MD5 hash of a file.
+
+    @author Claude Sonnet 4.5 Anthropic
+    """
+    md5_hash = hashlib.md5()
+    with open(file_path, 'rb') as f:
+        # Read in 8KB chunks for efficiency
+        for chunk in iter(lambda: f.read(8192), b''):
+            md5_hash.update(chunk)
+    return md5_hash.hexdigest()
+
+
+def should_upload_file(s3_client, bucket_name: str, key: str, local_path: Path) -> bool:
+    """Check if local file differs from R2 version.
+
+    Compares local file MD5 with R2 object ETag (which is MD5 for single-part uploads).
+    Returns True if file should be uploaded (different or doesn't exist).
+
+    @author Claude Sonnet 4.5 Anthropic
+    """
+    try:
+        # Get existing object metadata
+        response = s3_client.head_object(Bucket=bucket_name, Key=key)
+        remote_etag = response['ETag'].strip('"')  # Remove quotes from ETag
+
+        # Calculate local MD5
+        local_md5 = calculate_md5(local_path)
+
+        return local_md5 != remote_etag  # Upload if different
+    except ClientError as e:
+        if e.response.get('Error', {}).get('Code') == '404':
+            return True  # File doesn't exist, upload
+        raise
 
 
 def list_batches(s3_client, bucket_name: str) -> list[str]:
@@ -65,11 +102,20 @@ def list_batches(s3_client, bucket_name: str) -> list[str]:
         raise
 
 
-def generate_batch_id(s3_client, bucket_name: str, original_date: str) -> str:
-    """Generate next batch ID for original data date.
+def generate_batch_id(s3_client, bucket_name: str, original_date: str, create_new: bool = False) -> tuple[str, bool]:
+    """Generate or reuse batch ID for original data date.
 
     Format: YYYYMMDD_NN where NN is sequence (01, 02, ...)
-    Uses original data date (from folder name) for YYYYMMDD, increments NN if multiple versions exist.
+    Uses original data date (from folder name) for YYYYMMDD.
+
+    Args:
+        s3_client: Boto3 S3 client
+        bucket_name: R2 bucket name
+        original_date: Date string in "YYYY-MM-DD" format
+        create_new: If True, create new sequence. If False (default), reuse existing or create _01.
+
+    Returns:
+        Tuple of (batch_id, batch_exists) where batch_exists indicates if this ID already exists in R2
 
     @author Claude Sonnet 4.5 Anthropic
     """
@@ -86,7 +132,8 @@ def generate_batch_id(s3_client, bucket_name: str, original_date: str) -> str:
     same_date_batches = [b for b in all_batches if b.startswith(date_prefix)]
 
     if not same_date_batches:
-        return f"{date_prefix}_01"
+        # No existing batches for this date
+        return f"{date_prefix}_01", False
 
     # Find max sequence number
     max_seq = 0
@@ -97,9 +144,13 @@ def generate_batch_id(s3_client, bucket_name: str, original_date: str) -> str:
         except (IndexError, ValueError):
             continue
 
-    # Increment sequence
-    next_seq = max_seq + 1
-    return f"{date_prefix}_{next_seq:02d}"
+    if create_new:
+        # Create new sequence (for additional footage same day)
+        next_seq = max_seq + 1
+        return f"{date_prefix}_{next_seq:02d}", False
+    else:
+        # Reuse existing sequence (default: replace existing batch)
+        return f"{date_prefix}_{max_seq:02d}", True
 
 
 def get_highlights_duration(video_path: Path) -> float:
@@ -275,13 +326,19 @@ def upload_batch(
     clip_count: int,
     original_date: str,
     has_birds_dir: Path,
+    songs_path: Path | None = None,
+    batch_exists: bool = False,
 ) -> dict:
     """Upload all batch assets to R2.
+
+    When batch_exists=True, checks MD5/ETag before uploading each file to skip unchanged files.
 
     Returns: metadata dict for this batch
 
     @author Claude Sonnet 4.5 Anthropic
     """
+    uploaded_files = []
+    skipped_files = []
     # Extract date range from clip filenames with validation
     start_date, end_date = extract_date_range(has_birds_dir, original_date)
 
@@ -299,31 +356,38 @@ def upload_batch(
     uploaded_at = datetime.now(timezone.utc).isoformat()
 
     # Upload highlights.mp4 with progress bar
+    highlights_key = f"batches/{batch_id}/highlights.mp4"
     file_size = highlights_path.stat().st_size
-    typer.echo(f"  Uploading highlights.mp4 ({file_size / (1024*1024):.1f} MB)...")
 
-    with open(highlights_path, 'rb') as f:
-        with tqdm(
-            total=file_size,
-            unit='B',
-            unit_scale=True,
-            unit_divisor=1024,
-            desc="    Progress",
-            leave=False
-        ) as pbar:
-            def upload_callback(bytes_amount):
-                pbar.update(bytes_amount)
+    if batch_exists and not should_upload_file(s3_client, bucket_name, highlights_key, highlights_path):
+        typer.echo(f"  Skipping highlights.mp4 (unchanged, {file_size / (1024*1024):.1f} MB)")
+        skipped_files.append('highlights.mp4')
+    else:
+        typer.echo(f"  Uploading highlights.mp4 ({file_size / (1024*1024):.1f} MB)...")
 
-            s3_client.upload_fileobj(
-                f,
-                bucket_name,
-                f"batches/{batch_id}/highlights.mp4",
-                ExtraArgs={'ContentType': 'video/mp4'},
-                Callback=upload_callback
-            )
+        with open(highlights_path, 'rb') as f:
+            with tqdm(
+                total=file_size,
+                unit='B',
+                unit_scale=True,
+                unit_divisor=1024,
+                desc="    Progress",
+                leave=False
+            ) as pbar:
+                def upload_callback(bytes_amount):
+                    pbar.update(bytes_amount)
+
+                s3_client.upload_fileobj(
+                    f,
+                    bucket_name,
+                    highlights_key,
+                    ExtraArgs={'ContentType': 'video/mp4'},
+                    Callback=upload_callback
+                )
+        uploaded_files.append('highlights.mp4')
 
     # Upload top 3 frames (rename to frame_01.jpg, frame_02.jpg, frame_03.jpg)
-    typer.echo("  Uploading top 3 frames...")
+    typer.echo("  Checking top 3 frames...")
     top_frames_metadata = []
 
     for i, frame_info in enumerate(top_frames_data, start=1):
@@ -337,13 +401,21 @@ def upload_batch(
 
         # Upload as frame_01.jpg, frame_02.jpg, etc.
         new_filename = f"frame_{i:02d}.jpg"
-        with open(original_path, 'rb') as f:
-            s3_client.put_object(
-                Bucket=bucket_name,
-                Key=f"batches/{batch_id}/{new_filename}",
-                Body=f,
-                ContentType='image/jpeg'
-            )
+        frame_key = f"batches/{batch_id}/{new_filename}"
+
+        if batch_exists and not should_upload_file(s3_client, bucket_name, frame_key, original_path):
+            typer.echo(f"    Skipping {new_filename} (unchanged)")
+            skipped_files.append(new_filename)
+        else:
+            typer.echo(f"    Uploading {new_filename}")
+            with open(original_path, 'rb') as f:
+                s3_client.put_object(
+                    Bucket=bucket_name,
+                    Key=frame_key,
+                    Body=f,
+                    ContentType='image/jpeg'
+                )
+            uploaded_files.append(new_filename)
 
         top_frames_metadata.append({
             'filename': new_filename,
@@ -351,6 +423,35 @@ def upload_batch(
             'timestamp': frame_info['timestamp'],
             'combined_score': frame_info['scores']['combined']
         })
+
+    # Upload songs.json if available
+    songs_summary = None
+    if songs_path and songs_path.exists():
+        songs_key = f"batches/{batch_id}/songs.json"
+
+        with open(songs_path) as f:
+            songs_data = json.load(f)
+
+        if batch_exists and not should_upload_file(s3_client, bucket_name, songs_key, songs_path):
+            typer.echo("  Skipping songs.json (unchanged)")
+            skipped_files.append('songs.json')
+        else:
+            typer.echo("  Uploading songs.json...")
+            # Upload full songs.json
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=songs_key,
+                Body=json.dumps(songs_data, indent=2),
+                ContentType='application/json'
+            )
+            uploaded_files.append('songs.json')
+
+        # Create summary for metadata
+        songs_summary = {
+            'total_detections': songs_data['summary']['total_detections'],
+            'unique_species': songs_data['summary']['unique_species'],
+            'timestamps_reliable': songs_data.get('timestamps_reliable', True),
+        }
 
     # Create metadata.json
     metadata = {
@@ -364,7 +465,11 @@ def upload_batch(
         'top_frames': top_frames_metadata
     }
 
-    # Upload metadata.json
+    # Add songs summary if available
+    if songs_summary:
+        metadata['songs'] = songs_summary
+
+    # Always upload metadata.json (it's tiny and includes current timestamp)
     typer.echo("  Uploading metadata.json...")
     s3_client.put_object(
         Bucket=bucket_name,
@@ -372,6 +477,13 @@ def upload_batch(
         Body=json.dumps(metadata, indent=2),
         ContentType='application/json'
     )
+    uploaded_files.append('metadata.json')
+
+    # Add upload stats to metadata for reporting
+    metadata['_upload_stats'] = {
+        'uploaded': uploaded_files,
+        'skipped': skipped_files,
+    }
 
     return metadata
 
@@ -507,8 +619,14 @@ def cleanup_old_batches(s3_client, bucket_name: str, keep_latest: int = 5) -> li
 def publish_to_r2(
     input_dir: Path,
     config: dict,
+    create_new_batch: bool = False,
 ) -> dict:
     """Main publish orchestration function.
+
+    Args:
+        input_dir: Directory containing has_birds/ subdirectory
+        config: R2 configuration dict
+        create_new_batch: If True, create new batch sequence. If False (default), replace existing.
 
     Returns: Publication summary dict
 
@@ -561,6 +679,15 @@ def publish_to_r2(
     detections = load_detections(has_birds_dir)
     clip_count = len(detections) if detections else 0
 
+    # Check for songs.json (optional)
+    songs_path = input_dir / "songs.json"
+    if songs_path.exists():
+        typer.echo(f"Found songs.json - will include in upload")
+    else:
+        typer.echo(f"No songs.json found - skipping (run 'birdbird songs {input_dir}' to add)")
+        songs_path = None
+    typer.echo("")
+
     # Extract original date from directory name
     original_date = extract_original_date(input_dir)
 
@@ -570,8 +697,33 @@ def publish_to_r2(
     bucket_name = config['r2_bucket_name']
 
     # Generate batch ID
-    batch_id = generate_batch_id(s3_client, bucket_name, original_date)
-    typer.echo(f"Publishing batch: {batch_id}")
+    batch_id, batch_exists = generate_batch_id(s3_client, bucket_name, original_date, create_new=create_new_batch)
+
+    if batch_exists and not create_new_batch:
+        # Prompt user to confirm re-using existing batch
+        typer.echo(f"Batch {batch_id} already exists")
+        typer.echo("")
+        typer.echo("Options:")
+        typer.echo("  1. Re-use existing batch (update changed files only)")
+        typer.echo("  2. Create new batch (additional footage from same day)")
+        typer.echo("  3. Cancel")
+        typer.echo("")
+
+        choice = typer.prompt("Choose option", type=int, default=1)
+
+        if choice == 1:
+            typer.echo(f"Re-using batch: {batch_id}")
+        elif choice == 2:
+            # Regenerate batch_id with create_new=True
+            batch_id, batch_exists = generate_batch_id(s3_client, bucket_name, original_date, create_new=True)
+            typer.echo(f"Creating new batch: {batch_id}")
+        else:
+            typer.echo("Cancelled")
+            raise typer.Exit(0)
+    elif create_new_batch:
+        typer.echo(f"Creating new batch: {batch_id}")
+    else:
+        typer.echo(f"Creating batch: {batch_id}")
     typer.echo("")
 
     # Upload batch
@@ -585,6 +737,8 @@ def publish_to_r2(
         clip_count=clip_count,
         original_date=original_date,
         has_birds_dir=has_birds_dir,
+        songs_path=songs_path,
+        batch_exists=batch_exists,
     )
 
     # Update latest.json
@@ -593,11 +747,18 @@ def publish_to_r2(
     # Cleanup old batches
     deleted = cleanup_old_batches(s3_client, bucket_name, keep_latest=5)
 
+    # Extract upload stats from metadata
+    upload_stats = batch_metadata.pop('_upload_stats', {'uploaded': [], 'skipped': []})
+
     # Return summary
     return {
         'batch_id': batch_id,
-        'uploaded_files': 5,  # highlights.mp4 + 3 frames + metadata.json
+        'uploaded_files': len(upload_stats['uploaded']),
+        'skipped_files': len(upload_stats['skipped']),
+        'uploaded_list': upload_stats['uploaded'],
+        'skipped_list': upload_stats['skipped'],
         'clip_count': clip_count,
         'highlights_duration': batch_metadata['highlights_duration'],
         'deleted_batches': deleted,
+        'batch_replaced': batch_exists and not create_new_batch,
     }
