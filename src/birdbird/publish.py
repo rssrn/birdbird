@@ -524,6 +524,8 @@ def update_latest_json(s3_client, bucket_name: str, batch_metadata: dict) -> Non
         'id': batch_metadata['batch_id'],
         'uploaded': batch_metadata['uploaded'],
         'original_date': batch_metadata['original_date'],
+        'start_date': batch_metadata['start_date'],
+        'end_date': batch_metadata['end_date'],
         'clip_count': batch_metadata['clip_count'],
         'highlights_duration': batch_metadata['highlights_duration']
     }
