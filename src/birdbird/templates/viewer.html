@@ -355,7 +355,7 @@
         }
 
         .species-confidence {
-            color: #888;
+            color: #666;
             font-size: 0.85em;
             min-width: 65px;
             text-align: right;
@@ -745,7 +745,7 @@
         function renderAudioChart(speciesData, maxCount, clipMap, batchId) {
             const container = document.getElementById('audio-stats-container');
 
-            let html = '<h2>Bird Vocalisations Detected <span style="font-weight: normal; font-size: 0.7em; color: #888;">(with % confidence)</span></h2>';
+            let html = '<h2>Bird Vocalisations Detected <span style="font-weight: normal; font-size: 0.7em; color: #666;">(with % confidence)</span></h2>';
 
             speciesData.forEach(([commonName, data]) => {
                 const { count, confidences } = data;
