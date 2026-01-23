@@ -187,7 +187,7 @@ This allows processing ~10s clips in ~2.3 seconds while catching brief bird appe
 ### Output
 
 - **Filter**: Clips containing detected birds are copied to a `has_birds/` subdirectory
-- **Highlights**: MP4 reel concatenating bird activity segments with crossfade transitions
+- **Highlights**: MP4 reel concatenating bird activity segments
 - **Frames**: Top-N JPEG frames ranked by multi-factor quality score (confidence, sharpness, bird size, position)
 - **Songs**: JSON file with bird vocalizations detected by BirdNET (species, confidence, timestamps), plus normalized audio clips for each species
 
@@ -212,7 +212,7 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | #    | Milestone                                                                                                             | Description                                                                                                      | Status |
 | ---- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ |
 | M1   | Bird detection filter                                                                                                 | Discard clips without birds (eliminate wind false positives)                                                     | Done   |
-| M2   | Highlights reel v1                                                                                                    | Concatenate segments with bird activity with crossfade transitions                                               | Done   |
+| M2   | Highlights reel v1                                                                                                    | Concatenate segments with bird activity                                                                          | Done   |
 | M2.1 | Highlights reel captions                                                                                              | Add match type (e.g. bird or human) with confidence level within highlights reel, adjacent to existing timestamp |        |
 | M2.2 | Publish highlights to web                                                                                             | Upload to Cloudflare R2 with static web viewer showing video, frames, and audio stats                            | Done   |
 | M3   | Highlight images                                                                                                      | Extract some nice-looking in-focus bird frames with timestamps                                                   | Done   |

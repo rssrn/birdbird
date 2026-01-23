@@ -79,7 +79,7 @@ src/birdbird/
 
 **Detection approach**: Weighted frame sampling (4x in first second, then 1fps), YOLOv8-nano for COCO class 14 (bird).
 
-**Highlights approach**: Binary search for segment boundaries using cached detection timestamps from filter step. Crossfade transitions via ffmpeg.
+**Highlights approach**: Binary search for segment boundaries using cached detection timestamps from filter step. Concatenation via ffmpeg.
 
 **Frames approach**: Multi-factor scoring (confidence, sharpness, bird size, position) with weighted combination. Extracts top-N frames ranked by quality. Timing instrumentation tracks ms/frame for each factor.
 
@@ -95,7 +95,7 @@ src/birdbird/
 ## Milestone Tracker
 
 - [x] M1: Bird detection filter (498 clips, 29.9% detection rate)
-- [x] M2: Highlights reel v1 (binary search + crossfade transitions)
+- [x] M2: Highlights reel v1 (binary search for segment boundaries)
 - [x] M3: Frame capture (multi-factor quality scoring)
 - [ ] M4: Species detection
 - [ ] M5: Email report
@@ -155,17 +155,26 @@ src/birdbird/
 - Testing: Use `python3 preview_viewer.py` for local demo before deployment
 - Next steps: Implement per plan, test locally, copy to birdbird-website, deploy
 
-**M4: Visual Species Identification Research**
-- Plan file: `/home/ross/.claude/plans/birdbird-visual-species-identification.md`
-- Status: Research complete, implementation blocked by hardware
-- Summary: Researched options for identifying bird species from video frames
-- Options evaluated:
-  - **HuggingFace classifiers**: Poor UK species coverage (only 3/22 species matched)
-  - **iNaturalist API**: Excellent coverage but not publicly accessible (fee-based)
-  - **BioCLIP** (`pybioclip`): Best option - 454K+ taxa, MIT license, but very slow on CPU
-  - **NIA/Obsidentify**: European-focused, worth investigating API access
-- Problem: BioCLIP too slow without GPU (model load + inference takes many minutes on CPU)
-- Next steps: Try BioCLIP on GPU (Colab), or investigate NIA API, or hybrid approach with smaller label set
-- Test frames: `/tmp/bioclip_test/frame_0[1-5].jpg` (from Jan 21 highlights)
-- UK birds list: 67 species curated from BTO, saved in plan file
+**M4: Visual Species Identification**
+- Plan file: `/home/ross/.claude/plans/birdbird-m4-species-integration.md`
+- Status: Ready for implementation (GPU testing complete)
+- Summary: BioCLIP on remote GPU provides fast, accurate species identification
+- **Benchmarks (RTX 3050 6GB)**:
+  - Model load: 26s (with 67 species labels)
+  - Inference: 0.14s/frame average (~7 frames/sec)
+  - Accuracy: 87-99% confidence on clear frames, lower on obscured/difficult angles
+- **Remote GPU setup** (Windows laptop with WSL2):
+  - SSH: `ssh devserver@192.168.1.146` (PowerShell default shell, use `wsl` prefix)
+  - Python env: `~/bioclip_env` with PyTorch CUDA + pybioclip
+  - Test command: `wsl bash -c 'source ~/bioclip_env/bin/activate && python3 script.py'`
+- UK birds list: 67 species in `/tmp/bioclip_test/uk_garden_birds.txt`
+- **Implementation plan highlights**:
+  - Samples frames from `highlights.mp4` (not individual clips)
+  - New config section: `species.processing.mode` = "local" | "remote" | "cloud"
+  - Remote config: `species.processing.remote.host`, `.shell`, `.python_env`
+  - New command: `birdbird species /path/to/clips`
+  - Integration: `birdbird process --species` flag (runs after highlights generation)
+  - Output: `species.json` with timestamps and per-frame detections
+  - Config: `species.samples_per_minute` (default 6), `species.min_confidence` (default 0.5)
+  - README.md: Add optional "Remote GPU Setup" section with WSL2/Linux instructions
 
