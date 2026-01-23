@@ -141,3 +141,31 @@ src/birdbird/
 - Deployment URL: https://birdbird.rossarn.workers.dev/
 - Next steps: Copy viewer.html to birdbird-website, configure R2 base URL, push to deploy
 
+**Audio Statistics Tab in Viewer**
+- Plan file: `/home/ross/.claude/plans/goofy-finding-volcano.md`
+- Status: Planned (ready for implementation)
+- Summary: Add 2-tab interface to viewer showing Highlights (existing) and Audio (new) tabs
+- Requirements:
+  - Tab 1 (Highlights): Existing video + frames content (no changes to content itself)
+  - Tab 2 (Audio): Horizontal bar chart showing bird vocalization statistics from songs.json
+  - Bar chart shows: common name, count (sorted descending), proportional bar, confidence display
+  - Confidence format: single "54%", 2-3 "54%, 78%", 4+ "54-78%" (range)
+  - Explanatory text about ambient audio sampling from motion-triggered clips
+- Implementation: Single file change (`templates/viewer.html`) - adds tabs, CSS, JavaScript
+- Testing: Use `python3 preview_viewer.py` for local demo before deployment
+- Next steps: Implement per plan, test locally, copy to birdbird-website, deploy
+
+**M4: Visual Species Identification Research**
+- Plan file: `/home/ross/.claude/plans/birdbird-visual-species-identification.md`
+- Status: Research complete, implementation blocked by hardware
+- Summary: Researched options for identifying bird species from video frames
+- Options evaluated:
+  - **HuggingFace classifiers**: Poor UK species coverage (only 3/22 species matched)
+  - **iNaturalist API**: Excellent coverage but not publicly accessible (fee-based)
+  - **BioCLIP** (`pybioclip`): Best option - 454K+ taxa, MIT license, but very slow on CPU
+  - **NIA/Obsidentify**: European-focused, worth investigating API access
+- Problem: BioCLIP too slow without GPU (model load + inference takes many minutes on CPU)
+- Next steps: Try BioCLIP on GPU (Colab), or investigate NIA API, or hybrid approach with smaller label set
+- Test frames: `/tmp/bioclip_test/frame_0[1-5].jpg` (from Jan 21 highlights)
+- UK birds list: 67 species curated from BTO, saved in plan file
+
