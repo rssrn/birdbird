@@ -90,13 +90,11 @@ nano ~/.birdbird/config.json
 To publish highlights to the web, configure Cloudflare R2:
 
 1. **Create R2 bucket** in Cloudflare dashboard:
-
    - Navigate to R2 in left sidebar
    - Click "Create bucket"
    - Name it `birdbird-highlights`
 
 2. **Generate R2 API token**:
-
    - In R2 section, click "Manage R2 API Tokens"
    - Click "Create API Token"
    - Name: `birdbird-upload`
@@ -104,7 +102,6 @@ To publish highlights to the web, configure Cloudflare R2:
    - Save the Access Key ID and Secret Access Key (you won't see the secret again!)
 
 3. **Find your Account ID**:
-
    - Visible in R2 dashboard sidebar or in the URL
 
 4. **Create config file**:
@@ -133,14 +130,12 @@ To publish highlights to the web, configure Cloudflare R2:
    ```
 
 6. **Configure R2 bucket for public access**:
-
    - In Cloudflare R2 dashboard, select your bucket
    - Go to Settings → Public Access
    - Enable "Allow Access" and note the public R2.dev URL (e.g., `https://pub-xxxxx.r2.dev`)
    - This URL will be used in the viewer HTML
 
 7. **Set up the web viewer** (one-time):
-
    - Copy the viewer template to your website repo:
      ```bash
      cp src/birdbird/templates/viewer.html /path/to/your/website/index.html
@@ -209,17 +204,17 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 
 ## Milestones
 
-| #    | Milestone                                                                                                             | Description                                                                                                      | Status |
-| ---- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ |
-| M1   | Bird detection filter                                                                                                 | Discard clips without birds (eliminate wind false positives)                                                     | Done   |
-| M2   | Highlights reel v1                                                                                                    | Concatenate segments with bird activity                                                                          | Done   |
-| M2.1 | Highlights reel captions                                                                                              | Add match type (e.g. bird or human) with confidence level within highlights reel, adjacent to existing timestamp |        |
-| M2.2 | Publish highlights to web                                                                                             | Upload to Cloudflare R2 with static web viewer showing video, frames, and audio stats                            | Done   |
-| M3   | Highlight images                                                                                                      | Extract some nice-looking in-focus bird frames with timestamps                                                   | Done   |
-| M4   | Visual species detection                                                                                              | Identify species, generate timeline summary with frame captures                                                  |        |
-| M5   | Email or static web report                                                                                            | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material                                      |        |
-| M6   | Highlights reel v2                                                                                                    | Curated "best action" clips                                                                                      |        |
-| M7   | Structured storage                                                                                                    | database backend to get stats/graphs on species counts, times usually seen, etc                                  |        |
+| #    | Milestone                  | Description                                                                                                      | Status |
+| ---- | -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ |
+| M1   | Bird detection filter      | Discard clips without birds (eliminate wind false positives)                                                     | Done   |
+| M2   | Highlights reel v1         | Concatenate segments with bird activity                                                                          | Done   |
+| M2.1 | Highlights reel captions   | Add match type (e.g. bird or human) with confidence level within highlights reel, adjacent to existing timestamp |        |
+| M2.2 | Publish highlights to web  | Upload to Cloudflare R2 with static web viewer showing video, frames, and audio stats                            | Done   |
+| M3   | Highlight images           | Extract some nice-looking in-focus bird frames with timestamps                                                   | Done   |
+| M4   | Visual species detection   | Identify species, generate timeline summary with frame captures                                                  |        |
+| M5   | Email or static web report | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material                                      |        |
+| M6   | Highlights reel v2         | Curated "best action" clips                                                                                      |        |
+| M7   | Structured storage         | database backend to get stats/graphs on species counts, times usually seen, etc                                  |        |
 
 ## Other Feature Ideas
 
@@ -229,8 +224,10 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | F2  | Upload progress reporting     | Add progress bar/percentage for R2 uploads in publish command (especially for large video files)                                                                                                              | Done   |
 | F3  | Corrupted input file handling | Improve detection and handling of corrupted MJPEG frames (camera recording issues, SD card errors). Could validate files before processing, skip severely corrupted clips, or log warnings for manual review. |        |
 | F4  | Multiple bird detection       | Detect and count multiple birds in a single frame. Currently returns first detection only. Would enable richer captions (e.g., "2 Birds 85%, 72%"), social behavior tracking, and better statistics.          |        |
-| F5  | Audio species detection       | Species detection from audio using BirdNET. Extracts normalized audio clips for each species and publishes to web viewer with playback.                                                                                                           | Done   |
-| F6  | Credits page                  | Links to other projects/modules we are using, including licensing info                                                                                                                                          | Done   |
+| F5  | Audio species detection       | Species detection from audio using BirdNET. Extracts normalized audio clips for each species and publishes to web viewer with playback.                                                                       | Done   |
+| F6  | Credits page                  | Links to other projects/modules we are using, including licensing info                                                                                                                                        | Done   |
+| F7  | Analytics                     | Add some lightweight analytics, for example Umami using Umami Cloud Free tier.                                                                                                                                |        |
+| F8  | Staging                       | Add a staging target so viewer changes can be tested before going live                                                                                                                                        |        |
 
 ## Input Format
 
