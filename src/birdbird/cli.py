@@ -138,7 +138,7 @@ def process(
     force: bool = typer.Option(False, "--force", "-f", help="Clear existing has_birds directory without prompting"),
     highest_quality: bool = typer.Option(False, "--highest-quality", help="Use highest quality (1440x1080 @ 30fps, larger file)"),
     no_song_clips: bool = typer.Option(False, "--no-song-clips", help="Skip extracting audio clips for each species"),
-    run_species: bool = typer.Option(False, "--species", help="Run visual species identification (requires remote GPU)"),
+    run_species: bool = typer.Option(None, "--species/--no-species", help="Run visual species identification (default: from config)"),
 ) -> None:
     """Filter clips, generate highlights reel, extract top frames, analyze songs, and optionally identify species.
 
@@ -148,6 +148,11 @@ def process(
     if not input_dir.is_dir():
         typer.echo(f"Error: {input_dir} is not a directory", err=True)
         raise typer.Exit(1)
+
+    # Apply config default for species if not specified on CLI
+    if run_species is None:
+        species_config = get_species_config()
+        run_species = species_config.enabled
 
     # Estimate total time: ~2.3s filter + ~5s highlights + ~0.5s frames per clip with birds (~30% detection rate)
     clips = sorted(input_dir.glob("*.avi"))
