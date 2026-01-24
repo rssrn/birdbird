@@ -1,0 +1,111 @@
+# UK Garden Birds - Common species for BioCLIP classification
+# 67 species commonly seen at UK garden feeders and in gardens
+# Format: One species name per line (common English names)
+
+# Tits
+Blue Tit
+Great Tit
+Coal Tit
+Long-tailed Tit
+Marsh Tit
+Willow Tit
+Crested Tit
+
+# Finches
+Chaffinch
+Goldfinch
+Greenfinch
+Bullfinch
+Siskin
+Brambling
+Hawfinch
+Linnet
+Lesser Redpoll
+Common Redpoll
+Common Crossbill
+
+# Sparrows and Buntings
+House Sparrow
+Tree Sparrow
+Dunnock
+Reed Bunting
+Yellowhammer
+
+# Thrushes
+Blackbird
+Song Thrush
+Mistle Thrush
+Redwing
+Fieldfare
+Ring Ouzel
+
+# Robin and Chats
+Robin
+Stonechat
+Wheatear
+
+# Warblers
+Blackcap
+Chiffchaff
+Willow Warbler
+Garden Warbler
+
+# Starlings
+Starling
+
+# Woodpeckers
+Great Spotted Woodpecker
+Lesser Spotted Woodpecker
+Green Woodpecker
+
+# Pigeons and Doves
+Wood Pigeon
+Collared Dove
+Feral Pigeon
+Stock Dove
+
+# Crows
+Magpie
+Jay
+Jackdaw
+Carrion Crow
+Rook
+Raven
+
+# Nuthatches and Treecreepers
+Nuthatch
+Treecreeper
+
+# Wrens
+Wren
+
+# Wagtails
+Pied Wagtail
+Grey Wagtail
+
+# Swallows and Martins
+Swallow
+House Martin
+Sand Martin
+
+# Swifts
+Swift
+
+# Game Birds
+Pheasant
+
+# Birds of Prey (occasional garden visitors)
+Sparrowhawk
+Kestrel
+Buzzard
+Red Kite
+
+# Kingfisher
+Kingfisher
+
+# Owls (occasional)
+Tawny Owl
+Little Owl
+
+# Parakeets
+Ring-necked Parakeet

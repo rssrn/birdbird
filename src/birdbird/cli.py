@@ -8,12 +8,13 @@ from pathlib import Path
 
 import typer
 
-from .config import get_location
+from .config import get_location, get_species_config
 from .filter import filter_clips, load_detections
 from .highlights import generate_highlights, get_video_duration
 from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata
 from .publish import publish_to_r2
 from .songs import analyze_songs, save_song_detections
+from .species import identify_species, save_species_results
 
 app = typer.Typer(help="Bird feeder video analysis pipeline")
 
@@ -137,8 +138,9 @@ def process(
     force: bool = typer.Option(False, "--force", "-f", help="Clear existing has_birds directory without prompting"),
     highest_quality: bool = typer.Option(False, "--highest-quality", help="Use highest quality (1440x1080 @ 30fps, larger file)"),
     no_song_clips: bool = typer.Option(False, "--no-song-clips", help="Skip extracting audio clips for each species"),
+    run_species: bool = typer.Option(False, "--species", help="Run visual species identification (requires remote GPU)"),
 ) -> None:
-    """Filter clips, generate highlights reel, extract top frames, and analyze songs.
+    """Filter clips, generate highlights reel, extract top frames, analyze songs, and optionally identify species.
 
     By default, optimizes for web viewing (1440x1080 @ 24fps, smaller files).
     Use --highest-quality for maximum quality (30fps, larger files).
@@ -195,8 +197,11 @@ def process(
     original_duration = sum(get_video_duration(c) for c in clips_to_process)
     typer.echo("")
 
+    # Determine total steps
+    total_steps = 5 if run_species else 4
+
     # Step 1: Filter
-    typer.echo("Step 1/4: Filtering clips...")
+    typer.echo(f"Step 1/{total_steps}: Filtering clips...")
     filter_stats = filter_clips(
         input_dir,
         bird_confidence=bird_confidence,
@@ -212,7 +217,7 @@ def process(
         raise typer.Exit(0)
 
     # Step 2: Highlights
-    typer.echo("Step 2/4: Generating highlights...")
+    typer.echo(f"Step 2/{total_steps}: Generating highlights...")
     has_birds_dir = input_dir / "has_birds"
 
     if output is None:
@@ -239,7 +244,7 @@ def process(
         raise typer.Exit(1)
 
     # Step 3: Extract frames
-    typer.echo("Step 3/4: Extracting top frames...")
+    typer.echo(f"Step 3/{total_steps}: Extracting top frames...")
 
     frames_dir = has_birds_dir / "frames"
     frames_dir.mkdir(exist_ok=True)
@@ -302,7 +307,7 @@ def process(
         raise typer.Exit(1)
 
     # Step 4: Analyze songs
-    typer.echo("Step 4/4: Analyzing bird songs...")
+    typer.echo(f"Step 4/{total_steps}: Analyzing bird songs...")
 
     # Apply config defaults for location if not provided on CLI
     if lat is None and lon is None:
@@ -347,6 +352,41 @@ def process(
             typer.echo("  Continuing without songs data")
             typer.echo("")
 
+    # Step 5: Species identification (optional)
+    if run_species:
+        typer.echo("Step 5/5: Identifying species (remote GPU)...")
+
+        species_output = input_dir / "species.json"
+
+        # Remove existing species.json if present
+        if species_output.exists():
+            species_output.unlink()
+
+        def species_progress(msg: str) -> None:
+            typer.echo(f"  {msg}")
+
+        try:
+            species_config = get_species_config()
+            # Force remote mode
+            species_config.processing_mode = "remote"
+
+            species_results = identify_species(
+                highlights_path=output,
+                config=species_config,
+                progress_callback=species_progress,
+            )
+
+            # Save results
+            save_species_results(species_results, species_output)
+
+            typer.echo(f"  Identified {len(species_results.species_summary)} species in {species_results.processing_time_s:.1f}s")
+            typer.echo("")
+
+        except Exception as e:
+            typer.echo(f"  Error identifying species: {e}", err=True)
+            typer.echo("  Continuing without species data")
+            typer.echo("")
+
     typer.echo("Complete!")
     typer.echo(f"  Bird clips: {has_birds_dir}/")
     typer.echo(f"  Highlights: {output}")
@@ -355,6 +395,8 @@ def process(
         typer.echo(f"  Songs:      {input_dir}/songs.json")
     if (input_dir / "song_clips").exists():
         typer.echo(f"  Song clips: {input_dir}/song_clips/")
+    if (input_dir / "species.json").exists():
+        typer.echo(f"  Species:    {input_dir}/species.json")
 
 
 @app.command()
@@ -715,6 +757,125 @@ def songs(
         raise typer.Exit(1)
     except Exception as e:
         typer.echo(f"Error analyzing songs: {e}", err=True)
+        raise typer.Exit(1)
+
+
+@app.command()
+def species(
+    input_dir: Path = typer.Argument(..., help="Directory containing has_birds/ with highlights.mp4"),
+    output: Path = typer.Option(None, "--output", "-o", help="Output JSON path (default: input_dir/species.json)"),
+    samples_per_minute: float = typer.Option(None, "--samples", "-s", help="Frames to sample per minute (default: from config or 6)"),
+    min_confidence: float = typer.Option(None, "--min-conf", "-c", help="Min confidence threshold (default: from config or 0.5)"),
+    mode: str = typer.Option(None, "--mode", "-m", help="Processing mode: remote (default from config)"),
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing species.json without prompting"),
+) -> None:
+    """Identify bird species from highlights video using BioCLIP.
+
+    Samples frames from highlights.mp4 and identifies species using BioCLIP
+    on a remote GPU. Produces species.json with timestamps and detections.
+
+    Requires remote GPU configuration in ~/.birdbird/config.json.
+
+    @author Claude Opus 4.5 Anthropic
+    """
+    if not input_dir.is_dir():
+        typer.echo(f"Error: {input_dir} is not a directory", err=True)
+        raise typer.Exit(1)
+
+    # Find highlights.mp4
+    has_birds_dir = input_dir / "has_birds"
+    highlights_path = has_birds_dir / "highlights.mp4"
+
+    if not highlights_path.exists():
+        # Also check input_dir directly
+        highlights_path = input_dir / "highlights.mp4"
+        if not highlights_path.exists():
+            typer.echo(f"Error: highlights.mp4 not found in {has_birds_dir} or {input_dir}", err=True)
+            typer.echo("Run 'birdbird process' first to generate highlights.", err=True)
+            raise typer.Exit(1)
+
+    if output is None:
+        output = input_dir / "species.json"
+
+    # Check if output file already exists
+    if output.exists():
+        if force:
+            typer.echo(f"Removing existing {output}...")
+            output.unlink()
+            typer.echo("")
+        else:
+            typer.echo(f"Warning: {output} already exists")
+            typer.echo("")
+            typer.echo("Options:")
+            typer.echo("  1. Remove and re-analyze (recommended)")
+            typer.echo("  2. Cancel")
+            typer.echo("")
+
+            choice = typer.prompt("Choose option", type=int, default=1)
+
+            if choice == 1:
+                typer.echo(f"Removing {output}...")
+                output.unlink()
+                typer.echo("")
+            else:
+                typer.echo("Cancelled")
+                raise typer.Exit(0)
+
+    # Load config and apply CLI overrides
+    config = get_species_config()
+
+    if samples_per_minute is not None:
+        config.samples_per_minute = samples_per_minute
+    if min_confidence is not None:
+        config.min_confidence = min_confidence
+    if mode is not None:
+        config.processing_mode = mode
+
+    # Default to remote mode if not specified
+    if config.processing_mode == "local":
+        config.processing_mode = "remote"
+
+    typer.echo(f"Identifying species from {highlights_path}")
+    typer.echo(f"Settings: samples={config.samples_per_minute}/min, min_conf={config.min_confidence}, mode={config.processing_mode}")
+    typer.echo("")
+
+    def progress_callback(msg: str) -> None:
+        typer.echo(f"  {msg}")
+
+    try:
+        results = identify_species(
+            highlights_path=highlights_path,
+            config=config,
+            progress_callback=progress_callback,
+        )
+
+        # Save results
+        save_species_results(results, output)
+
+        typer.echo("")
+        typer.echo("Results:")
+        typer.echo(f"  Frames analyzed:    {results.total_frames}")
+        typer.echo(f"  Video duration:     {format_duration(results.highlights_duration_s)}")
+        typer.echo(f"  Processing time:    {results.processing_time_s:.1f}s")
+        typer.echo(f"  Species detected:   {len(results.species_summary)}")
+        typer.echo(f"  Output:             {output}")
+
+        if results.species_summary:
+            typer.echo("")
+            typer.echo("Species breakdown:")
+            for species_name, data in list(results.species_summary.items())[:10]:
+                typer.echo(f"  {species_name}: {data['count']} ({data['avg_confidence']*100:.0f}% avg)")
+            if len(results.species_summary) > 10:
+                typer.echo(f"  ... and {len(results.species_summary) - 10} more species")
+
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
+    except RuntimeError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
+    except Exception as e:
+        typer.echo(f"Error identifying species: {e}", err=True)
         raise typer.Exit(1)
 
 
