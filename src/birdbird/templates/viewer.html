@@ -381,6 +381,23 @@
             font-size: 1.1em;
         }
 
+        .species-detected {
+            color: #555;
+            font-size: 1.05em;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .species-detected-label {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .species-separator {
+            color: #999;
+            margin: 0 6px;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2em;
@@ -448,6 +465,9 @@
 
                 <!-- Visual Tab -->
                 <div class="tab-content" id="visual-tab" role="tabpanel" aria-labelledby="tab-visual">
+                    <!-- Species detected (populated by JS if available) -->
+                    <div id="species-detected" class="species-detected" style="display: none;"></div>
+
                     <!-- Frames will be inserted here -->
                     <div id="frames-container" class="frames-container"></div>
 
@@ -631,11 +651,50 @@
                 });
             }
 
+            // Load species data for Visual tab (if available)
+            loadAndRenderSpecies(metadata.batch_id);
+
             // Load audio data for Audio tab (pass song_clips for player)
             loadAndRenderAudio(metadata.batch_id, metadata.song_clips || []);
 
             // Restore previously active tab (for batch switching)
             restoreActiveTab();
+        }
+
+        async function loadAndRenderSpecies(batchId) {
+            const speciesContainer = document.getElementById('species-detected');
+
+            try {
+                const response = await fetch(`${R2_BASE_URL}/batches/${batchId}/species.json`);
+
+                if (!response.ok) {
+                    // No species.json available - hide the container
+                    speciesContainer.style.display = 'none';
+                    return;
+                }
+
+                const speciesData = await response.json();
+
+                if (!speciesData.species_summary || Object.keys(speciesData.species_summary).length === 0) {
+                    speciesContainer.style.display = 'none';
+                    return;
+                }
+
+                // Sort species by count descending
+                const sortedSpecies = Object.entries(speciesData.species_summary)
+                    .sort((a, b) => b[1].count - a[1].count)
+                    .map(([name, data]) => name);
+
+                // Build display string with diamond separators
+                const speciesList = sortedSpecies.join(' <span class="species-separator">◆</span> ');
+
+                speciesContainer.innerHTML = `<span class="species-detected-label">Detected:</span> ${speciesList}`;
+                speciesContainer.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading species data:', error);
+                speciesContainer.style.display = 'none';
+            }
         }
 
         function initTabs() {
