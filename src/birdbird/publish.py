@@ -358,6 +358,7 @@ def upload_batch(
     has_birds_dir: Path,
     songs_path: Path | None = None,
     song_clips_dir: Path | None = None,
+    species_path: Path | None = None,
     batch_exists: bool = False,
 ) -> dict:
     """Upload all batch assets to R2.
@@ -544,6 +545,38 @@ def upload_batch(
     # Add song clips if available
     if song_clips_metadata:
         metadata['song_clips'] = song_clips_metadata
+
+    # Upload species.json if available
+    species_summary = None
+    if species_path and species_path.exists():
+        species_key = f"batches/{batch_id}/species.json"
+
+        with open(species_path) as f:
+            species_data = json.load(f)
+
+        if batch_exists and not should_upload_file(s3_client, bucket_name, species_key, species_path):
+            typer.echo("  Skipping species.json (unchanged)")
+            skipped_files.append('species.json')
+        else:
+            typer.echo("  Uploading species.json...")
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=species_key,
+                Body=json.dumps(species_data, indent=2),
+                ContentType='application/json'
+            )
+            uploaded_files.append('species.json')
+
+        # Create summary for metadata
+        species_summary = {
+            'total_frames': species_data['total_frames'],
+            'unique_species': len(species_data['species_summary']),
+            'species_list': list(species_data['species_summary'].keys()),
+        }
+
+    # Add species summary if available
+    if species_summary:
+        metadata['species'] = species_summary
 
     # Always upload metadata.json (it's tiny and includes current timestamp)
     typer.echo("  Uploading metadata.json...")
@@ -780,6 +813,14 @@ def publish_to_r2(
     else:
         typer.echo(f"No song_clips/ found - skipping")
         song_clips_dir = None
+
+    # Check for species.json (optional)
+    species_path = input_dir / "species.json"
+    if species_path.exists():
+        typer.echo(f"Found species.json - will include in upload")
+    else:
+        typer.echo(f"No species.json found - skipping (run 'birdbird species {input_dir}' to add)")
+        species_path = None
     typer.echo("")
 
     # Extract original date from directory name
@@ -833,6 +874,7 @@ def publish_to_r2(
         has_birds_dir=has_birds_dir,
         songs_path=songs_path,
         song_clips_dir=song_clips_dir,
+        species_path=species_path,
         batch_exists=batch_exists,
     )
 
