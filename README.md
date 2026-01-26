@@ -208,12 +208,13 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | ---- | -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ |
 | M1   | Bird detection filter      | Discard clips without birds (eliminate wind false positives)                                                     | Done   |
 | M2   | Highlights reel v1         | Concatenate segments with bird activity                                                                          | Done   |
-| M2.1 | Highlights reel captions   | Add match type (e.g. bird or human) with confidence level within highlights reel, adjacent to existing timestamp |        |
+| M2.1 | Highlights reel seek       | Based on M4 output, provide buttons to seek to timestamps with highest confidence for each species               |        |
 | M2.2 | Publish highlights to web  | Upload to Cloudflare R2 with static web viewer showing video, frames, and audio stats                            | Done   |
 | M3   | Highlight images           | Extract some nice-looking in-focus bird frames with timestamps                                                   | Done   |
-| M4   | Visual species detection   | Identify species, generate timeline summary with frame captures                                                  |        |
-| M5   | Email or static web report | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material                                      |        |
-| M6   | Highlights reel v2         | Curated "best action" clips                                                                                      |        |
+| M3.1 | Highlight images v2        | Improve selection based on highest confidence frames for M4, and species variety.             | |
+| M4   | Visual species detection   | Identify species, generate timeline summary with frame capture                                                   | Done   |
+| M5   | Full report, stats         | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material                                      |        |
+| M6   | Best action sequence       | Curated "best action": algo to find best 30 second sequence based on max species variety and confidence and quantity.  Then expand on M2.1, button to seek to the start of that 30 seconds |        |
 | M7   | Structured storage         | database backend to get stats/graphs on species counts, times usually seen, etc                                  |        |
 
 ## Other Feature Ideas
