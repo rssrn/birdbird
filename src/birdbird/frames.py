@@ -4,6 +4,7 @@
 """
 
 import json
+import shutil
 import time
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -13,7 +14,7 @@ import numpy as np
 from tqdm import tqdm
 
 from .detector import BirdDetector
-from .filter import load_detections
+from .paths import BirdbirdPaths, load_detections, get_asset_frame_paths
 
 
 @dataclass
@@ -166,16 +167,28 @@ def extract_and_score_frames(
     detector: BirdDetector,
     weights: dict[str, float],
     limit: int | None = None,
+    paths: BirdbirdPaths | None = None,
 ) -> tuple[list[FrameScore], dict]:
     """Extract and score all detected frames.
+
+    Args:
+        input_dir: Original input directory containing source .avi clips
+        detector: BirdDetector instance
+        weights: Scoring weights dict
+        limit: Optional limit on number of clips to process
+        paths: Optional BirdbirdPaths object (constructed if not provided)
 
     Returns:
         Tuple of (scored_frames, timing_stats)
 
     @author Claude Sonnet 4.5 Anthropic
     """
+    # Get paths
+    if paths is None:
+        paths = BirdbirdPaths.from_input_dir(input_dir)
+
     # Load detections
-    detections = load_detections(input_dir)
+    detections = load_detections(paths.detections_json)
     if not detections:
         return [], {}
 
@@ -208,7 +221,7 @@ def extract_and_score_frames(
         timestamp = detection_info['first_bird']
         confidence = detection_info['confidence']
 
-        clip_path = input_dir / clip_name
+        clip_path = paths.clips_dir / clip_name
         if not clip_path.exists():
             continue
 
@@ -307,18 +320,27 @@ def extract_and_score_frames(
 
 def save_top_frames(
     frames: list[FrameScore],
-    input_dir: Path,
+    clips_dir: Path,
     output_dir: Path,
     top_n: int,
 ) -> list[Path]:
-    """Save top N frames as JPEGs with descriptive filenames.
+    """Save top N frames as JPEGs with descriptive filenames to working directory.
+
+    Args:
+        frames: List of FrameScore objects sorted by quality
+        clips_dir: Directory containing filtered clip symlinks
+        output_dir: Working frames candidates directory
+        top_n: Number of top frames to save
+
+    Returns:
+        List of saved frame paths
 
     @author Claude Sonnet 4.5 Anthropic
     """
     saved_paths = []
 
     for rank, frame_score in enumerate(frames[:top_n], start=1):
-        clip_path = input_dir / frame_score.clip_name
+        clip_path = clips_dir / frame_score.clip_name
         if not clip_path.exists():
             continue
 
@@ -383,3 +405,37 @@ def save_frame_metadata(
 
     with open(output_path, 'w') as f:
         json.dump(metadata, f, indent=2)
+
+
+def copy_top_frames_to_assets(
+    frame_scores_path: Path,
+    candidates_dir: Path,
+    assets_dir: Path,
+    top_n: int = 3,
+) -> list[Path]:
+    """Copy top N frames from working dir to assets with simplified naming.
+
+    Args:
+        frame_scores_path: Path to frame_scores.json
+        candidates_dir: Working frames candidates directory
+        assets_dir: Assets directory
+        top_n: Number of top frames to copy (default: 3)
+
+    Returns:
+        List of asset frame paths that were created
+
+    @author Claude Sonnet 4.5 Anthropic
+    """
+    # Load frame_scores.json
+    with open(frame_scores_path) as f:
+        metadata = json.load(f)
+
+    frames = metadata["frames"][:top_n]
+    asset_paths = get_asset_frame_paths(assets_dir, top_n)
+
+    for frame, asset_path in zip(frames, asset_paths):
+        src = candidates_dir / frame["filename"]
+        if src.exists():
+            shutil.copy2(src, asset_path)
+
+    return asset_paths

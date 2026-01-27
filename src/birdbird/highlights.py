@@ -12,7 +12,7 @@ import cv2
 from tqdm import tqdm
 
 from .detector import BirdDetector
-from .filter import load_detections
+from .paths import BirdbirdPaths, load_detections
 
 
 # Cache for hardware encoder availability
@@ -388,6 +388,7 @@ def generate_highlights(
     threads: int = 2,
     optimize_web: bool = False,
     original_duration: float | None = None,
+    paths: BirdbirdPaths | None = None,
 ) -> HighlightsStats:
     """Generate a highlights reel from bird clips.
 
@@ -400,6 +401,7 @@ def generate_highlights(
         threads: Max ffmpeg threads to use (default 2 for low-power systems)
         optimize_web: If True, optimize for web viewing (preserve aspect ratio @ 24fps, CRF 23)
         original_duration: Optional pre-calculated original duration (if None, calculates from input_dir)
+        paths: Optional BirdbirdPaths object (constructed if not provided)
 
     Returns:
         HighlightsStats with duration information
@@ -409,6 +411,12 @@ def generate_highlights(
     clips = sorted(input_dir.glob("*.avi"))
     if not clips:
         raise ValueError(f"No .avi clips found in {input_dir}")
+
+    # Get paths if not provided
+    if paths is None:
+        # Try to infer from input_dir (which should be clips_dir)
+        # Go up 3 levels: clips -> filter -> working -> birdbird -> input_dir
+        paths = BirdbirdPaths.from_input_dir(input_dir.parent.parent.parent.parent)
 
     # Detect hardware encoder once at start
     hw_encoder = detect_hardware_encoder()
@@ -420,10 +428,13 @@ def generate_highlights(
     print(f"FFmpeg thread limit: {threads}")
 
     # Try to load cached detection data from filter step
-    cached_detections = load_detections(input_dir)
-    using_cache = cached_detections is not None
-    if using_cache:
+    try:
+        cached_detections = load_detections(paths.detections_json)
+        using_cache = True
         print(f"Using cached detections for {len(cached_detections)} clips")
+    except FileNotFoundError:
+        cached_detections = None
+        using_cache = False
 
     detector = BirdDetector(
         bird_confidence=bird_confidence,

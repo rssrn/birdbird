@@ -4,15 +4,28 @@
 """
 
 import json
+import os
 import shutil
 from pathlib import Path
 
 from tqdm import tqdm
 
 from .detector import BirdDetector
+from .paths import BirdbirdPaths
 
 
-DETECTIONS_FILE = "detections.json"
+def create_symlink_or_copy(src: Path, dst: Path) -> None:
+    """Create symlink to src at dst. Falls back to copy on Windows/errors.
+
+    Args:
+        src: Source file path
+        dst: Destination path for symlink or copy
+    """
+    try:
+        os.symlink(src, dst)
+    except (OSError, NotImplementedError):
+        # Windows or filesystem doesn't support symlinks
+        shutil.copy2(src, dst)
 
 
 def filter_clips(
@@ -22,8 +35,8 @@ def filter_clips(
 ) -> dict:
     """Filter clips to keep only those containing birds.
 
-    Saves detection metadata to detections.json in the output directory
-    for use by the highlights command.
+    Saves detection metadata to detections.json in the working filter directory.
+    Creates symlinks to filtered clips (falls back to copies on Windows).
 
     Args:
         input_dir: Directory containing .avi clips
@@ -31,11 +44,11 @@ def filter_clips(
         limit: Maximum number of clips to process (for testing)
 
     Returns:
-        Dict with counts: total, with_birds, filtered_out
+        Dict with counts: total, with_birds, filtered_out, and paths object
     """
     input_dir = Path(input_dir)
-    output_dir = input_dir / "has_birds"
-    output_dir.mkdir(exist_ok=True)
+    paths = BirdbirdPaths.from_input_dir(input_dir)
+    paths.ensure_working_dirs()
 
     clips = sorted(input_dir.glob("*.avi"))
     if limit:
@@ -53,9 +66,9 @@ def filter_clips(
 
         if detection:
             stats["with_birds"] += 1
-            dest = output_dir / clip_path.name
+            dest = paths.clips_dir / clip_path.name
             if not dest.exists():
-                shutil.copy2(clip_path, dest)
+                create_symlink_or_copy(clip_path, dest)
             # Save detection metadata
             detections[clip_path.name] = {
                 "first_bird": detection.timestamp,
@@ -65,24 +78,8 @@ def filter_clips(
             stats["filtered_out"] += 1
 
     # Write detections metadata
-    detections_path = output_dir / DETECTIONS_FILE
-    with open(detections_path, "w") as f:
+    with open(paths.detections_json, "w") as f:
         json.dump(detections, f, indent=2)
 
+    stats["paths"] = paths
     return stats
-
-
-def load_detections(input_dir: Path) -> dict[str, dict] | None:
-    """Load detection metadata from a directory.
-
-    Args:
-        input_dir: Directory containing detections.json
-
-    Returns:
-        Dict mapping clip names to detection info, or None if not found
-    """
-    detections_path = Path(input_dir) / DETECTIONS_FILE
-    if not detections_path.exists():
-        return None
-    with open(detections_path) as f:
-        return json.load(f)

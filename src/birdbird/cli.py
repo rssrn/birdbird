@@ -3,16 +3,19 @@
 @author Claude Opus 4.5 Anthropic
 """
 
+import json
 import shutil
+from datetime import datetime
 from pathlib import Path
 
 import typer
 
 from .config import get_location, get_species_config
-from .filter import filter_clips, load_detections
+from .filter import filter_clips
 from .highlights import generate_highlights, get_video_duration
 from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata
-from .publish import publish_to_r2
+from .paths import BirdbirdPaths
+from .publish import publish_to_r2, extract_date_range
 from .songs import analyze_songs, save_song_detections
 from .species import identify_species, save_species_results
 
@@ -27,6 +30,61 @@ def format_duration(seconds: float) -> str:
     minutes = int(seconds // 60)
     secs = int(seconds % 60)
     return f"{minutes}m:{secs:02d}s"
+
+
+def write_local_metadata(paths: BirdbirdPaths, input_dir: Path) -> None:
+    """Write metadata.json to assets directory after processing.
+
+    Creates batch metadata similar to what publish command generates,
+    but for local reference without uploading to R2.
+
+    @author Claude Sonnet 4.5 Anthropic
+    """
+    # Extract date range (use same logic as publish)
+    from .publish import extract_original_date
+    original_date = extract_original_date(input_dir)
+    start_date, end_date = extract_date_range(input_dir, original_date)
+
+    # Read frame scores if available
+    frame_count = 0
+    if paths.frame_scores_json.exists():
+        with open(paths.frame_scores_json) as f:
+            frame_data = json.load(f)
+            frame_count = len(frame_data.get("frames", []))
+
+    # Read songs if available
+    song_species = []
+    if paths.songs_json.exists():
+        with open(paths.songs_json) as f:
+            songs_data = json.load(f)
+            song_species = songs_data.get("summary", {}).get("species_list", [])
+
+    # Count clips from detections
+    clip_count = 0
+    if paths.detections_json.exists():
+        from .paths import load_detections
+        detections = load_detections(paths.detections_json)
+        clip_count = len(detections)
+
+    # Build metadata
+    metadata = {
+        "batch_id": input_dir.name,  # Use directory name as ID
+        "start_date": start_date,
+        "end_date": end_date,
+        "created_at": datetime.now().isoformat(),
+        "clips": clip_count,
+        "frames": frame_count,
+        "songs": {
+            "species_count": len(song_species),
+            "species_list": song_species,
+        },
+        "local": True,  # Marker that this is local, not published to R2
+    }
+
+    # Write to assets
+    paths.ensure_assets_dirs()
+    with open(paths.metadata_json, 'w') as f:
+        json.dump(metadata, f, indent=2)
 
 
 @app.command()
@@ -62,13 +120,15 @@ def filter(
     typer.echo(f"  Filtered out:   {stats['filtered_out']}")
     pct = 100 * stats['with_birds'] / stats['total'] if stats['total'] > 0 else 0
     typer.echo(f"  Detection rate: {pct:.1f}%")
-    typer.echo(f"  Bird clips in:  {input_dir}/has_birds/")
+    paths = stats['paths']
+    typer.echo(f"  Clips:          {paths.clips_dir}")
+    typer.echo(f"  Detections:     {paths.detections_json}")
 
 
 @app.command()
 def highlights(
-    input_dir: Path = typer.Argument(..., help="Directory containing .avi clips (pre-filtered for birds)"),
-    output: Path = typer.Option(None, "--output", "-o", help="Output MP4 path (default: input_dir/highlights.mp4)"),
+    input_dir: Path = typer.Argument(..., help="Directory containing original .avi clips"),
+    output: Path = typer.Option(None, "--output", "-o", help="Output MP4 path (default: birdbird/assets/highlights.mp4)"),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
     buffer_before: float = typer.Option(1.0, "--buffer-before", help="Seconds before first bird detection"),
     buffer_after: float = typer.Option(1.0, "--buffer-after", help="Seconds after last bird detection (bird-free time)"),
@@ -79,16 +139,27 @@ def highlights(
 
     By default, optimizes for web viewing (1440x1080 @ 24fps, smaller files).
     Use --highest-quality for maximum quality (30fps, larger files).
+
+    Note: Run 'birdbird filter' first to detect and filter clips.
     """
     if not input_dir.is_dir():
         typer.echo(f"Error: {input_dir} is not a directory", err=True)
         raise typer.Exit(1)
 
+    from .paths import BirdbirdPaths
+    paths = BirdbirdPaths.from_input_dir(input_dir)
+
+    # Check filtered clips exist
+    if not paths.clips_dir.is_dir():
+        typer.echo(f"Error: No filtered clips found. Run 'birdbird filter {input_dir}' first.", err=True)
+        raise typer.Exit(1)
+
     if output is None:
-        output = input_dir / "highlights.mp4"
+        paths.ensure_assets_dirs()
+        output = paths.highlights_mp4
 
     # Count clips and estimate duration (~7s per clip with binary search + extraction)
-    clips = list(input_dir.glob("*.avi"))
+    clips = list(paths.clips_dir.glob("*.avi"))
     clip_count = len(clips)
     est_seconds = clip_count * 7
     est_minutes = est_seconds / 60
@@ -99,13 +170,14 @@ def highlights(
 
     try:
         stats = generate_highlights(
-            input_dir=input_dir,
+            input_dir=paths.clips_dir,
             output_path=output,
             bird_confidence=bird_confidence,
             buffer_before=buffer_before,
             buffer_after=buffer_after,
             threads=threads,
             optimize_web=not highest_quality,
+            paths=paths,
         )
 
         typer.echo("")
@@ -149,6 +221,9 @@ def process(
         typer.echo(f"Error: {input_dir} is not a directory", err=True)
         raise typer.Exit(1)
 
+    from .paths import BirdbirdPaths
+    paths = BirdbirdPaths.from_input_dir(input_dir)
+
     # Apply config default for species if not specified on CLI
     if run_species is None:
         species_config = get_species_config()
@@ -165,17 +240,17 @@ def process(
     typer.echo(f"Settings: bird_conf={bird_confidence}, top_n={top_n}")
     typer.echo("")
 
-    # Check if has_birds directory already exists with content
-    has_birds_dir = input_dir / "has_birds"
-    if has_birds_dir.exists():
-        existing_clips = list(has_birds_dir.glob("*.avi"))
+    # Check if birdbird directory already exists with content
+    if paths.birdbird_dir.exists():
+        # Check if there are any existing clips
+        existing_clips = list(paths.clips_dir.glob("*.avi")) if paths.clips_dir.exists() else []
         if existing_clips:
             if force:
-                typer.echo(f"Clearing existing {has_birds_dir} ({len(existing_clips)} clips)...")
-                shutil.rmtree(has_birds_dir)
+                typer.echo(f"Clearing existing {paths.birdbird_dir} ({len(existing_clips)} clips)...")
+                shutil.rmtree(paths.birdbird_dir)
                 typer.echo("")
             else:
-                typer.echo(f"Warning: {has_birds_dir} already exists with {len(existing_clips)} clips")
+                typer.echo(f"Warning: {paths.birdbird_dir} already exists with {len(existing_clips)} clips")
                 typer.echo("This will mix old and new results, which may cause cache mismatches.")
                 typer.echo("")
                 typer.echo("Options:")
@@ -187,14 +262,18 @@ def process(
                 choice = typer.prompt("Choose option", type=int, default=1)
 
                 if choice == 1:
-                    typer.echo(f"Removing {has_birds_dir}...")
-                    shutil.rmtree(has_birds_dir)
+                    typer.echo(f"Removing {paths.birdbird_dir}...")
+                    shutil.rmtree(paths.birdbird_dir)
                 elif choice == 2:
                     typer.echo("Continuing with existing directory (results may be unpredictable)")
                 else:
                     typer.echo("Cancelled")
                     raise typer.Exit(0)
                 typer.echo("")
+
+    # Ensure directories exist
+    paths.ensure_working_dirs()
+    paths.ensure_assets_dirs()
 
     # Calculate original duration before filtering
     typer.echo("Calculating original duration...")
@@ -223,14 +302,13 @@ def process(
 
     # Step 2: Highlights
     typer.echo(f"Step 2/{total_steps}: Generating highlights...")
-    has_birds_dir = input_dir / "has_birds"
 
     if output is None:
-        output = has_birds_dir / "highlights.mp4"
+        output = paths.highlights_mp4
 
     try:
         highlights_stats = generate_highlights(
-            input_dir=has_birds_dir,
+            input_dir=paths.clips_dir,
             output_path=output,
             bird_confidence=bird_confidence,
             buffer_before=buffer_before,
@@ -238,6 +316,7 @@ def process(
             threads=threads,
             optimize_web=not highest_quality,
             original_duration=original_duration,
+            paths=paths,
         )
 
         typer.echo("")
@@ -250,9 +329,6 @@ def process(
 
     # Step 3: Extract frames
     typer.echo(f"Step 3/{total_steps}: Extracting top frames...")
-
-    frames_dir = has_birds_dir / "frames"
-    frames_dir.mkdir(exist_ok=True)
 
     # Track total wall clock time for frames
     import time
@@ -268,7 +344,7 @@ def process(
 
     # Extract and score
     from .detector import BirdDetector
-    from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata
+    from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata, copy_top_frames_to_assets
 
     detector = BirdDetector(
         bird_confidence=bird_confidence,
@@ -276,34 +352,42 @@ def process(
 
     try:
         scored_frames, timing_stats = extract_and_score_frames(
-            input_dir=has_birds_dir,
+            input_dir=input_dir,
             detector=detector,
             weights=weights,
             limit=None,  # Process all clips from filter step
+            paths=paths,
         )
 
         if not scored_frames:
             typer.echo("  No frames found to score")
         else:
-            # Save top N frames
+            # Save top N frames to working directory
             saved_paths = save_top_frames(
                 frames=scored_frames,
-                input_dir=has_birds_dir,
-                output_dir=frames_dir,
+                clips_dir=paths.clips_dir,
+                output_dir=paths.frames_candidates_dir,
                 top_n=top_n,
             )
 
             # Save metadata
-            metadata_path = frames_dir / "frame_scores.json"
             save_frame_metadata(
                 frames=scored_frames[:top_n],
                 timing_stats=timing_stats,
-                output_path=metadata_path,
+                output_path=paths.frame_scores_json,
                 config={"weights": weights, "top_n": top_n},
             )
 
+            # Copy top 3 frames to assets
+            asset_frames = copy_top_frames_to_assets(
+                frame_scores_path=paths.frame_scores_json,
+                candidates_dir=paths.frames_candidates_dir,
+                assets_dir=paths.assets_dir,
+                top_n=3,
+            )
+
             elapsed_seconds = time.perf_counter() - start_time
-            typer.echo(f"  Extracted {len(saved_paths)} frames in {format_duration(elapsed_seconds)}")
+            typer.echo(f"  Extracted {len(saved_paths)} frames ({len(asset_frames)} to assets) in {format_duration(elapsed_seconds)}")
 
         typer.echo("")
 
@@ -326,11 +410,9 @@ def process(
         typer.echo("  Skipping songs analysis")
         typer.echo("")
     else:
-        songs_output = input_dir / "songs.json"
-
         # Remove existing songs.json if present
-        if songs_output.exists():
-            songs_output.unlink()
+        if paths.songs_json.exists():
+            paths.songs_json.unlink()
 
         try:
             songs_start = time.perf_counter()
@@ -342,10 +424,11 @@ def process(
                 threads=song_threads,
                 limit=limit,
                 extract_clips=not no_song_clips,
+                paths=paths,
             )
 
             # Save results
-            save_song_detections(songs_results, songs_output)
+            save_song_detections(songs_results, paths.songs_json)
 
             songs_elapsed = time.perf_counter() - songs_start
             clips_msg = f", {songs_results['summary']['clips_extracted']} clips" if not no_song_clips else ""
@@ -361,11 +444,9 @@ def process(
     if run_species:
         typer.echo("Step 5/5: Identifying species (remote GPU)...")
 
-        species_output = input_dir / "species.json"
-
         # Remove existing species.json if present
-        if species_output.exists():
-            species_output.unlink()
+        if paths.species_json.exists():
+            paths.species_json.unlink()
 
         def species_progress(msg: str) -> None:
             typer.echo(f"  {msg}")
@@ -382,7 +463,7 @@ def process(
             )
 
             # Save results
-            save_species_results(species_results, species_output)
+            save_species_results(species_results, paths.species_json)
 
             typer.echo(f"  Identified {len(species_results.species_summary)} species in {species_results.processing_time_s:.1f}s")
             typer.echo("")
@@ -392,28 +473,36 @@ def process(
             typer.echo("  Continuing without species data")
             typer.echo("")
 
+    # Write local metadata.json
+    write_local_metadata(paths, input_dir)
+
     typer.echo("Complete!")
-    typer.echo(f"  Bird clips: {has_birds_dir}/")
-    typer.echo(f"  Highlights: {output}")
-    typer.echo(f"  Frames:     {frames_dir}/")
-    if (input_dir / "songs.json").exists():
-        typer.echo(f"  Songs:      {input_dir}/songs.json")
-    if (input_dir / "song_clips").exists():
-        typer.echo(f"  Song clips: {input_dir}/song_clips/")
+    typer.echo(f"  Working:")
+    typer.echo(f"    Clips:        {paths.clips_dir}/")
+    typer.echo(f"    Detections:   {paths.detections_json}")
+    typer.echo(f"    Candidates:   {paths.frames_candidates_dir}/")
+    typer.echo(f"  Assets:")
+    typer.echo(f"    Highlights:   {paths.highlights_mp4}")
+    typer.echo(f"    Frames:       {paths.assets_dir}/ (3 frames)")
+    if paths.songs_json.exists():
+        typer.echo(f"    Songs:        {paths.songs_json}")
+    if paths.song_clips_dir.exists() and list(paths.song_clips_dir.glob("*.wav")):
+        typer.echo(f"    Song clips:   {paths.song_clips_dir}/")
     if (input_dir / "species.json").exists():
         typer.echo(f"  Species:    {input_dir}/species.json")
 
 
 @app.command()
 def frames(
-    input_dir: Path = typer.Argument(..., help="Directory containing filtered clips (has_birds/)"),
-    output_dir: Path = typer.Option(None, "--output", "-o", help="Output directory (default: input_dir/frames/)"),
-    top_n: int = typer.Option(20, "--top-n", "-n", help="Number of top frames to extract"),
+    input_dir: Path = typer.Argument(..., help="Directory containing original .avi clips"),
+    top_n: int = typer.Option(20, "--top-n", "-n", help="Number of top frames to extract to candidates"),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
     force: bool = typer.Option(False, "--force", "-f", help="Clear existing frames without prompting"),
 ) -> None:
     """Extract and rank best bird frames from filtered clips.
+
+    Note: Run 'birdbird filter' first to detect and filter clips.
 
     @author Claude Sonnet 4.5 Anthropic
     """
@@ -421,24 +510,37 @@ def frames(
         typer.echo(f"Error: {input_dir} is not a directory", err=True)
         raise typer.Exit(1)
 
-    if output_dir is None:
-        output_dir = input_dir / "frames"
+    from .paths import BirdbirdPaths, load_detections
+    from .frames import copy_top_frames_to_assets
+    paths = BirdbirdPaths.from_input_dir(input_dir)
+
+    # Check filtered clips exist
+    if not paths.clips_dir.is_dir():
+        typer.echo(f"Error: No filtered clips found. Run 'birdbird filter {input_dir}' first.", err=True)
+        raise typer.Exit(1)
+
+    # Check for detections.json
+    if not paths.detections_json.exists():
+        typer.echo(f"Error: No detections.json found. Run 'birdbird filter {input_dir}' first.", err=True)
+        raise typer.Exit(1)
+
+    paths.ensure_working_dirs()
+    paths.ensure_assets_dirs()
 
     # Check if frames directory already exists with content
-    if output_dir.exists():
-        existing_frames = list(output_dir.glob("frame_*.jpg"))
+    if paths.frames_candidates_dir.exists():
+        existing_frames = list(paths.frames_candidates_dir.glob("frame_*.jpg"))
         if existing_frames:
             if force:
-                typer.echo(f"Clearing existing frames from {output_dir} ({len(existing_frames)} frames)...")
+                typer.echo(f"Clearing existing frames from {paths.frames_candidates_dir} ({len(existing_frames)} frames)...")
                 for frame_file in existing_frames:
                     frame_file.unlink()
                 # Also remove metadata if it exists
-                metadata_file = output_dir / "frame_scores.json"
-                if metadata_file.exists():
-                    metadata_file.unlink()
+                if paths.frame_scores_json.exists():
+                    paths.frame_scores_json.unlink()
                 typer.echo("")
             else:
-                typer.echo(f"Warning: {output_dir} already exists with {len(existing_frames)} frames")
+                typer.echo(f"Warning: {paths.frames_candidates_dir} already exists with {len(existing_frames)} frames")
                 typer.echo("")
                 typer.echo("Options:")
                 typer.echo("  1. Clear and re-extract (recommended)")
@@ -449,13 +551,11 @@ def frames(
                 choice = typer.prompt("Choose option", type=int, default=1)
 
                 if choice == 1:
-                    typer.echo(f"Removing existing frames from {output_dir}...")
+                    typer.echo(f"Removing existing frames from {paths.frames_candidates_dir}...")
                     for frame_file in existing_frames:
                         frame_file.unlink()
-                    # Also remove metadata if it exists
-                    metadata_file = output_dir / "frame_scores.json"
-                    if metadata_file.exists():
-                        metadata_file.unlink()
+                    if paths.frame_scores_json.exists():
+                        paths.frame_scores_json.unlink()
                     typer.echo("")
                 elif choice == 2:
                     typer.echo("Continuing with existing directory (results may be unpredictable)")
@@ -464,17 +564,8 @@ def frames(
                     typer.echo("Cancelled")
                     raise typer.Exit(0)
 
-    output_dir.mkdir(exist_ok=True)
-
-    # Check for detections.json
-    detections_file = input_dir / "detections.json"
-    if not detections_file.exists():
-        typer.echo(f"Error: No detections.json found in {input_dir}", err=True)
-        typer.echo("Run 'birdbird filter' first to generate detection metadata.", err=True)
-        raise typer.Exit(1)
-
     # Load and count detections
-    detections = load_detections(input_dir)
+    detections = load_detections(paths.detections_json)
     clip_count = len(detections) if limit is None else min(len(detections), limit)
 
     # Estimate duration (~0.5s per frame for scoring)
@@ -509,28 +600,37 @@ def frames(
             detector=detector,
             weights=weights,
             limit=limit,
+            paths=paths,
         )
 
         if not scored_frames:
             typer.echo("No frames found to score", err=True)
             raise typer.Exit(1)
 
-        # Save top N frames
-        typer.echo("Saving top frames...")
+        # Save top N frames to working directory
+        typer.echo("Saving top frames to working directory...")
         saved_paths = save_top_frames(
             frames=scored_frames,
-            input_dir=input_dir,
-            output_dir=output_dir,
+            clips_dir=paths.clips_dir,
+            output_dir=paths.frames_candidates_dir,
             top_n=top_n,
         )
 
         # Save metadata
-        metadata_path = output_dir / "frame_scores.json"
         save_frame_metadata(
             frames=scored_frames[:top_n],
             timing_stats=timing_stats,
-            output_path=metadata_path,
+            output_path=paths.frame_scores_json,
             config={"weights": weights, "top_n": top_n},
+        )
+
+        # Copy top 3 frames to assets directory
+        typer.echo("Copying top 3 frames to assets...")
+        asset_frames = copy_top_frames_to_assets(
+            frame_scores_path=paths.frame_scores_json,
+            candidates_dir=paths.frames_candidates_dir,
+            assets_dir=paths.assets_dir,
+            top_n=3,
         )
 
         # Calculate total time
@@ -541,8 +641,8 @@ def frames(
         typer.echo("")
         typer.echo("Results:")
         typer.echo(f"  Frames scored:    {len(scored_frames)}")
-        typer.echo(f"  Top frames saved: {top_n}")
-        typer.echo(f"  Output dir:       {output_dir}/")
+        typer.echo(f"  Candidates:       {top_n} in {paths.frames_candidates_dir}/")
+        typer.echo(f"  Assets:           3 in {paths.assets_dir}/")
         typer.echo(f"  Total time:       {elapsed_formatted}")
         typer.echo("")
         typer.echo("Timing per frame:")
@@ -559,7 +659,7 @@ def frames(
 
 @app.command()
 def publish(
-    input_dir: Path = typer.Argument(..., help="Directory containing has_birds/ (output from process/filter)"),
+    input_dir: Path = typer.Argument(..., help="Directory containing birdbird/assets/ (output from process)"),
     config_file: Path = typer.Option("~/.birdbird/cloudflare.json", "--config", "-c", help="Cloudflare config file"),
     new_batch: bool = typer.Option(False, "--new-batch", "-n", help="Create new batch sequence (for additional footage same day)"),
 ) -> None:
@@ -567,6 +667,8 @@ def publish(
 
     By default, replaces existing batch for the same date. Use --new-batch to create
     a new sequence (e.g., 20260114_02) when you collected additional footage same day.
+
+    Note: Run 'birdbird process' first to generate assets for publishing.
 
     @author Claude Sonnet 4.5 Anthropic
     """
@@ -665,8 +767,11 @@ def songs(
         typer.echo(f"Error: {input_dir} is not a directory", err=True)
         raise typer.Exit(1)
 
+    paths = BirdbirdPaths.from_input_dir(input_dir)
+    paths.ensure_assets_dirs()
+
     if output is None:
-        output = input_dir / "songs.json"
+        output = paths.songs_json
 
     # Check if output file already exists
     if output.exists():
@@ -729,6 +834,7 @@ def songs(
             threads=song_threads,
             limit=limit,
             extract_clips=not no_song_clips,
+            paths=paths,
         )
 
         # Save results
@@ -747,7 +853,7 @@ def songs(
         typer.echo(f"  Processing time:    {format_duration(elapsed_seconds)}")
         typer.echo(f"  Output:             {output}")
         if not no_song_clips and results['summary']['clips_extracted'] > 0:
-            typer.echo(f"  Clips:              {input_dir}/song_clips/")
+            typer.echo(f"  Clips:              {paths.song_clips_dir}/")
 
         if results['summary']['species_list']:
             typer.echo("")

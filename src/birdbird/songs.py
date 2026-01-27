@@ -19,6 +19,8 @@ from pathlib import Path
 
 from tqdm import tqdm
 
+from .paths import BirdbirdPaths
+
 
 @contextmanager
 def suppress_stdout():
@@ -447,6 +449,7 @@ def analyze_songs(
     threads: int = 2,
     limit: int | None = None,
     extract_clips: bool = True,
+    paths: BirdbirdPaths | None = None,
 ) -> dict:
     """Analyze bird songs from AVI files using BirdNET.
 
@@ -458,6 +461,7 @@ def analyze_songs(
         threads: Number of CPU threads for BirdNET
         limit: Max clips to process (for testing)
         extract_clips: Extract audio clips for highest confidence of each species
+        paths: Optional BirdbirdPaths object (constructed if not provided)
 
     Returns:
         Dict with detections, config, summary, and optionally clips
@@ -465,6 +469,12 @@ def analyze_songs(
     @author Claude Opus 4.5 Anthropic
     """
     from birdnet_analyzer import analyze
+
+    # Get paths if not provided
+    if paths is None:
+        paths = BirdbirdPaths.from_input_dir(input_dir)
+
+    paths.ensure_assets_dirs()
 
     # Find all AVI files
     avi_files = sorted(input_dir.glob("*.avi"))
@@ -561,11 +571,10 @@ def analyze_songs(
     # Extract audio clips for each species (highest confidence detection)
     clips_info = []
     if extract_clips and all_detections:
-        clips_dir = input_dir / "song_clips"
         clips_info = extract_species_clips(
             detections=all_detections,
             input_dir=input_dir,
-            output_dir=clips_dir,
+            output_dir=paths.song_clips_dir,
         )
 
     return {

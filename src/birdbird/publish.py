@@ -14,7 +14,7 @@ import typer
 from botocore.exceptions import ClientError
 from tqdm import tqdm
 
-from .filter import load_detections
+from .paths import BirdbirdPaths, load_detections
 
 
 def create_r2_client(config: dict):
@@ -209,15 +209,15 @@ def extract_original_date(input_dir: Path) -> str:
     return "unknown"
 
 
-def extract_date_range(has_birds_dir: Path, original_date: str) -> tuple[str, str]:
+def extract_date_range(input_dir: Path, original_date: str) -> tuple[str, str]:
     """Extract date range from clip filenames with timestamp validation.
 
-    Scans ALL clip filenames in the parent directory (not just has_birds) to determine
-    the actual date range. Validates that the directory date falls within the filename
-    date range as a sanity check (camera clock may be incorrect if device was reset).
+    Scans ALL clip filenames in the input directory to determine the actual date range.
+    Validates that the directory date falls within the filename date range as a sanity
+    check (camera clock may be incorrect if device was reset).
 
     Args:
-        has_birds_dir: Path to has_birds/ directory (parent dir will be scanned)
+        input_dir: Path to input directory containing .avi clips
         original_date: Date from directory name (format "YYYY-MM-DD" or "unknown")
 
     Returns:
@@ -258,10 +258,9 @@ def extract_date_range(has_birds_dir: Path, original_date: str) -> tuple[str, st
     except ValueError:
         return (original_date, original_date)
 
-    # Scan all .avi files in PARENT directory (not just has_birds)
+    # Scan all .avi files in input directory
     # This gives us the full date range of the batch, even if some days had no birds
-    parent_dir = has_birds_dir.parent
-    avi_files = list(parent_dir.glob("*.avi"))
+    avi_files = list(input_dir.glob("*.avi"))
     if not avi_files:
         # No clips found, return single date
         return (original_date, original_date)
@@ -351,11 +350,9 @@ def upload_batch(
     s3_client,
     bucket_name: str,
     batch_id: str,
-    highlights_path: Path,
-    frames_dir: Path,
+    paths: BirdbirdPaths,
     clip_count: int,
     original_date: str,
-    has_birds_dir: Path,
     songs_path: Path | None = None,
     song_clips_dir: Path | None = None,
     species_path: Path | None = None,
@@ -365,39 +362,50 @@ def upload_batch(
 
     When batch_exists=True, checks MD5/ETag before uploading each file to skip unchanged files.
 
+    Args:
+        s3_client: Boto3 S3 client for R2
+        bucket_name: R2 bucket name
+        batch_id: Batch identifier (YYYYMMDD or YYYYMMDD-NN)
+        paths: BirdbirdPaths object with all path references
+        clip_count: Number of clips with birds
+        original_date: Original date string from directory
+        songs_path: Optional path to songs.json
+        song_clips_dir: Optional path to song_clips directory
+        species_path: Optional path to species.json
+        batch_exists: Whether batch already exists in R2
+
     Returns: metadata dict for this batch
 
-    @author Claude Opus 4.5 Anthropic
+    @author Claude Sonnet 4.5 Anthropic
     """
     uploaded_files = []
     skipped_files = []
     # Extract date range from clip filenames with validation
-    start_date, end_date = extract_date_range(has_birds_dir, original_date)
+    start_date, end_date = extract_date_range(paths.input_dir, original_date)
 
-    # Read frame_scores.json to get top 3 frame info
-    frame_scores_path = frames_dir / "frame_scores.json"
-    with open(frame_scores_path) as f:
+    # Read frame_scores.json to get top 3 frame info (for metadata)
+    with open(paths.frame_scores_json) as f:
         frame_data = json.load(f)
 
     top_frames_data = frame_data['frames'][:3]
 
     # Get highlights duration
-    highlights_duration = get_highlights_duration(highlights_path)
+    highlights_duration = get_highlights_duration(paths.highlights_mp4)
 
     # Upload timestamp
     uploaded_at = datetime.now(timezone.utc).isoformat()
 
     # Upload highlights.mp4 with progress bar
     highlights_key = f"batches/{batch_id}/highlights.mp4"
-    file_size = highlights_path.stat().st_size
+    file_size = paths.highlights_mp4.stat().st_size
 
-    if batch_exists and not should_upload_file(s3_client, bucket_name, highlights_key, highlights_path):
+    if batch_exists and not should_upload_file(s3_client, bucket_name, highlights_key, paths.highlights_mp4):
         typer.echo(f"  Skipping highlights.mp4 (unchanged, {file_size / (1024*1024):.1f} MB)")
         skipped_files.append('highlights.mp4')
     else:
         typer.echo(f"  Uploading highlights.mp4 ({file_size / (1024*1024):.1f} MB)...")
 
-        with open(highlights_path, 'rb') as f:
+        with open(paths.highlights_mp4, 'rb') as f:
             with tqdm(
                 total=file_size,
                 unit='B',
@@ -418,43 +426,43 @@ def upload_batch(
                 )
         uploaded_files.append('highlights.mp4')
 
-    # Upload top 3 frames (rename to frame_01.jpg, frame_02.jpg, frame_03.jpg)
+    # Upload top 3 frames (already named frame_01.jpg, frame_02.jpg, frame_03.jpg in assets)
     typer.echo("  Checking top 3 frames...")
     top_frames_metadata = []
 
-    for i, frame_info in enumerate(top_frames_data, start=1):
-        # Find original frame file
-        original_filename = frame_info['filename']
-        original_path = frames_dir / original_filename
+    for i in range(1, 4):  # frames 1-3
+        frame_filename = f"frame_{i:02d}.jpg"
+        frame_path = paths.assets_dir / frame_filename
 
-        if not original_path.exists():
-            typer.echo(f"    Warning: Frame {original_filename} not found, skipping", err=True)
+        if not frame_path.exists():
+            typer.echo(f"    Warning: {frame_filename} not found, skipping", err=True)
             continue
 
-        # Upload as frame_01.jpg, frame_02.jpg, etc.
-        new_filename = f"frame_{i:02d}.jpg"
-        frame_key = f"batches/{batch_id}/{new_filename}"
+        frame_key = f"batches/{batch_id}/{frame_filename}"
 
-        if batch_exists and not should_upload_file(s3_client, bucket_name, frame_key, original_path):
-            typer.echo(f"    Skipping {new_filename} (unchanged)")
-            skipped_files.append(new_filename)
+        if batch_exists and not should_upload_file(s3_client, bucket_name, frame_key, frame_path):
+            typer.echo(f"    Skipping {frame_filename} (unchanged)")
+            skipped_files.append(frame_filename)
         else:
-            typer.echo(f"    Uploading {new_filename}")
-            with open(original_path, 'rb') as f:
+            typer.echo(f"    Uploading {frame_filename}")
+            with open(frame_path, 'rb') as f:
                 s3_client.put_object(
                     Bucket=bucket_name,
                     Key=frame_key,
                     Body=f,
                     ContentType='image/jpeg'
                 )
-            uploaded_files.append(new_filename)
+            uploaded_files.append(frame_filename)
 
-        top_frames_metadata.append({
-            'filename': new_filename,
-            'clip': frame_info['clip'],
-            'timestamp': frame_info['timestamp'],
-            'combined_score': frame_info['scores']['combined']
-        })
+        # Use metadata from frame_scores.json for this frame
+        if i <= len(top_frames_data):
+            frame_info = top_frames_data[i-1]
+            top_frames_metadata.append({
+                'filename': frame_filename,
+                'clip': frame_info['clip'],
+                'timestamp': frame_info['timestamp'],
+                'combined_score': frame_info['scores']['combined']
+            })
 
     # Upload songs.json if available
     songs_summary = None
@@ -738,7 +746,7 @@ def publish_to_r2(
     """Main publish orchestration function.
 
     Args:
-        input_dir: Directory containing has_birds/ subdirectory
+        input_dir: Directory containing birdbird/ subdirectory with assets
         config: R2 configuration dict
         create_new_batch: If True, create new batch sequence. If False (default), replace existing.
 
@@ -749,64 +757,59 @@ def publish_to_r2(
     # Normalize path
     input_dir = Path(input_dir)
 
-    # Handle case where user passed has_birds/ directly instead of parent
-    if input_dir.name == "has_birds":
-        # User passed has_birds/ directly, use parent directory
-        input_dir = input_dir.parent
-        typer.echo(f"Note: Using parent directory {input_dir}")
-        typer.echo("")
+    # Get paths structure
+    paths = BirdbirdPaths.from_input_dir(input_dir)
 
-    # Check for has_birds subdirectory
-    has_birds_dir = input_dir / "has_birds"
-    if not has_birds_dir.is_dir():
+    # Check for birdbird/assets subdirectory
+    if not paths.assets_dir.is_dir():
         raise ValueError(
-            f"has_birds/ subdirectory not found in {input_dir}\n"
-            f"       Run 'birdbird process' or 'birdbird filter' first to create has_birds/"
+            f"birdbird/assets/ subdirectory not found in {input_dir}\n"
+            f"       Run 'birdbird process {input_dir}' first to generate assets"
         )
 
     # Validate highlights.mp4 exists
-    highlights_path = has_birds_dir / "highlights.mp4"
-    if not highlights_path.exists():
+    if not paths.highlights_mp4.exists():
         raise ValueError(
-            f"highlights.mp4 not found in {has_birds_dir}\n"
-            f"       Run 'birdbird highlights {has_birds_dir}' or 'birdbird process {input_dir}' first"
+            f"highlights.mp4 not found in {paths.assets_dir}\n"
+            f"       Run 'birdbird process {input_dir}' to generate highlights"
         )
 
-    # Validate frames directory and files
-    frames_dir = has_birds_dir / "frames"
-    if not frames_dir.is_dir():
+    # Validate frame_scores.json in working directory
+    if not paths.frame_scores_json.exists():
         raise ValueError(
-            f"frames/ subdirectory not found in {has_birds_dir}\n"
-            f"       Run 'birdbird frames {has_birds_dir}' first to extract frames"
+            f"frame_scores.json not found in {paths.frames_working_dir}\n"
+            f"       Run 'birdbird frames {input_dir}' first to extract frames"
         )
 
-    frame_scores_path = frames_dir / "frame_scores.json"
-    if not frame_scores_path.exists():
-        raise ValueError(f"frame_scores.json not found in {frames_dir}")
-
-    # Check we have at least 3 frames
-    frame_files = sorted(frames_dir.glob("frame_*.jpg"))
+    # Check we have at least 3 frames in assets
+    frame_files = sorted(paths.assets_dir.glob("frame_*.jpg"))
     if len(frame_files) < 3:
-        raise ValueError(f"Need at least 3 frames in {frames_dir}, found {len(frame_files)}")
+        raise ValueError(
+            f"Need at least 3 frames in {paths.assets_dir}, found {len(frame_files)}\n"
+            f"       Run 'birdbird process {input_dir}' or 'birdbird frames {input_dir}' first"
+        )
 
     # Load detections to count clips
-    detections = load_detections(has_birds_dir)
-    clip_count = len(detections) if detections else 0
+    try:
+        detections = load_detections(paths.detections_json)
+        clip_count = len(detections)
+    except FileNotFoundError:
+        clip_count = 0
 
     # Check for songs.json (optional)
-    songs_path = input_dir / "songs.json"
-    if songs_path.exists():
+    if paths.songs_json.exists():
         typer.echo(f"Found songs.json - will include in upload")
+        songs_path = paths.songs_json
     else:
         typer.echo(f"No songs.json found - skipping (run 'birdbird songs {input_dir}' to add)")
         songs_path = None
 
     # Check for song_clips directory (optional)
-    song_clips_dir = input_dir / "song_clips"
-    if song_clips_dir.is_dir():
-        clip_files = list(song_clips_dir.glob("*.wav"))
+    if paths.song_clips_dir.is_dir():
+        clip_files = list(paths.song_clips_dir.glob("*.wav"))
         if clip_files:
             typer.echo(f"Found {len(clip_files)} song clips - will include in upload")
+            song_clips_dir = paths.song_clips_dir
         else:
             typer.echo(f"song_clips/ directory empty - skipping")
             song_clips_dir = None
@@ -815,9 +818,9 @@ def publish_to_r2(
         song_clips_dir = None
 
     # Check for species.json (optional)
-    species_path = input_dir / "species.json"
-    if species_path.exists():
+    if paths.species_json.exists():
         typer.echo(f"Found species.json - will include in upload")
+        species_path = paths.species_json
     else:
         typer.echo(f"No species.json found - skipping (run 'birdbird species {input_dir}' to add)")
         species_path = None
@@ -867,11 +870,9 @@ def publish_to_r2(
         s3_client=s3_client,
         bucket_name=bucket_name,
         batch_id=batch_id,
-        highlights_path=highlights_path,
-        frames_dir=frames_dir,
+        paths=paths,
         clip_count=clip_count,
         original_date=original_date,
-        has_birds_dir=has_birds_dir,
         songs_path=songs_path,
         song_clips_dir=song_clips_dir,
         species_path=species_path,
