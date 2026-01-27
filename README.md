@@ -230,6 +230,7 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | F7  | Analytics                     | Add some lightweight analytics, for example Umami using Umami Cloud Free tier.                                                                                                                                |        |
 | F8  | Staging                       | Add a staging target so viewer changes can be tested before going live                                                                                                                                        |        |
 | F9  | Ongoing accessibility         | Add accessibility testing in local pipeline, pre-commit, perhaps using playwright                                                                                                                             |        |
+| F10 | Add favicon | | |
 
 ## Input Format
 
