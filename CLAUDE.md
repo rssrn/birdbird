@@ -15,18 +15,28 @@ birdbird - Bird feeder video analysis pipeline. See README.md for full project d
 
 ## Development Commands
 
+**IMPORTANT**: This project REQUIRES venv setup and installation before running commands.
+
 ```bash
-# Setup: Create and activate virtual environment (recommended)
+# REQUIRED SETUP (run once):
 python3 -m venv .venv
 source .venv/bin/activate  # On Linux/Mac
 # .venv\Scripts\activate   # On Windows
-
-# Install in development mode
 pip install -e .
 
-# Run commands (if using venv without activating, prefix with .venv/bin/)
+# Running commands:
+# Option 1: Activate venv first, then run commands directly
+source .venv/bin/activate
 birdbird filter /path/to/clips
-# Or: .venv/bin/birdbird filter /path/to/clips
+
+# Option 2: Prefix commands with .venv/bin/ (without activating)
+.venv/bin/birdbird filter /path/to/clips
+
+# NEVER use: python3 -m src.birdbird.cli (this will fail)
+# ALWAYS use: birdbird command (after pip install -e .)
+# Examples:
+
+birdbird filter /path/to/clips
 
 # Generate highlights reel from filtered clips
 birdbird highlights /path/to/clips/has_birds/
