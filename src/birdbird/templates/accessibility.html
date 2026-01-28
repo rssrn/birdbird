@@ -4,127 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accessibility - Bird Feeder Highlights</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Lato:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
         .container {
             max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-        }
-
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .back-link {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            transition: background 0.3s ease;
-            margin-bottom: 30px;
-        }
-
-        .back-link:hover {
-            background: #5568d3;
-            text-decoration: none;
-        }
-
-        h2 {
-            color: #333;
-            margin: 30px 0 15px 0;
-            font-size: 1.4em;
-        }
-
-        h2:first-of-type {
-            margin-top: 0;
-        }
-
-        p {
-            color: #666;
-            line-height: 1.7;
-            margin-bottom: 15px;
-        }
-
-        ul {
-            color: #666;
-            line-height: 1.7;
-            margin-bottom: 15px;
-            padding-left: 25px;
-        }
-
-        li {
-            margin-bottom: 8px;
-        }
-
-        a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
         }
 
         .updated {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #e9ecef;
-            color: #999;
+            border-top: 1px solid var(--parchment-dark);
+            color: var(--bark-brown);
             font-size: 0.9em;
             font-style: italic;
-        }
-
-        footer {
-            text-align: center;
-            padding: 30px;
-            color: #666;
-            font-size: 0.9em;
-            border-top: 1px solid #e9ecef;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2em;
-            }
-
-            .content {
-                padding: 20px;
-            }
         }
     </style>
 </head>
