@@ -105,77 +105,17 @@ src/birdbird/
 
 ## Saved Plans
 
-**Viewer UI Improvements & Date Ranges**
-- Plan file: `/home/ross/.claude/plans/birdbird-viewer-ui-improvements.md`
-- Status: Implemented
-- Summary: Made viewer less technical, added multi-day date range support with timestamp validation
-- Implemented changes:
-  - Fixed filename format docs (actual: `DDHHmmss00.avi`, not `MMDDHHmmss.avi`)
-  - Added `extract_date_range()` in publish.py with timestamp validation (scans parent directory)
-  - Validates directory date falls within filename date range; falls back if camera clock incorrect
-  - Metadata includes `start_date` and `end_date` fields
-  - Simplified UI: removed frame captions, batch IDs; shows human-readable dates ("11-14 Jan")
-  - Added location (Holt, Wiltshire) to subtitle
-  - Archive buttons at top with accessible current selection indicator (black border)
-  - Created `update_metadata.py` script to update existing R2 batches without re-upload
+Use `/plan` to list plans or `/plan <name>` to load details. Plans are stored in `~/.claude/plans/`.
 
-**M2.1: Highlights Reel Captions**
-- Status: Planned (not yet implemented)
-- Summary: Add detection confidence overlay to highlight segments
-- Requirements:
-  - **Placement**: Top-left corner (existing camera timestamp is bottom-left)
-  - **Font**: Match style and size of embedded camera timestamp (white text with black shadow)
-  - **Format**: "Bird 85%" (confidence percentage)
-  - **Always visible**: Display throughout entire segment duration
-- Implementation considerations:
-  - Enhance `Segment` dataclass to include `detection_confidence`
-  - Update `find_bird_segments()` to track and return detection metadata
-  - Modify `extract_segment()` to add ffmpeg drawtext filter with detection info
-- Sample frame reference: `/home/ross/BIRDS/20260114/1112062500.avi` shows existing timestamp style
+| Name | Status | Domain | Summary |
+|------|--------|--------|---------|
+| `viewer-ui` | Implemented | Frontend | Date range support, simplified UI |
+| `captions` | Planned | Backend | M2.1: Detection confidence overlay |
+| `publish` | Implemented | Both | M2.2: R2 upload, static web viewer |
+| `audio-tab` | Ready | Frontend | Audio statistics tab in viewer |
+| `m4-species` | Ready | Backend | BioCLIP visual species identification |
 
-**M2.2: Publish Highlights to Cloudflare R2 + Workers**
-- Plan file: `/home/ross/.claude/plans/idempotent-bouncing-thimble.md`
-- Status: Implemented
-- Summary: Upload highlights.mp4 + top 3 frames to R2 with static web viewer
-- Implementation: `publish.py` module, `birdbird publish` command, `templates/viewer.html`
-- Website repo: `/home/ross/src/birdbird-website/` (auto-deploys to Cloudflare on push to main)
+**Key references** (available in full plans):
+- Website repo: `/home/ross/src/birdbird-website/` (auto-deploys on push)
 - Deployment URL: https://birdbird.rossarn.workers.dev/
-- Next steps: Copy viewer.html to birdbird-website, configure R2 base URL, push to deploy
-
-**Audio Statistics Tab in Viewer**
-- Plan file: `/home/ross/.claude/plans/goofy-finding-volcano.md`
-- Status: Planned (ready for implementation)
-- Summary: Add 2-tab interface to viewer showing Highlights (existing) and Audio (new) tabs
-- Requirements:
-  - Tab 1 (Highlights): Existing video + frames content (no changes to content itself)
-  - Tab 2 (Audio): Horizontal bar chart showing bird vocalization statistics from songs.json
-  - Bar chart shows: common name, count (sorted descending), proportional bar, confidence display
-  - Confidence format: single "54%", 2-3 "54%, 78%", 4+ "54-78%" (range)
-  - Explanatory text about ambient audio sampling from motion-triggered clips
-- Implementation: Single file change (`templates/viewer.html`) - adds tabs, CSS, JavaScript
-- Testing: Use `npx serve -l 3000 src/birdbird/templates` for local demo before deployment
-- Next steps: Implement per plan, test locally, copy to birdbird-website, deploy
-
-**M4: Visual Species Identification**
-- Plan file: `/home/ross/.claude/plans/birdbird-m4-species-integration.md`
-- Status: Ready for implementation (GPU testing complete)
-- Summary: BioCLIP on remote GPU provides fast, accurate species identification
-- **Benchmarks (RTX 3050 6GB)**:
-  - Model load: 26s (with 67 species labels)
-  - Inference: 0.14s/frame average (~7 frames/sec)
-  - Accuracy: 87-99% confidence on clear frames, lower on obscured/difficult angles
-- **Remote GPU setup** (Windows laptop with WSL2):
-  - SSH: `ssh devserver@192.168.1.146` (PowerShell default shell, use `wsl` prefix)
-  - Python env: `~/bioclip_env` with PyTorch CUDA + pybioclip
-  - Test command: `wsl bash -c 'source ~/bioclip_env/bin/activate && python3 script.py'`
-- UK birds list: 67 species in `/tmp/bioclip_test/uk_garden_birds.txt`
-- **Implementation plan highlights**:
-  - Samples frames from `highlights.mp4` (not individual clips)
-  - New config section: `species.processing.mode` = "local" | "remote" | "cloud"
-  - Remote config: `species.processing.remote.host`, `.shell`, `.python_env`
-  - New command: `birdbird species /path/to/clips`
-  - Integration: `birdbird process --species` flag (runs after highlights generation)
-  - Output: `species.json` with timestamps and per-frame detections
-  - Config: `species.samples_per_minute` (default 6), `species.min_confidence` (default 0.5)
-  - README.md: Add optional "Remote GPU Setup" section with WSL2/Linux instructions
-
+- Remote GPU: `ssh devserver@192.168.1.146` (for M4 species detection)
