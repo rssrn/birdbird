@@ -34,7 +34,8 @@ class BirdbirdPaths:
                 ├── frame_03.jpg
                 ├── metadata.json        (batch metadata)
                 ├── songs.json
-                ├── species.json         (future)
+                ├── species.json
+                ├── best_clips.json      (best time windows per species)
                 └── song_clips/
                     └── *.wav
     """
@@ -58,6 +59,7 @@ class BirdbirdPaths:
     metadata_json: Path
     songs_json: Path
     species_json: Path
+    best_clips_json: Path
     song_clips_dir: Path
 
     @classmethod
@@ -88,6 +90,7 @@ class BirdbirdPaths:
         metadata_json = assets_dir / "metadata.json"
         songs_json = assets_dir / "songs.json"
         species_json = assets_dir / "species.json"
+        best_clips_json = assets_dir / "best_clips.json"
         song_clips_dir = assets_dir / "song_clips"
 
         return cls(
@@ -105,6 +108,7 @@ class BirdbirdPaths:
             metadata_json=metadata_json,
             songs_json=songs_json,
             species_json=species_json,
+            best_clips_json=best_clips_json,
             song_clips_dir=song_clips_dir,
         )
 

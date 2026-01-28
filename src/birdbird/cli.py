@@ -18,6 +18,7 @@ from .paths import BirdbirdPaths
 from .publish import publish_to_r2, extract_date_range
 from .songs import analyze_songs, save_song_detections
 from .species import identify_species, save_species_results
+from .best_clips import find_all_best_clips, save_best_clips
 
 app = typer.Typer(help="Bird feeder video analysis pipeline")
 
@@ -466,6 +467,16 @@ def process(
             save_species_results(species_results, paths.species_json)
 
             typer.echo(f"  Identified {len(species_results.species_summary)} species in {species_results.processing_time_s:.1f}s")
+
+            # Find best clips for each species (for M2.1 seek functionality)
+            typer.echo("  Finding best clips for each species...")
+            try:
+                best_clips = find_all_best_clips(paths.species_json, window_duration_s=14.0)
+                save_best_clips(best_clips, paths.best_clips_json, window_duration_s=14.0)
+                typer.echo(f"  Found best clips for {len(best_clips)} species")
+            except Exception as e:
+                typer.echo(f"  Warning: Could not generate best clips: {e}")
+
             typer.echo("")
 
         except Exception as e:
@@ -488,8 +499,10 @@ def process(
         typer.echo(f"    Songs:        {paths.songs_json}")
     if paths.song_clips_dir.exists() and list(paths.song_clips_dir.glob("*.wav")):
         typer.echo(f"    Song clips:   {paths.song_clips_dir}/")
-    if (input_dir / "species.json").exists():
-        typer.echo(f"  Species:    {input_dir}/species.json")
+    if paths.species_json.exists():
+        typer.echo(f"    Species:      {paths.species_json}")
+    if paths.best_clips_json.exists():
+        typer.echo(f"    Best clips:   {paths.best_clips_json}")
 
 
 @app.command()
@@ -872,6 +885,99 @@ def songs(
 
 
 @app.command()
+def best_clips(
+    input_dir: Path = typer.Argument(..., help="Directory containing species.json"),
+    output: Path = typer.Option(None, "--output", "-o", help="Output JSON path (default: input_dir/birdbird/assets/best_clips.json)"),
+    window_duration: float = typer.Option(14.0, "--window", "-w", help="Window duration in seconds (default: 14)"),
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing best_clips.json without prompting"),
+) -> None:
+    """Find best time windows for each species from species.json.
+
+    Analyzes species detections to find the highest-confidence time windows
+    for each species. Output is used for seek functionality in the viewer.
+
+    Note: Run 'birdbird species' first to generate species.json.
+
+    @author Claude Sonnet 4.5 Anthropic
+    """
+    if not input_dir.is_dir():
+        typer.echo(f"Error: {input_dir} is not a directory", err=True)
+        raise typer.Exit(1)
+
+    paths = BirdbirdPaths.from_input_dir(input_dir)
+
+    # Check if species.json exists (try both locations for compatibility)
+    species_json_path = None
+    if paths.species_json.exists():
+        species_json_path = paths.species_json
+    elif (input_dir / "species.json").exists():
+        species_json_path = input_dir / "species.json"
+
+    if species_json_path is None:
+        typer.echo(f"Error: species.json not found", err=True)
+        typer.echo(f"  Checked: {paths.species_json}", err=True)
+        typer.echo(f"  Checked: {input_dir / 'species.json'}", err=True)
+        typer.echo("Run 'birdbird species' first to generate species data.", err=True)
+        raise typer.Exit(1)
+
+    if output is None:
+        paths.ensure_assets_dirs()
+        output = paths.best_clips_json
+
+    # Check if output file already exists
+    if output.exists():
+        if force:
+            typer.echo(f"Removing existing {output}...")
+            output.unlink()
+            typer.echo("")
+        else:
+            typer.echo(f"Warning: {output} already exists")
+            typer.echo("")
+            typer.echo("Options:")
+            typer.echo("  1. Remove and regenerate (recommended)")
+            typer.echo("  2. Cancel")
+            typer.echo("")
+
+            choice = typer.prompt("Choose option", type=int, default=1)
+
+            if choice == 1:
+                typer.echo(f"Removing {output}...")
+                output.unlink()
+                typer.echo("")
+            else:
+                typer.echo("Cancelled")
+                raise typer.Exit(0)
+
+    typer.echo(f"Finding best clips from {species_json_path}")
+    typer.echo(f"Settings: window_duration={window_duration}s")
+    typer.echo("")
+
+    try:
+        best_clips_data = find_all_best_clips(species_json_path, window_duration_s=window_duration)
+        save_best_clips(best_clips_data, output, window_duration_s=window_duration)
+
+        typer.echo("Results:")
+        typer.echo(f"  Species analyzed:  {len(best_clips_data)}")
+        typer.echo(f"  Window duration:   {window_duration}s")
+        typer.echo(f"  Output:            {output}")
+
+        if best_clips_data:
+            typer.echo("")
+            typer.echo("Best clips:")
+            for species, clip in list(best_clips_data.items())[:10]:
+                typer.echo(f"  {species}: {clip.start_s:.1f}s-{clip.end_s:.1f}s (score: {clip.score:.2f}, {clip.detection_count} detections)")
+            if len(best_clips_data) > 10:
+                typer.echo(f"  ... and {len(best_clips_data) - 10} more species")
+
+    except FileNotFoundError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
+    except Exception as e:
+        typer.echo(f"Error finding best clips: {e}", err=True)
+        raise typer.Exit(1)
+
+
+@app.command()
 def species(
     input_dir: Path = typer.Argument(..., help="Directory containing has_birds/ with highlights.mp4"),
     output: Path = typer.Option(None, "--output", "-o", help="Output JSON path (default: input_dir/species.json)"),
@@ -970,6 +1076,8 @@ def species(
         typer.echo(f"  Processing time:    {results.processing_time_s:.1f}s")
         typer.echo(f"  Species detected:   {len(results.species_summary)}")
         typer.echo(f"  Output:             {output}")
+        typer.echo("")
+        typer.echo("Tip: Run 'birdbird best-clips' to find optimal time windows for each species")
 
         if results.species_summary:
             typer.echo("")
