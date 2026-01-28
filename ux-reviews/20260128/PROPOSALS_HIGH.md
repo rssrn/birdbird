@@ -1,6 +1,7 @@
 # BirdBird UX Improvement Proposals - High Priority
 
 ## Status Legend
+
 - 🔵 Proposed - awaiting decision
 - 🔵 Proposed / QuickWin - can be implemented with HTML/CSS/JS only (no backend changes)
 - ✅ Accepted - approved for implementation
@@ -18,6 +19,7 @@
 Add a summary card at the top of each view showing key metrics for the selected date range: total species detected, most common species, any first-time/rare sightings, and audio-only detections count.
 
 **Rationale:**
+
 - Dramatically improves first-time comprehension (ChatGPT: "Very High Impact")
 - Provides immediate "bird's-eye view" before diving into detailed stats
 - Helps users quickly understand "what happened today" without scrolling through all data
@@ -27,6 +29,7 @@ Add a summary card at the top of each view showing key metrics for the selected 
 **Suggested by:** ChatGPT (Strategic Enhancement #7.1), Gemini 3 (Overview card), Claude Opus 4.5 (implicit in framing concerns)
 
 **Implementation approach:**
+
 - Create summary component that appears above tabs or at top of each tab
 - Calculate metrics: unique species count, top species by detection count, new species (first appearance in date range)
 - Consider showing "Audio-only: N species" to highlight off-camera detections
@@ -46,6 +49,7 @@ Add a summary card at the top of each view showing key metrics for the selected 
 Add context at the top of Video Stats and Audio Stats showing the denominator: "234 motion clips analysed · 312 total detections" or "498 clips analysed · 87 audio detections in 42 clips".
 
 **Rationale:**
+
 - "115 Blue Tit detections" sounds impressive but lacks context (ChatGPT #4.1)
 - Users don't know if this is over 10 clips or 1000 clips, 1 hour or 24 hours
 - Helps users understand detection density and reliability
@@ -54,6 +58,7 @@ Add context at the top of Video Stats and Audio Stats showing the denominator: "
 **Suggested by:** ChatGPT (#4.1 Counts Without Context)
 
 **Implementation approach:**
+
 - Add summary line above species lists in Video Stats and Audio Stats
 - For Video Stats: total clips processed, total detection count across all species
 - For Audio Stats: total clips analysed, total vocalizations detected, number of clips with audio
@@ -66,12 +71,13 @@ Add context at the top of Video Stats and Audio Stats showing the denominator: "
 
 ### HIGH-03: Improve Cross-View Species Linking
 
-**Status:** 🔵 Proposed / QuickWin
+**Status:** ❌ Rejected / QuickWin
 
 **Description:**
 Enable navigation between related species detections across views. If a Blue Tit appears in Video Stats, show an indicator that it was also heard in Audio Stats, with a link to jump to that species in the other view.
 
 **Rationale:**
+
 - Currently audio and video stats are siloed (Claude Opus 4.5)
 - Users want to know "What did I see vs. what did I hear?" (Gemini 3)
 - Creates a more cohesive story of each bird's visit
@@ -80,6 +86,7 @@ Enable navigation between related species detections across views. If a Blue Tit
 **Suggested by:** Claude Opus 4.5 (Cross-referencing), Gemini 3 (Audio/Video Comparison), ChatGPT (implicit in data relationship concerns)
 
 **Implementation approach:**
+
 - Add small icon/badge next to species name in Video Stats if that species also appears in Audio Stats
 - Add similar icon in Audio Stats if species appears in Video Stats
 - Make icons clickable to jump to corresponding tab + scroll to that species
@@ -88,18 +95,21 @@ Enable navigation between related species detections across views. If a Blue Tit
 
 **Response:**
 
+Not entirely convinced - the audio is ambient so doesn't directly relate to the visuals, so it actually makes sense to keep them disparate and not link them. The fact that the audio doesn't directly relate to the visuals is already explained in the text.
+
 ---
 
 ## Video Stats View
 
 ### HIGH-04: Group Rare Species Detections
 
-**Status:** 🔵 Proposed / QuickWin
+**Status:** ✅ Accepted / QuickWin
 
 **Description:**
 Collapse or group species with only 1-2 detections into an expandable "Rare Visitors" or "Also Detected" section. This reduces the long tail of single-detection species that creates excessive scrolling and visual noise.
 
 **Rationale:**
+
 - Reduces cognitive load by de-emphasizing low-confidence, single-occurrence data
 - Improves scannability by making dominant species more prominent
 - Multiple reports (ChatGPT, Claude Opus, Gemini) identified this as the "long tail problem"
@@ -109,6 +119,7 @@ Collapse or group species with only 1-2 detections into an expandable "Rare Visi
 **Suggested by:** ChatGPT (#4.2, #3.1), Claude Opus 4.5 (#24), Gemini 3 (#3, Priority Win #3) - consensus across all three AI reviews
 
 **Implementation approach:**
+
 - Add threshold logic (e.g., count <= 2 or count < 3)
 - Create collapsible `<details>` section with summary text (e.g., "5 rare species (1-2 detections each) - click to expand")
 - Consider separate treatment for low-confidence (<60%) vs high-confidence rare detections
@@ -116,6 +127,8 @@ Collapse or group species with only 1-2 detections into an expandable "Rare Visi
 - Collapsed by default, remembers state in localStorage
 
 **Response:**
+
+I don't necessarily agree with "Users likely care most about frequent visitors" - rare birds are interesting! However, often these are low confidence so become less interesting. Seems reasonable, I'd go for count <=2 and the summary text seems OK. We could consider highlighting high-confidence rare detections in some way, on all 3 tabs.
 
 ---
 
@@ -127,6 +140,7 @@ Collapse or group species with only 1-2 detections into an expandable "Rare Visi
 Replace percentage ranges (e.g., "53-100%") with simpler confidence visualization: show median confidence with min/max on hover, or use qualitative labels (High/Medium/Low confidence).
 
 **Rationale:**
+
 - Ranges like "53-100%" are technically accurate but cognitively noisy (ChatGPT #4.3)
 - Creates visual clutter that competes with the more important detection counts
 - Users care more about "Was this definitely a Blue Tit?" than mathematical ranges
@@ -135,6 +149,7 @@ Replace percentage ranges (e.g., "53-100%") with simpler confidence visualizatio
 **Suggested by:** ChatGPT (#4.3, #3.2), Claude Opus 4.5 (#15), Gemini 3 (#40)
 
 **Implementation approach:**
+
 - Option A: Show median confidence prominently, display full range on hover/tooltip
 - Option B: Use qualitative labels (⭐⭐⭐ High, ⭐⭐ Medium, ⭐ Low confidence)
 - Option C: Visual indicator within the bar itself (gradient or opacity variation)
@@ -144,18 +159,21 @@ Replace percentage ranges (e.g., "53-100%") with simpler confidence visualizatio
 
 **Response:**
 
+It's a fair point, although as a technical user I'd find it hard to accept the loss of nuance. Maybe needs some more thought. Who are our audience?
+
 ---
 
 ## Highlights View
 
 ### HIGH-06: Add Video Context Header
 
-**Status:** 🔵 Proposed / QuickWin
+**Status:** 🔵 ✅ Accepted with modifications / QuickWin
 
 **Description:**
 Add a prominent context header above the video player showing the current species, confidence, date/time, and other key metadata instead of requiring users to expand "Batch Information" accordion.
 
 **Rationale:**
+
 - Video currently appears without enough explanatory framing (ChatGPT #5.2)
 - Date/time stamp is baked into video feed and hard to read (Gemini 3)
 - "Batch Information" is hidden but likely contains important context (Claude Opus 4.5, Gemini 3)
@@ -164,6 +182,7 @@ Add a prominent context header above the video player showing the current specie
 **Suggested by:** ChatGPT (#5.2), Gemini 3 (#26), Claude Opus 4.5 (#38)
 
 **Implementation approach:**
+
 - Add header above video player with format: "Blue Tit · 94% confidence · 26 Jan, 09:14 · 12s clip"
 - Surface key metadata inline: species name (large), confidence tier badge, timestamp, clip duration
 - Remove or de-emphasize the collapsed "Batch Information" accordion
@@ -171,6 +190,8 @@ Add a prominent context header above the video player showing the current specie
 - Update when user clicks different species in sidebar
 
 **Response:**
+
+This is partly a misunderstanding i.e. Batch Information does NOT show the current species, it's just stats for the whole tab (I didn't show them a screenshot of it expanded, my mistake). Asking for "clip duration" also doesn't make sense because we are seeking to points, not navigating to different clips. What I think we should do is highlight whatever button was clicked on - currently there's no indication. Even consider removing the highlight once the player has passed outside the 14-second window we identified for that species. Moving batch information to make it obvious it relates to the whole batch would be a good idea too - I just noticed the batch info only appears in the highlights tab so the confusion is understandable.
 
 ---
 
@@ -184,6 +205,7 @@ Add a prominent context header above the video player showing the current specie
 Add tooltips to audio playback controls and improve their visual prominence. Make it clear these buttons play actual bird vocalizations captured off-camera.
 
 **Rationale:**
+
 - Playback controls are small and their purpose isn't entirely clear (Claude Opus 4.5)
 - Icons (play, waveform, speaker, menu) are compact but ambiguous (ChatGPT #3.3)
 - This is "a lovely feature that deserves more prominence" (Claude Opus 4.5)
@@ -192,6 +214,7 @@ Add tooltips to audio playback controls and improve their visual prominence. Mak
 **Suggested by:** ChatGPT (#3.3 Audio Controls), Claude Opus 4.5 (#17)
 
 **Implementation approach:**
+
 - Add aria-labels and visible tooltips on hover (e.g., "Play vocalization", "View spectrogram")
 - Increase clickable area around small icons
 - Consider consolidating controls (e.g., merge play + waveform into single "Play with visualization" button)
