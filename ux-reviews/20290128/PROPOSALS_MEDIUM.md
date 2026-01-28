@@ -2,6 +2,7 @@
 
 ## Status Legend
 - 🔵 Proposed - awaiting decision
+- 🔵 Proposed / QuickWin - can be implemented with HTML/CSS/JS only (no backend changes)
 - ✅ Accepted - approved for implementation
 - ❌ Rejected - declined
 
@@ -11,7 +12,7 @@
 
 ### MED-01: Add Tab Explainer Subtitles
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Add one-line explanatory subtitles below each tab name to clarify what each view shows:
@@ -65,7 +66,7 @@ Enhance date navigation by adding metadata under each date button (e.g., "142 cl
 
 ### MED-03: Explain Relationship Between Views
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Add introductory element or FAQ explaining why Video Stats and Audio Stats show different species lists, and what the detection methods reveal about bird behavior.
@@ -90,7 +91,7 @@ Add introductory element or FAQ explaining why Video Stats and Audio Stats show 
 
 ### MED-04: Clarify "Detection" Definition
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Explain what a "detection" represents in video terms - one frame, one continuous appearance, or one event. Add this explanation near the stats displays.
@@ -117,7 +118,7 @@ Explain what a "detection" represents in video terms - one frame, one continuous
 
 ### MED-05: Add Species List Sorting Options
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Allow users to sort the species list by count (default), by confidence level, or alphabetically. Add subtle sorting controls above the list.
@@ -145,7 +146,7 @@ Allow users to sort the species list by count (default), by confidence level, or
 
 ### MED-06: Improve Species Navigation Affordance
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin (Options B, C, D only)
 
 **Description:**
 Make the clickable species list more obviously interactive. Add thumbnails, enhanced hover states, or show key metadata (confidence %, duration, time of day) to make the navigation richer.
@@ -172,7 +173,7 @@ Make the clickable species list more obviously interactive. Add thumbnails, enha
 
 ### MED-07: Standardize Confidence Tier System
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Apply the confidence tier system (Very Probable / Probable / Possible) consistently across all views, not just Highlights. Update Video Stats and Audio Stats to use the same language.
@@ -228,7 +229,7 @@ Display small waveform visualizations next to each species in the Audio Stats vi
 
 ### MED-09: Group Audio Detections by Frequency
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Introduce grouping or thresholds in Audio Stats similar to Video Stats: "Common vocalizations" (5+), "Occasional" (2-4), "Single detections" (1). This mirrors the rare species grouping proposal for Video Stats.
@@ -253,7 +254,7 @@ Introduce grouping or thresholds in Audio Stats similar to Video Stats: "Common 
 
 ### MED-10: Improve Confidence Representation in Audio
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Add qualitative confidence labels or visual indicators to Audio Stats. Show median confidence prominently with full range on hover, similar to Video Stats improvements in HIGH-05.

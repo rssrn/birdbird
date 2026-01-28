@@ -2,6 +2,7 @@
 
 ## Status Legend
 - 🔵 Proposed - awaiting decision
+- 🔵 Proposed / QuickWin - can be implemented with HTML/CSS/JS only (no backend changes)
 - ✅ Accepted - approved for implementation
 - ❌ Rejected - declined
 
@@ -11,7 +12,7 @@
 
 ### LOW-01: Progressive Disclosure / Beginner Mode
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Add a toggle between "Beginner" and "Advanced" modes. Beginner mode shows summaries and highlights with simplified confidence labels. Advanced mode shows full stats, confidence ranges, model details, and technical information.
@@ -202,7 +203,7 @@ When showing a detection, optionally display the top 2-3 alternative species if 
 
 ### LOW-08: Add Batch Information Visibility Controls
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Determine whether "Batch Information" accordion should be expanded by default, more prominent, or removed. If it contains interesting metadata (weather, recording time), surface it; if purely technical, keep collapsed.
@@ -230,7 +231,7 @@ Determine whether "Batch Information" accordion should be expanded by default, m
 
 ### LOW-09: Add Secondary Visual Indicator for Confidence
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Ensure confidence bars use a secondary visual indicator (pattern, numerical label, or shape) in addition to color, for users with color vision deficiencies.
@@ -257,7 +258,7 @@ Ensure confidence bars use a secondary visual indicator (pattern, numerical labe
 
 ### LOW-10: Improve Empty State Messages
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 If a user clicks a date with no audio detections or no video detections, show a friendly empty state message (e.g., "It was a quiet day!" or "No birds detected in this batch") instead of blank screen.
@@ -286,7 +287,7 @@ If a user clicks a date with no audio detections or no video detections, show a 
 
 ### LOW-11: Custom Audio Player Styling
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Replace default browser audio player controls with custom-styled player that matches the site's aesthetic. Use modern, minimal play/pause toggle instead of standard controls.
@@ -315,7 +316,7 @@ Replace default browser audio player controls with custom-styled player that mat
 
 ### LOW-12: Mobile Optimization
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Ensure horizontal bars and sidebar lists work well on mobile devices. Move species list below video player on small screens, ensure touch targets are large enough, optimize for vertical scrolling.
@@ -342,7 +343,7 @@ Ensure horizontal bars and sidebar lists work well on mobile devices. Move speci
 
 ### LOW-13: WCAG Accessibility Compliance
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Audit and improve accessibility: ensure sufficient color contrast (WCAG AA standards), add alt text to all images, verify keyboard navigation works, add ARIA labels to icon-only controls, support screen readers.
@@ -372,7 +373,7 @@ Audit and improve accessibility: ensure sufficient color contrast (WCAG AA stand
 
 ### LOW-14: Reduced Motion Mode
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Respect user's prefers-reduced-motion setting. Disable or reduce animations, auto-play, and other motion effects for users who have enabled reduced motion in their OS settings.

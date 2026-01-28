@@ -2,6 +2,7 @@
 
 ## Status Legend
 - 🔵 Proposed - awaiting decision
+- 🔵 Proposed / QuickWin - can be implemented with HTML/CSS/JS only (no backend changes)
 - ✅ Accepted - approved for implementation
 - ❌ Rejected - declined
 
@@ -65,7 +66,7 @@ Add context at the top of Video Stats and Audio Stats showing the denominator: "
 
 ### HIGH-03: Improve Cross-View Species Linking
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Enable navigation between related species detections across views. If a Blue Tit appears in Video Stats, show an indicator that it was also heard in Audio Stats, with a link to jump to that species in the other view.
@@ -93,7 +94,7 @@ Enable navigation between related species detections across views. If a Blue Tit
 
 ### HIGH-04: Group Rare Species Detections
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Collapse or group species with only 1-2 detections into an expandable "Rare Visitors" or "Also Detected" section. This reduces the long tail of single-detection species that creates excessive scrolling and visual noise.
@@ -120,7 +121,7 @@ Collapse or group species with only 1-2 detections into an expandable "Rare Visi
 
 ### HIGH-05: Simplify Confidence Range Display
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Replace percentage ranges (e.g., "53-100%") with simpler confidence visualization: show median confidence with min/max on hover, or use qualitative labels (High/Medium/Low confidence).
@@ -149,7 +150,7 @@ Replace percentage ranges (e.g., "53-100%") with simpler confidence visualizatio
 
 ### HIGH-06: Add Video Context Header
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Add a prominent context header above the video player showing the current species, confidence, date/time, and other key metadata instead of requiring users to expand "Batch Information" accordion.
@@ -177,7 +178,7 @@ Add a prominent context header above the video player showing the current specie
 
 ### HIGH-07: Clarify Audio Control Purpose
 
-**Status:** 🔵 Proposed
+**Status:** 🔵 Proposed / QuickWin
 
 **Description:**
 Add tooltips to audio playback controls and improve their visual prominence. Make it clear these buttons play actual bird vocalizations captured off-camera.
