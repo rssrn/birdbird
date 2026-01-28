@@ -1,0 +1,1 @@
+Act as a UX consultant. Analyse these 3 screenshots of the 3 main views from https://birdbird.rossarn.workers.dev/ and suggest improvements to the info displayed, layout, interface, and other aspects a UX consultant might highlight.

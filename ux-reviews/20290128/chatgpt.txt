@@ -1,0 +1,349 @@
+Below is a structured UX review of the three primary views (Highlights, Video Stats, Audio Stats), written from the perspective of a UX consultant evaluating an early–mid stage data-rich product. I’ll focus on information design, layout, interaction patterns, clarity, and trust, and I’ll distinguish quick wins from deeper design opportunities.
+
+1. Overall Product & UX Framing
+What works well
+
+Clear purpose: “Bird Feeder Highlights” and the subtitle (“Automated bird activity highlights…”) immediately communicate intent.
+
+Consistent visual language: Calm, natural palette fits the subject matter; nothing visually jarring.
+
+Structured navigation: Date ranges + tabs (Highlights / Video Stats / Audio Stats) are familiar and predictable.
+
+Credibility signals: Confidence percentages, model names, and dataset attribution reinforce trust.
+
+High-level UX risks
+
+Cognitive load: The interface is information-dense without enough summarisation or hierarchy.
+
+Expert bias: Model-related terms (YOLOv8, BioCLIP, confidence ranges) are accurate but may overwhelm non-technical users.
+
+Ambiguity between “detections”, “counts”, and “confidence”: Users may not fully understand what numbers represent in real-world terms.
+
+2. Global Navigation & Layout
+Date Range Selector (Top)
+
+Strengths
+
+Clearly scoped time windows
+
+Active date visually highlighted
+
+Issues
+
+Looks like tabs, behaves like filters → conceptual mismatch
+
+No indication of:
+
+Total activity per date
+
+Whether data volume differs significantly between ranges
+
+Improvements
+
+Add light metadata under each date (e.g. “142 clips”, “23 detections”)
+
+Consider a dropdown + calendar picker for advanced users
+
+Visually separate date navigation from content tabs (they currently compete)
+
+Tabs: Highlights / Video Stats / Audio Stats
+
+Strengths
+
+Logical segmentation
+
+Persistent across views (good spatial memory)
+
+Improvements
+
+Add 1-line explainer subtitle per tab, e.g.:
+
+Highlights: “Best examples per species”
+
+Video Stats: “On-camera visual detections”
+
+Audio Stats: “Off-camera sound detections”
+
+Consider badges (e.g. “13 species”, “4 vocal species”) to aid scanning
+
+3. Audio Stats View (Screenshot 1)
+What works
+
+Clear distinction that these are off-camera vocalisations
+
+Ranking by frequency is intuitive
+
+Confidence ranges communicate uncertainty well
+
+Issues & Opportunities
+3.1 Information Density
+
+Long vertical list with similar visual weight
+
+Rare detections (1 count) look equally important as dominant ones
+
+Improvements
+
+Introduce grouping or thresholds, e.g.:
+
+“Common vocalisations”
+
+“Occasional”
+
+“Single detections”
+
+Collapse species with count = 1 into an expandable section
+
+3.2 Confidence Representation
+
+Confidence ranges (e.g. 55–94%) are accurate but abstract
+
+Improvements
+
+Add qualitative labels:
+
+High confidence
+
+Mixed confidence
+
+Low confidence
+
+Or show a median confidence dot inside the bar
+
+3.3 Audio Controls
+
+Icons (play, waveform, speaker, menu) are compact but ambiguous
+
+Issues
+
+Unclear difference between:
+
+Play vs waveform
+
+Speaker vs play
+
+Improvements
+
+Add tooltips on hover
+
+Consider merging play + waveform into a single audio preview control
+
+Highlight which clip is “best example”
+
+4. Video Stats View (Screenshot 2)
+What works
+
+Strong scannability: counts + bars make dominance obvious
+
+Blue Tit / Great Tit dominance immediately clear
+
+Confidence ranges feel more credible for visual ID
+
+Issues & Improvements
+4.1 Counts Without Context
+
+“115 Blue Tit detections” sounds impressive, but:
+
+Over how many clips?
+
+Over how many hours?
+
+Same individual or multiple?
+
+Improvements
+
+Add contextual framing at top:
+
+“234 motion clips analysed · 312 total detections”
+
+Consider optional normalisation:
+
+Detections per day
+
+% of total detections
+
+4.2 Species List Length
+
+Long tail of single detections visually competes with common species
+
+Improvements
+
+Visually de-emphasise rare species (lighter text, grouped section)
+
+Allow sorting:
+
+By count
+
+By confidence
+
+Alphabetically
+
+4.3 Confidence Ranges
+
+Ranges like “53–100%” are technically sound but cognitively noisy
+
+Improvements
+
+Replace ranges with:
+
+Median confidence + min/max on hover
+
+Or a small sparkline-style confidence indicator
+
+5. Highlights View (Screenshot 3)
+
+This is the most emotionally engaging view — and the one with the biggest UX opportunity.
+
+What works
+
+Video preview is central and visually dominant (correct priority)
+
+Species list on the left provides fast navigation
+
+Probability labels (Very Probable / Probable / Possible) are excellent
+
+Key Issues & Improvements
+5.1 Species Navigation (Left Panel)
+
+Issues
+
+Repeated species list across tabs feels redundant
+
+Users don’t know why one clip is chosen as “best”
+
+Improvements
+
+Add microcopy:
+
+“Best-confidence clip per species”
+
+Show:
+
+Confidence %
+
+Duration
+
+Time of day
+
+Allow filtering:
+
+“Show only Very Probable”
+
+5.2 Video Player Context
+
+Issues
+
+The video appears without enough explanatory framing
+
+“Batch Information” is hidden, but likely important
+
+Improvements
+
+Add a context header above video:
+
+Blue Tit · 94% confidence · 26 Jan, 09:14
+
+Surface key metadata inline, not hidden:
+
+Detection confidence
+
+Clip length
+
+Detection method (vision)
+
+5.3 Trust & Interpretation
+
+Users may wonder:
+
+“How confident should I really be this is a Blue Tit?”
+
+Improvements
+
+Add a subtle confidence explainer tooltip:
+
+“Confidence reflects model agreement, not certainty”
+
+Optionally show top 2 alternative species if close
+
+6. Accessibility & Usability
+Accessibility Positives
+
+High contrast text
+
+Clear typography
+
+Logical reading order
+
+Improvements
+
+Ensure all icon-only controls have:
+
+ARIA labels
+
+Keyboard focus states
+
+Increase clickable area on small icons
+
+Consider a reduced-motion or “data-only” mode
+
+7. Strategic UX Enhancements (Beyond UI Polish)
+7.1 Summary Layer (Very High Impact)
+
+Add a daily/period summary card at the top of each date:
+
+“14 species detected”
+
+“Most common: Blue Tit”
+
+“New this period: Marsh Tit”
+
+“Audio-only detections: 8”
+
+This dramatically improves first-time comprehension.
+
+7.2 Progressive Disclosure
+
+Right now, everything is visible immediately.
+
+Introduce:
+
+Beginner mode: summaries + highlights
+
+Advanced mode: full stats, confidence ranges, model details
+
+7.3 Narrative Framing
+
+You’re sitting on a storytelling product.
+
+Examples:
+
+“This week, Blue Tits dominated the feeder, with a rare Marsh Tit appearance.”
+
+“Audio picked up a Green Sandpiper overnight — no visual confirmation.”
+
+This turns data into insight.
+
+Final Assessment
+
+Overall UX maturity: 7.5 / 10
+
+Technically credible
+
+Visually calm and consistent
+
+Strong foundations for trust and exploration
+
+Main UX opportunity:
+👉 Reduce cognitive load and add interpretive scaffolding — help users understand what matters without reading everything.
+
+If you’d like, next steps could include:
+
+A reworked wireframe for one view
+
+A persona-based critique (casual birder vs data enthusiast)
+
+Copywriting improvements for clarity and tone
+
+A prioritised UX backlog (quick wins vs structural changes)
+
+Just say how deep you want to go.

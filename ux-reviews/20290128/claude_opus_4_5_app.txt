@@ -1,0 +1,37 @@
+UX Analysis: Bird Feeder Highlights
+This is a nicely designed application with a clear purpose and pleasant aesthetic. I'll offer some observations and suggestions across several dimensions.
+
+Information Architecture
+What's working well: The three-tab structure (Highlights, Video Stats, Audio Stats) provides logical separation of content types, and the date range selector at the top establishes clear temporal context.
+Opportunities:
+The relationship between the three views isn't immediately obvious. A first-time visitor might wonder: why are there different species lists on Video Stats versus Audio Stats? The explanatory text helps ("Birds were likely off-camera" for audio), but this could be surfaced more prominently or explained in an introductory element.
+Consider whether "Highlights" is the right label for what appears to be a video player with species detections. "Live View" or "Video Clips" might be more descriptive. Alternatively, if this is meant to be a curated "best of" view, that distinction could be clearer.
+The confidence tiers in Highlights (Very Probable / Probable / Possible) don't appear in the stats views, where you instead show percentage ranges. This inconsistency might confuse users trying to understand what the confidence levels mean across the application.
+
+Visual Hierarchy & Layout
+Highlights view: The split layout with species list on the left and video on the right works well on desktop. However, the species list is quite long (13 items visible) and could benefit from being collapsible by tier, or showing only the top detections with an expandable "show more" option.
+Stats views: The horizontal bar charts are readable, but the information density is quite high. Some suggestions:
+The confidence range (e.g., "53-100%") appearing to the right of the count creates a lot of visual noise. Consider showing confidence only on hover or tap, or representing it visually within the bar itself (perhaps as a gradient or opacity variation).
+The playback controls (play, minus, speaker icons) on the Audio Stats view are small and their purpose isn't entirely clear from the screenshot. Are these for playing the actual vocalisations? If so, that's a lovely feature that deserves more prominence.
+
+Interaction Design
+Date navigation: The date range buttons work, but there's no obvious way to jump to a specific date or see a longer time range. For users wanting to track patterns over time (which seems like a natural use case for bird watching), consider adding a calendar picker or a "view all time" summary option.
+Species as links: In the Highlights view, you can click species to "jump to best sighting" – this is useful but the affordance is subtle. The chevrons help, but the text instruction "Click to jump to best sighting" is easy to miss.
+Cross-referencing: If I see a Blue Tit in the video stats and want to hear its call, or vice versa, there's no obvious way to navigate between related detections. Linking species across views could be valuable.
+
+Data Presentation
+Discrepancies between views: The Video Stats shows Blue Tit with 115 detections as the clear winner, while Audio Stats shows Common Wood-Pigeon with 19 vocalisations. This is interesting data! But it might leave users wondering whether these are genuinely different patterns or whether the detection methods have different sensitivities. A brief explanation of why these differ (visual vs audio detection, different species vocalise more, etc.) could add educational value.
+The single-detection species: Several species appear with just 1 detection at relatively low confidence (51-65%). Consider whether these add value or create noise. You might group these as "Also detected (unconfirmed)" or require a minimum confidence threshold for inclusion.
+Missing context: What does a "detection" represent in video terms? One frame? One continuous appearance? Knowing this would help users interpret the numbers meaningfully.
+
+Accessibility & Usability
+The colour scheme is pleasant and the green palette is thematically appropriate. However, the confidence bars all use similar green shades, which might be difficult to distinguish for users with colour vision deficiencies. Consider adding a secondary visual indicator (pattern, or numerical label) for the confidence level.
+The "Batch Information" accordion at the bottom of the Highlights view is collapsed by default – if this contains useful metadata, consider whether it should be more visible.
+
+Feature Suggestions
+Trends over time: Given you have multiple date ranges, a simple "what's new this week" or "first sighting of the season" indicator could delight bird watchers who are tracking their garden's biodiversity.
+Export/share: Bird watchers often keep life lists or share sightings. An export function or social sharing for notable detections could increase engagement.
+Notification of unusual species: If the system detects something rare for your location (a Brambling at 61% confidence is noteworthy!), highlighting this could add excitement.
+
+Summary
+The application has solid bones – it's visually cohesive, the core functionality is clear, and the data presentation is generally sensible. The main areas for improvement are around helping users understand the relationship between the three views, reducing visual complexity in the stats tables, and adding features that support the "bird watching journey" (trends, comparisons, sharing). The confidence tier system could also be made more consistent across views.
