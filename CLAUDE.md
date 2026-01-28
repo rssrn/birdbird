@@ -89,6 +89,22 @@ src/birdbird/
 
 **Viewer development**: Use `npx serve -l 3000 src/birdbird/templates` to test viewer changes locally without deploying. Viewer fetches directly from R2 bucket (requires CORS configuration allowing localhost:3000). After confirming changes, copy to birdbird-website repo and push to deploy.
 
+**Chrome headless screenshots**: When evaluating viewer designs or capturing UI state, use Chrome headless mode:
+```bash
+# Basic screenshot
+google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,900 http://localhost:3000/viewer.html 2>/dev/null
+
+# For pages that need load time (JavaScript content)
+google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,2400 --virtual-time-budget=5000 http://localhost:3000/viewer.html 2>/dev/null
+
+# For specific tabs or query parameters
+google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,2400 --virtual-time-budget=5000 'http://localhost:3000/viewer.html?tab=audio' 2>/dev/null
+```
+- Use `--virtual-time-budget=5000` (5 seconds) to allow async content to load
+- Larger `--window-size` (e.g., 1400x2400) captures more of the page
+- Always use single quotes around URLs with query parameters to avoid shell issues
+- The `2>/dev/null` suppresses Chrome's stderr output
+
 **Songs approach**: Extracts audio from AVI files to temporary WAV files (ffmpeg), runs BirdNET-Analyzer for bird vocalization detection. Outputs songs.json with all detections including species (common/scientific names), confidence, filename, and timestamps. Configurable confidence threshold (default 0.25). Location filtering available via --lat/--lon for regional species filtering.
 
 **Configuration**: User settings stored in `~/.birdbird/config.json`. Currently supports:
