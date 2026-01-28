@@ -14,3 +14,6 @@ build/
 # IDE
 .idea/
 .vscode/
+
+# Editor temp files
+*~
