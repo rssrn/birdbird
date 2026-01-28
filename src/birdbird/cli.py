@@ -338,6 +338,7 @@ def process(
             paths.songs_json.unlink()
 
         try:
+            import time
             songs_start = time.perf_counter()
             songs_results = analyze_songs(
                 input_dir=input_dir,
