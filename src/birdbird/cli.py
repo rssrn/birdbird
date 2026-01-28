@@ -13,7 +13,6 @@ import typer
 from .config import get_location, get_species_config
 from .filter import filter_clips
 from .highlights import generate_highlights, get_video_duration
-from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata
 from .paths import BirdbirdPaths
 from .publish import publish_to_r2, extract_date_range
 from .songs import analyze_songs, save_song_detections
@@ -46,13 +45,6 @@ def write_local_metadata(paths: BirdbirdPaths, input_dir: Path) -> None:
     original_date = extract_original_date(input_dir)
     start_date, end_date = extract_date_range(input_dir, original_date)
 
-    # Read frame scores if available
-    frame_count = 0
-    if paths.frame_scores_json.exists():
-        with open(paths.frame_scores_json) as f:
-            frame_data = json.load(f)
-            frame_count = len(frame_data.get("frames", []))
-
     # Read songs if available
     song_species = []
     if paths.songs_json.exists():
@@ -74,7 +66,6 @@ def write_local_metadata(paths: BirdbirdPaths, input_dir: Path) -> None:
         "end_date": end_date,
         "created_at": datetime.now().isoformat(),
         "clips": clip_count,
-        "frames": frame_count,
         "songs": {
             "species_count": len(song_species),
             "species_list": song_species,
@@ -204,7 +195,6 @@ def process(
     buffer_after: float = typer.Option(1.0, "--buffer-after", help="Seconds after last bird detection"),
     threads: int = typer.Option(2, "--threads", "-t", help="Max ffmpeg threads (default 2 for low-power systems)"),
     song_threads: int = typer.Option(2, "--song-threads", help="CPU threads for BirdNET"),
-    top_n: int = typer.Option(20, "--top-n", "-n", help="Number of top frames to extract"),
     lat: float = typer.Option(None, "--lat", help="Latitude for species filtering (default: from config)"),
     lon: float = typer.Option(None, "--lon", help="Longitude for species filtering (default: from config)"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
@@ -213,7 +203,7 @@ def process(
     no_song_clips: bool = typer.Option(False, "--no-song-clips", help="Skip extracting audio clips for each species"),
     run_species: bool = typer.Option(None, "--species/--no-species", help="Run visual species identification (default: from config)"),
 ) -> None:
-    """Filter clips, generate highlights reel, extract top frames, analyze songs, and optionally identify species.
+    """Filter clips, generate highlights reel, analyze songs, and optionally identify species.
 
     By default, optimizes for web viewing (1440x1080 @ 24fps, smaller files).
     Use --highest-quality for maximum quality (30fps, larger files).
@@ -230,15 +220,15 @@ def process(
         species_config = get_species_config()
         run_species = species_config.enabled
 
-    # Estimate total time: ~2.3s filter + ~5s highlights + ~0.5s frames per clip with birds (~30% detection rate)
+    # Estimate total time: ~2.3s filter + ~5s highlights per clip with birds (~30% detection rate)
     clips = sorted(input_dir.glob("*.avi"))
     clip_count = min(len(clips), limit) if limit else len(clips)
     est_bird_clips = int(clip_count * 0.3)  # Assume ~30% have birds
-    est_seconds = clip_count * 2.3 + est_bird_clips * (5 + 0.5)
+    est_seconds = clip_count * 2.3 + est_bird_clips * 5
     est_minutes = est_seconds / 60
 
     typer.echo(f"Processing {clip_count} clips (estimated {est_minutes:.1f} minutes total)")
-    typer.echo(f"Settings: bird_conf={bird_confidence}, top_n={top_n}")
+    typer.echo(f"Settings: bird_conf={bird_confidence}")
     typer.echo("")
 
     # Check if birdbird directory already exists with content
@@ -283,7 +273,7 @@ def process(
     typer.echo("")
 
     # Determine total steps
-    total_steps = 5 if run_species else 4
+    total_steps = 4 if run_species else 3
 
     # Step 1: Filter
     typer.echo(f"Step 1/{total_steps}: Filtering clips...")
@@ -328,76 +318,8 @@ def process(
         typer.echo(f"Error generating highlights: {e}", err=True)
         raise typer.Exit(1)
 
-    # Step 3: Extract frames
-    typer.echo(f"Step 3/{total_steps}: Extracting top frames...")
-
-    # Track total wall clock time for frames
-    import time
-    start_time = time.perf_counter()
-
-    # Scoring weights (tunable parameters)
-    weights = {
-        "bird_size": 0.25,    # Large birds are more visually impressive
-        "sharpness": 0.30,    # Sharp focus important for quality
-        "confidence": 0.25,   # Detection confidence
-        "position": 0.20,     # Binary penalty for edge-clipped birds
-    }
-
-    # Extract and score
-    from .detector import BirdDetector
-    from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata, copy_top_frames_to_assets
-
-    detector = BirdDetector(
-        bird_confidence=bird_confidence,
-    )
-
-    try:
-        scored_frames, timing_stats = extract_and_score_frames(
-            input_dir=input_dir,
-            detector=detector,
-            weights=weights,
-            limit=None,  # Process all clips from filter step
-            paths=paths,
-        )
-
-        if not scored_frames:
-            typer.echo("  No frames found to score")
-        else:
-            # Save top N frames to working directory
-            saved_paths = save_top_frames(
-                frames=scored_frames,
-                clips_dir=paths.clips_dir,
-                output_dir=paths.frames_candidates_dir,
-                top_n=top_n,
-            )
-
-            # Save metadata
-            save_frame_metadata(
-                frames=scored_frames[:top_n],
-                timing_stats=timing_stats,
-                output_path=paths.frame_scores_json,
-                config={"weights": weights, "top_n": top_n},
-            )
-
-            # Copy top 3 frames to assets
-            asset_frames = copy_top_frames_to_assets(
-                frame_scores_path=paths.frame_scores_json,
-                candidates_dir=paths.frames_candidates_dir,
-                assets_dir=paths.assets_dir,
-                top_n=3,
-            )
-
-            elapsed_seconds = time.perf_counter() - start_time
-            typer.echo(f"  Extracted {len(saved_paths)} frames ({len(asset_frames)} to assets) in {format_duration(elapsed_seconds)}")
-
-        typer.echo("")
-
-    except ValueError as e:
-        typer.echo(f"Error extracting frames: {e}", err=True)
-        raise typer.Exit(1)
-
-    # Step 4: Analyze songs
-    typer.echo(f"Step 4/{total_steps}: Analyzing bird songs...")
+    # Step 3: Analyze songs
+    typer.echo(f"Step 3/{total_steps}: Analyzing bird songs...")
 
     # Apply config defaults for location if not provided on CLI
     if lat is None and lon is None:
@@ -441,9 +363,9 @@ def process(
             typer.echo("  Continuing without songs data")
             typer.echo("")
 
-    # Step 5: Species identification (optional)
+    # Step 4: Species identification (optional)
     if run_species:
-        typer.echo("Step 5/5: Identifying species (remote GPU)...")
+        typer.echo("Step 4/4: Identifying species (remote GPU)...")
 
         # Remove existing species.json if present
         if paths.species_json.exists():
@@ -491,10 +413,8 @@ def process(
     typer.echo(f"  Working:")
     typer.echo(f"    Clips:        {paths.clips_dir}/")
     typer.echo(f"    Detections:   {paths.detections_json}")
-    typer.echo(f"    Candidates:   {paths.frames_candidates_dir}/")
     typer.echo(f"  Assets:")
     typer.echo(f"    Highlights:   {paths.highlights_mp4}")
-    typer.echo(f"    Frames:       {paths.assets_dir}/ (3 frames)")
     if paths.songs_json.exists():
         typer.echo(f"    Songs:        {paths.songs_json}")
     if paths.song_clips_dir.exists() and list(paths.song_clips_dir.glob("*.wav")):
@@ -505,7 +425,7 @@ def process(
         typer.echo(f"    Best clips:   {paths.best_clips_json}")
 
 
-@app.command()
+@app.command(hidden=True)
 def frames(
     input_dir: Path = typer.Argument(..., help="Directory containing original .avi clips"),
     top_n: int = typer.Option(20, "--top-n", "-n", help="Number of top frames to extract to candidates"),
@@ -516,6 +436,7 @@ def frames(
     """Extract and rank best bird frames from filtered clips.
 
     Note: Run 'birdbird filter' first to detect and filter clips.
+    This command is hidden as frame scoring is not part of the main pipeline.
 
     @author Claude Sonnet 4.5 Anthropic
     """
@@ -676,7 +597,7 @@ def publish(
     config_file: Path = typer.Option("~/.birdbird/cloudflare.json", "--config", "-c", help="Cloudflare config file"),
     new_batch: bool = typer.Option(False, "--new-batch", "-n", help="Create new batch sequence (for additional footage same day)"),
 ) -> None:
-    """Publish highlights and frames to Cloudflare R2.
+    """Publish highlights to Cloudflare R2.
 
     By default, replaces existing batch for the same date. Use --new-batch to create
     a new sequence (e.g., 20260114_02) when you collected additional footage same day.

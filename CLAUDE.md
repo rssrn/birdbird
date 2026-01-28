@@ -41,18 +41,11 @@ birdbird filter /path/to/clips
 # Generate highlights reel from filtered clips
 birdbird highlights /path/to/clips/has_birds/
 
-# Run filter + highlights in one step (clears existing has_birds with --force)
+# Run filter + highlights + songs in one step (clears existing has_birds with --force)
 birdbird process /path/to/clips --force
-
-# Extract top 20 frames from filtered clips
-birdbird frames /path/to/clips/has_birds/
-
-# Extract top 50 frames
-birdbird frames /path/to/clips/has_birds/ --top-n 50
 
 # Test with limited clips
 birdbird filter /path/to/clips --limit 10
-birdbird frames /path/to/clips/has_birds/ --limit 5 --top-n 10
 
 # Publish highlights to Cloudflare R2
 birdbird publish /path/to/clips
@@ -78,7 +71,7 @@ src/birdbird/
 ├── detector.py      # BirdDetector class (YOLOv8-nano, COCO bird class)
 ├── filter.py        # filter_clips() - batch processing, saves detections.json
 ├── highlights.py    # generate_highlights() - segment extraction + concatenation
-├── frames.py        # extract_and_score_frames() - quality-based frame ranking
+├── frames.py        # extract_and_score_frames() - standalone frame scoring (not in main pipeline)
 ├── publish.py       # publish_to_r2() - R2 upload with batch management
 ├── songs.py         # analyze_songs() - BirdNET audio analysis for bird vocalizations
 └── templates/
@@ -92,9 +85,7 @@ src/birdbird/
 
 **Highlights approach**: Binary search for segment boundaries using cached detection timestamps from filter step. Concatenation via ffmpeg.
 
-**Frames approach**: Multi-factor scoring (confidence, sharpness, bird size, position) with weighted combination. Extracts top-N frames ranked by quality. Timing instrumentation tracks ms/frame for each factor.
-
-**Publish approach**: Uploads highlights.mp4 + top 3 frames to Cloudflare R2 with YYYYMMDD-NN batch naming. Maintains latest.json index for web viewer. Prompts before deleting old batches (>5). Static HTML viewer fetches from R2 via client-side JavaScript.
+**Publish approach**: Uploads highlights.mp4 to Cloudflare R2 with YYYYMMDD-NN batch naming. Maintains latest.json index for web viewer. Prompts before deleting old batches (>5). Static HTML viewer fetches from R2 via client-side JavaScript.
 
 **Viewer development**: Use `npx serve -l 3000 src/birdbird/templates` to test viewer changes locally without deploying. Viewer fetches directly from R2 bucket (requires CORS configuration allowing localhost:3000). After confirming changes, copy to birdbird-website repo and push to deploy.
 
@@ -107,8 +98,8 @@ src/birdbird/
 
 - [x] M1: Bird detection filter (498 clips, 29.9% detection rate)
 - [x] M2: Highlights reel v1 (binary search for segment boundaries)
-- [x] M3: Frame capture (multi-factor quality scoring)
-- [ ] M4: Species detection
+- [ ] M3: Species-specific frame extraction (using M4 detections)
+- [x] M4: Species detection (BioCLIP visual identification)
 - [ ] M5: Email report
 - [ ] M6: Highlights reel v2
 - [ ] M7: Cloud storage

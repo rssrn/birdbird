@@ -385,12 +385,6 @@ def upload_batch(
     # Extract date range from clip filenames with validation
     start_date, end_date = extract_date_range(paths.input_dir, original_date)
 
-    # Read frame_scores.json to get top 3 frame info (for metadata)
-    with open(paths.frame_scores_json) as f:
-        frame_data = json.load(f)
-
-    top_frames_data = frame_data['frames'][:3]
-
     # Get highlights duration
     highlights_duration = get_highlights_duration(paths.highlights_mp4)
 
@@ -427,44 +421,6 @@ def upload_batch(
                     Callback=upload_callback
                 )
         uploaded_files.append('highlights.mp4')
-
-    # Upload top 3 frames (already named frame_01.jpg, frame_02.jpg, frame_03.jpg in assets)
-    typer.echo("  Checking top 3 frames...")
-    top_frames_metadata = []
-
-    for i in range(1, 4):  # frames 1-3
-        frame_filename = f"frame_{i:02d}.jpg"
-        frame_path = paths.assets_dir / frame_filename
-
-        if not frame_path.exists():
-            typer.echo(f"    Warning: {frame_filename} not found, skipping", err=True)
-            continue
-
-        frame_key = f"batches/{batch_id}/{frame_filename}"
-
-        if batch_exists and not should_upload_file(s3_client, bucket_name, frame_key, frame_path):
-            typer.echo(f"    Skipping {frame_filename} (unchanged)")
-            skipped_files.append(frame_filename)
-        else:
-            typer.echo(f"    Uploading {frame_filename}")
-            with open(frame_path, 'rb') as f:
-                s3_client.put_object(
-                    Bucket=bucket_name,
-                    Key=frame_key,
-                    Body=f,
-                    ContentType='image/jpeg'
-                )
-            uploaded_files.append(frame_filename)
-
-        # Use metadata from frame_scores.json for this frame
-        if i <= len(top_frames_data):
-            frame_info = top_frames_data[i-1]
-            top_frames_metadata.append({
-                'filename': frame_filename,
-                'clip': frame_info['clip'],
-                'timestamp': frame_info['timestamp'],
-                'combined_score': frame_info['scores']['combined']
-            })
 
     # Upload songs.json if available
     songs_summary = None
@@ -545,7 +501,6 @@ def upload_batch(
         'end_date': end_date,
         'clip_count': clip_count,
         'highlights_duration': round(highlights_duration, 2),
-        'top_frames': top_frames_metadata
     }
 
     # Add songs summary if available
@@ -806,21 +761,6 @@ def publish_to_r2(
         raise ValueError(
             f"highlights.mp4 not found in {paths.assets_dir}\n"
             f"       Run 'birdbird process {input_dir}' to generate highlights"
-        )
-
-    # Validate frame_scores.json in working directory
-    if not paths.frame_scores_json.exists():
-        raise ValueError(
-            f"frame_scores.json not found in {paths.frames_working_dir}\n"
-            f"       Run 'birdbird frames {input_dir}' first to extract frames"
-        )
-
-    # Check we have at least 3 frames in assets
-    frame_files = sorted(paths.assets_dir.glob("frame_*.jpg"))
-    if len(frame_files) < 3:
-        raise ValueError(
-            f"Need at least 3 frames in {paths.assets_dir}, found {len(frame_files)}\n"
-            f"       Run 'birdbird process {input_dir}' or 'birdbird frames {input_dir}' first"
         )
 
     # Load detections to count clips

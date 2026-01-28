@@ -43,7 +43,7 @@ source .venv/bin/activate
 # Install in development mode
 pip install -e .
 
-# Process clips: filter + highlights + frames + songs in one step
+# Process clips: filter + highlights + songs in one step
 birdbird process /path/to/clips
 
 # Test with limited clips first
@@ -52,7 +52,6 @@ birdbird process /path/to/clips --limit 10
 # Or run steps separately:
 birdbird filter /path/to/clips
 birdbird highlights /path/to/clips/has_birds/
-birdbird frames /path/to/clips/has_birds/ --top-n 20
 
 # Detect bird songs from audio (standalone step)
 birdbird songs /path/to/clips
@@ -207,7 +206,6 @@ This allows processing ~10s clips in ~2.3 seconds while catching brief bird appe
 
 - **Filter**: Clips containing detected birds are copied to a `has_birds/` subdirectory
 - **Highlights**: MP4 reel concatenating bird activity segments
-- **Frames**: Top-N JPEG frames ranked by multi-factor quality score (confidence, sharpness, bird size, position)
 - **Songs**: JSON file with bird vocalizations detected by BirdNET (species, confidence, timestamps), plus normalized audio clips for each species
 
 ## Problem
@@ -232,10 +230,9 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | ---- | -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ |
 | M1   | Bird detection filter      | Discard clips without birds (eliminate wind false positives)                                                     | Done   |
 | M2   | Highlights reel v1         | Concatenate segments with bird activity                                                                          | Done   |
-| M2.1 | Highlights reel seek       | Based on M4 output, provide buttons to seek to timestamps with highest confidence for each species               |        |
-| M2.2 | Publish highlights to web  | Upload to Cloudflare R2 with static web viewer showing video, frames, and audio stats                            | Done   |
-| M3   | Highlight images           | Extract some nice-looking in-focus bird frames with timestamps                                                   | Done   |
-| M3.1 | Highlight images v2        | Improve selection based on highest confidence frames for M4, and species variety.             | |
+| M2.1 | Highlights reel seek       | Based on M4 output, provide buttons to seek to timestamps with highest confidence for each species               | Done   |
+| M2.2 | Publish highlights to web  | Upload to Cloudflare R2 with static web viewer showing video and audio stats                                     | Done   |
+| M3   | Highlight images           | Extract species-specific frames from M4 detections                                                               |        |
 | M4   | Visual species detection   | Identify species, generate timeline summary with frame capture                                                   | Done   |
 | M5   | Full report, stats         | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material                                      |        |
 | M6   | Best action sequence       | Curated "best action": algo to find best 30 second sequence based on max species variety and confidence and quantity.  Then expand on M2.1, button to seek to the start of that 30 seconds |        |
