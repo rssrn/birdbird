@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bird Feeder Highlights</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Lato:wght@400;500&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -125,16 +128,55 @@
         }
 
         .metadata {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 8px;
-            margin: 40px 0;
+            background: #f8f5ed;
+            border: 1px solid #e8dcc4;
+            border-radius: 2px;
+            margin: 30px 0 0 0;
+            overflow: hidden;
+        }
+
+        .metadata-header {
+            padding: 14px 18px;
+            background: #f8f5ed;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.15s ease;
+            border-bottom: 1px solid #e8dcc4;
+        }
+
+        .metadata-header:hover {
+            background: #fff;
         }
 
         .metadata h2 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.5em;
+            color: #2c3e50;
+            margin: 0;
+            font-size: 0.95em;
+            font-weight: 600;
+            font-family: 'Lato', -apple-system, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metadata-toggle {
+            font-size: 0.8em;
+            color: #8b7355;
+            transition: transform 0.2s ease;
+        }
+
+        .metadata-toggle.expanded {
+            transform: rotate(180deg);
+        }
+
+        .metadata-content {
+            padding: 20px;
+            display: none;
+        }
+
+        .metadata-content.expanded {
+            display: block;
         }
 
         .metadata-grid {
@@ -146,22 +188,24 @@
         .metadata-item {
             padding: 12px;
             background: white;
-            border-radius: 6px;
-            border-left: 4px solid #667eea;
+            border-radius: 2px;
+            border-left: 3px solid #8b7355;
         }
 
         .metadata-label {
-            font-size: 0.85em;
-            color: #666;
+            font-size: 0.75em;
+            color: #8b7355;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 5px;
+            font-weight: 600;
         }
 
         .metadata-value {
-            font-size: 1.3em;
-            color: #333;
-            font-weight: 600;
+            font-size: 1.2em;
+            color: #2c3e50;
+            font-weight: 500;
+            font-family: 'Lato', -apple-system, sans-serif;
         }
 
         .archive {
@@ -343,21 +387,156 @@
             font-size: 1.1em;
         }
 
+        .visual-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
         .species-detected {
-            color: #555;
-            font-size: 1.05em;
-            margin-bottom: 25px;
-            line-height: 1.6;
+            position: sticky;
+            top: 20px;
         }
 
-        .species-detected-label {
-            font-weight: 600;
-            color: #667eea;
+        .species-nav-header {
+            font-family: 'Merriweather', Georgia, serif;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 6px;
         }
 
-        .species-separator {
-            color: #999;
-            margin: 0 6px;
+        .species-nav-subtitle {
+            font-size: 0.8em;
+            color: #8b7355;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e8dcc4;
+            font-style: italic;
+        }
+
+        .species-group {
+            margin-bottom: 24px;
+        }
+
+        .species-group-label {
+            font-size: 0.75em;
+            font-weight: 700;
+            color: #8b7355;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .species-group-label::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .species-group-label.very-probable::before {
+            background: #2d5016;
+        }
+
+        .species-group-label.probable::before {
+            background: #6b8e23;
+        }
+
+        .species-group-label.possible::before {
+            background: #c9b896;
+        }
+
+        .species-seek-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .species-seek-button {
+            padding: 10px 14px 10px 32px;
+            background: #f8f5ed;
+            color: #2c3e50;
+            border: 1px solid #e8dcc4;
+            border-left: 3px solid #2d5016;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            font-family: 'Lato', -apple-system, sans-serif;
+            text-align: left;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .species-seek-button::before {
+            content: '▶';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.7em;
+            opacity: 0.4;
+            transition: all 0.15s ease;
+        }
+
+        .species-seek-button:hover {
+            background: #fff;
+            border-left-width: 5px;
+            padding-left: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .species-seek-button:hover::before {
+            opacity: 1;
+            left: 10px;
+        }
+
+        .species-seek-button:active {
+            transform: translateX(2px);
+        }
+
+        .species-seek-button.probable {
+            border-left-color: #6b8e23;
+        }
+
+        .species-seek-button.possible {
+            border-left-color: #c9b896;
+            opacity: 0.85;
+        }
+
+        .species-seek-button.possible:hover {
+            opacity: 1;
+        }
+
+        .video-wrapper {
+            min-width: 0;
+        }
+
+        @media (max-width: 968px) {
+            .visual-layout {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .species-detected {
+                position: static;
+                order: -1;
+            }
+
+            .species-seek-buttons {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .species-seek-button {
+                flex: 0 0 auto;
+            }
         }
 
         @media (max-width: 768px) {
@@ -423,24 +602,33 @@
 
                 <!-- Visual Tab -->
                 <div class="tab-content" id="visual-tab" role="tabpanel" aria-labelledby="tab-visual">
-                    <!-- Species detected (populated by JS if available) -->
-                    <div id="species-detected" class="species-detected" style="display: none;"></div>
+                    <div class="visual-layout">
+                        <!-- Species detected (populated by JS if available) -->
+                        <div id="species-detected" class="species-detected" style="display: none;"></div>
 
-                    <!-- Video player -->
-                    <div class="video-container">
-                        <video id="highlights-player" controls preload="metadata">
-                            <source id="video-source" src="" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                        <div class="play-overlay" id="play-overlay" role="button" tabindex="0" aria-label="Play video">
-                            <div class="play-button"></div>
+                        <div class="video-wrapper">
+                            <!-- Video player -->
+                            <div class="video-container">
+                                <video id="highlights-player" controls preload="metadata">
+                                    <source id="video-source" src="" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                                <div class="play-overlay" id="play-overlay" role="button" tabindex="0" aria-label="Play video">
+                                    <div class="play-button"></div>
+                                </div>
+                            </div>
+
+                            <!-- Metadata -->
+                            <div class="metadata">
+                                <div class="metadata-header" id="metadata-header">
+                                    <h2>Batch Information</h2>
+                                    <span class="metadata-toggle">▼</span>
+                                </div>
+                                <div class="metadata-content" id="metadata-content">
+                                    <div class="metadata-grid" id="metadata-container"></div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- Metadata -->
-                    <div class="metadata">
-                        <h2>Batch Information</h2>
-                        <div class="metadata-grid" id="metadata-container"></div>
                     </div>
                 </div>
 
@@ -601,36 +789,157 @@
             const speciesContainer = document.getElementById('species-detected');
 
             try {
-                const response = await fetch(`${R2_BASE_URL}/batches/${batchId}/species.json`);
+                // Fetch both best_clips.json and species.json
+                const [bestClipsResponse, speciesResponse] = await Promise.all([
+                    fetch(`${R2_BASE_URL}/batches/${batchId}/best_clips.json`),
+                    fetch(`${R2_BASE_URL}/batches/${batchId}/species.json`)
+                ]);
 
-                if (!response.ok) {
-                    // No species.json available - hide the container
+                if (!bestClipsResponse.ok) {
+                    // No best_clips.json available - hide the container
                     speciesContainer.style.display = 'none';
                     return;
                 }
 
-                const speciesData = await response.json();
+                const bestClipsData = await bestClipsResponse.json();
 
-                if (!speciesData.species_summary || Object.keys(speciesData.species_summary).length === 0) {
+                if (!bestClipsData.clips || Object.keys(bestClipsData.clips).length === 0) {
                     speciesContainer.style.display = 'none';
                     return;
                 }
 
-                // Sort species by count descending
-                const sortedSpecies = Object.entries(speciesData.species_summary)
-                    .sort((a, b) => b[1].count - a[1].count)
-                    .map(([name, data]) => name);
+                // Load species detections if available
+                let speciesDetections = [];
+                if (speciesResponse.ok) {
+                    const speciesData = await speciesResponse.json();
+                    speciesDetections = speciesData.detections || [];
+                }
 
-                // Build display string with diamond separators
-                const speciesList = sortedSpecies.join(' <span class="species-separator">◆</span> ');
+                // Convert clips object to array with common_name and categorize
+                const clipsArray = Object.entries(bestClipsData.clips).map(([commonName, data]) => {
+                    const clip = {
+                        common_name: commonName,
+                        ...data
+                    };
 
-                speciesContainer.innerHTML = `<span class="species-detected-label">Detected:</span> ${speciesList}`;
+                    // Categorize the clip
+                    if (clip.detection_count >= 4) {
+                        clip.category = 'very_probable';
+                    } else {
+                        // Need to check max confidence from species.json
+                        const clipDetections = speciesDetections.filter(det =>
+                            det.species === commonName &&
+                            det.timestamp_s >= clip.start_s &&
+                            det.timestamp_s <= clip.end_s
+                        );
+
+                        const maxConfidence = clipDetections.length > 0
+                            ? Math.max(...clipDetections.map(det => det.confidence))
+                            : 0;
+
+                        if (maxConfidence >= 0.80) {
+                            clip.category = 'probable';
+                        } else {
+                            clip.category = 'possible';
+                        }
+                    }
+
+                    return clip;
+                });
+
+                // Render grouped seek buttons
+                renderSpeciesSeekButtons(clipsArray);
                 speciesContainer.style.display = 'block';
 
             } catch (error) {
-                console.error('Error loading species data:', error);
+                console.error('Error loading best clips data:', error);
                 speciesContainer.style.display = 'none';
             }
+        }
+
+        function renderSpeciesSeekButtons(clips) {
+            const speciesContainer = document.getElementById('species-detected');
+            const videoPlayer = document.getElementById('highlights-player');
+
+            speciesContainer.innerHTML = '';
+
+            // Add header
+            const header = document.createElement('div');
+            header.className = 'species-nav-header';
+            header.textContent = 'Species Guide';
+            speciesContainer.appendChild(header);
+
+            // Add subtitle
+            const subtitle = document.createElement('div');
+            subtitle.className = 'species-nav-subtitle';
+            subtitle.textContent = 'Click to jump to best sighting';
+            speciesContainer.appendChild(subtitle);
+
+            // Group clips by category
+            const groups = {
+                very_probable: clips.filter(c => c.category === 'very_probable'),
+                probable: clips.filter(c => c.category === 'probable'),
+                possible: clips.filter(c => c.category === 'possible')
+            };
+
+            const groupLabels = {
+                very_probable: 'Very Probable',
+                probable: 'Probable',
+                possible: 'Possible'
+            };
+
+            // Render each group
+            ['very_probable', 'probable', 'possible'].forEach(groupKey => {
+                const groupClips = groups[groupKey];
+                if (groupClips.length === 0) return;
+
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'species-group';
+
+                const labelDiv = document.createElement('div');
+                labelDiv.className = `species-group-label ${groupKey.replace('_', '-')}`;
+                labelDiv.textContent = groupLabels[groupKey];
+                groupDiv.appendChild(labelDiv);
+
+                const buttonsContainer = document.createElement('div');
+                buttonsContainer.className = 'species-seek-buttons';
+
+                groupClips.forEach(clip => {
+                    const button = document.createElement('button');
+                    button.className = 'species-seek-button';
+
+                    if (groupKey === 'probable') {
+                        button.classList.add('probable');
+                    } else if (groupKey === 'possible') {
+                        button.classList.add('possible');
+                    }
+
+                    button.textContent = clip.common_name;
+
+                    // Format timestamp for aria-label
+                    const minutes = Math.floor(clip.start_s / 60);
+                    const seconds = Math.floor(clip.start_s % 60);
+                    const timestamp = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    button.setAttribute('aria-label', `Seek to ${clip.common_name} at ${timestamp}`);
+
+                    // Add click handler to seek video
+                    button.addEventListener('click', () => {
+                        videoPlayer.currentTime = clip.start_s;
+                        videoPlayer.play();
+
+                        // Hide play overlay if visible
+                        const playOverlay = document.getElementById('play-overlay');
+                        if (playOverlay) {
+                            playOverlay.classList.add('hidden');
+                        }
+                    });
+
+                    buttonsContainer.appendChild(button);
+                });
+
+                groupDiv.appendChild(buttonsContainer);
+                speciesContainer.appendChild(groupDiv);
+            });
         }
 
         function initTabs() {
@@ -901,8 +1210,49 @@
             });
         }
 
+        function initMetadataToggle() {
+            const header = document.getElementById('metadata-header');
+            const content = document.getElementById('metadata-content');
+            const toggle = document.querySelector('.metadata-toggle');
+
+            if (!header || !content || !toggle) return;
+
+            header.addEventListener('click', () => {
+                const isExpanded = content.classList.contains('expanded');
+
+                if (isExpanded) {
+                    content.classList.remove('expanded');
+                    toggle.classList.remove('expanded');
+                } else {
+                    content.classList.add('expanded');
+                    toggle.classList.add('expanded');
+                }
+            });
+
+            // Add keyboard support
+            header.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    header.click();
+                }
+            });
+
+            header.setAttribute('role', 'button');
+            header.setAttribute('tabindex', '0');
+            header.setAttribute('aria-expanded', 'false');
+            header.setAttribute('aria-controls', 'metadata-content');
+
+            // Update aria-expanded when toggled
+            const observer = new MutationObserver(() => {
+                const isExpanded = content.classList.contains('expanded');
+                header.setAttribute('aria-expanded', isExpanded.toString());
+            });
+            observer.observe(content, { attributes: true, attributeFilter: ['class'] });
+        }
+
         // Initialize tabs and load batch on page load
         initTabs();
+        initMetadataToggle();
         loadBatch(requestedBatch);
     </script>
 </body>
