@@ -514,10 +514,8 @@
     </div>
 
     <script>
-        // Auto-detect if running in preview mode (localhost) or production
-        const R2_BASE_URL = window.location.hostname === 'localhost'
-            ? ''  // Use same-origin for preview (proxied by preview_viewer.py)
-            : 'https://pub-975f47bf9a614239932c993acd009ad5.r2.dev';
+        // R2 bucket URL (CORS configured to allow localhost and production)
+        const R2_BASE_URL = 'https://pub-975f47bf9a614239932c993acd009ad5.r2.dev';
 
         // Get batch ID from URL query parameter (e.g., ?batch=20250116-01)
         const urlParams = new URLSearchParams(window.location.search);

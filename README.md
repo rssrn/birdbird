@@ -135,15 +135,39 @@ To publish highlights to the web, configure Cloudflare R2:
    - Enable "Allow Access" and note the public R2.dev URL (e.g., `https://pub-xxxxx.r2.dev`)
    - This URL will be used in the viewer HTML
 
-7. **Set up the web viewer** (one-time):
+7. **Configure CORS for R2 bucket** (required for web viewer):
+   - In Cloudflare R2 dashboard, select your bucket
+   - Go to Settings → CORS Policy
+   - Add a CORS rule allowing your production domain and localhost for development:
+     ```json
+     [
+       {
+         "AllowedOrigins": [
+           "https://your-production-domain.com",
+           "http://localhost:3000"
+         ],
+         "AllowedMethods": ["GET"],
+         "AllowedHeaders": ["*"],
+         "ExposeHeaders": [],
+         "MaxAgeSeconds": 3600
+       }
+     ]
+     ```
+
+8. **Set up the web viewer** (one-time):
    - Copy the viewer template to your website repo:
      ```bash
      cp src/birdbird/templates/viewer.html /path/to/your/website/index.html
      ```
-   - Edit `index.html` and replace `YOUR_R2_PUBLIC_URL_HERE` with your R2 public URL
    - Deploy to your web host (Cloudflare Pages, GitHub Pages, etc.)
 
-8. **Test publishing**:
+   For local testing before deployment:
+   ```bash
+   npx serve -l 3000 src/birdbird/templates
+   # Open http://localhost:3000/viewer.html
+   ```
+
+9. **Test publishing**:
    ```bash
    birdbird publish /path/to/clips
    ```

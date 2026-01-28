@@ -52,9 +52,10 @@ birdbird songs /path/to/clips
 birdbird songs /path/to/clips --min-conf 0.3 --limit 10
 
 # Preview viewer changes locally (before deploying)
-python preview_viewer.py
-# Then open: http://localhost:8000/viewer.html
+npx serve -l 3000 src/birdbird/templates
+# Then open: http://localhost:3000/viewer.html
 # Edit src/birdbird/templates/viewer.html and refresh browser to see changes
+# Note: R2 bucket CORS must include http://localhost:3000
 ```
 
 ## Architecture
@@ -85,7 +86,7 @@ src/birdbird/
 
 **Publish approach**: Uploads highlights.mp4 + top 3 frames to Cloudflare R2 with YYYYMMDD-NN batch naming. Maintains latest.json index for web viewer. Prompts before deleting old batches (>5). Static HTML viewer fetches from R2 via client-side JavaScript.
 
-**Viewer development**: Use `preview_viewer.py` to test viewer changes locally without deploying. Server runs on localhost:8000 and proxies R2 requests to avoid CORS. Viewer auto-detects localhost and uses proxy. After confirming changes, copy to birdbird-website repo and push to deploy.
+**Viewer development**: Use `npx serve -l 3000 src/birdbird/templates` to test viewer changes locally without deploying. Viewer fetches directly from R2 bucket (requires CORS configuration allowing localhost:3000). After confirming changes, copy to birdbird-website repo and push to deploy.
 
 **Songs approach**: Extracts audio from AVI files to temporary WAV files (ffmpeg), runs BirdNET-Analyzer for bird vocalization detection. Outputs songs.json with all detections including species (common/scientific names), confidence, filename, and timestamps. Configurable confidence threshold (default 0.25). Location filtering available via --lat/--lon for regional species filtering.
 
@@ -152,7 +153,7 @@ src/birdbird/
   - Confidence format: single "54%", 2-3 "54%, 78%", 4+ "54-78%" (range)
   - Explanatory text about ambient audio sampling from motion-triggered clips
 - Implementation: Single file change (`templates/viewer.html`) - adds tabs, CSS, JavaScript
-- Testing: Use `python3 preview_viewer.py` for local demo before deployment
+- Testing: Use `npx serve -l 3000 src/birdbird/templates` for local demo before deployment
 - Next steps: Implement per plan, test locally, copy to birdbird-website, deploy
 
 **M4: Visual Species Identification**
