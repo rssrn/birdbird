@@ -356,6 +356,7 @@ def upload_batch(
     songs_path: Path | None = None,
     song_clips_dir: Path | None = None,
     species_path: Path | None = None,
+    best_clips_path: Path | None = None,
     batch_exists: bool = False,
 ) -> dict:
     """Upload all batch assets to R2.
@@ -372,6 +373,7 @@ def upload_batch(
         songs_path: Optional path to songs.json
         song_clips_dir: Optional path to song_clips directory
         species_path: Optional path to species.json
+        best_clips_path: Optional path to best_clips.json
         batch_exists: Whether batch already exists in R2
 
     Returns: metadata dict for this batch
@@ -585,6 +587,38 @@ def upload_batch(
     # Add species summary if available
     if species_summary:
         metadata['species'] = species_summary
+
+    # Upload best_clips.json if available
+    best_clips_summary = None
+    if best_clips_path and best_clips_path.exists():
+        best_clips_key = f"batches/{batch_id}/best_clips.json"
+
+        with open(best_clips_path) as f:
+            best_clips_data = json.load(f)
+
+        if batch_exists and not should_upload_file(s3_client, bucket_name, best_clips_key, best_clips_path):
+            typer.echo("  Skipping best_clips.json (unchanged)")
+            skipped_files.append('best_clips.json')
+        else:
+            typer.echo("  Uploading best_clips.json...")
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=best_clips_key,
+                Body=json.dumps(best_clips_data, indent=2),
+                ContentType='application/json'
+            )
+            uploaded_files.append('best_clips.json')
+
+        # Create summary for metadata
+        best_clips_summary = {
+            'window_duration_s': best_clips_data['window_duration_s'],
+            'species_count': best_clips_data['species_count'],
+            'species_list': list(best_clips_data['clips'].keys()),
+        }
+
+    # Add best_clips summary if available
+    if best_clips_summary:
+        metadata['best_clips'] = best_clips_summary
 
     # Always upload metadata.json (it's tiny and includes current timestamp)
     typer.echo("  Uploading metadata.json...")
@@ -824,6 +858,14 @@ def publish_to_r2(
     else:
         typer.echo(f"No species.json found - skipping (run 'birdbird species {input_dir}' to add)")
         species_path = None
+
+    # Check for best_clips.json (optional)
+    if paths.best_clips_json.exists():
+        typer.echo(f"Found best_clips.json - will include in upload")
+        best_clips_path = paths.best_clips_json
+    else:
+        typer.echo(f"No best_clips.json found - skipping (run 'birdbird frames {input_dir}' to add)")
+        best_clips_path = None
     typer.echo("")
 
     # Extract original date from directory name
@@ -876,6 +918,7 @@ def publish_to_r2(
         songs_path=songs_path,
         song_clips_dir=song_clips_dir,
         species_path=species_path,
+        best_clips_path=best_clips_path,
         batch_exists=batch_exists,
     )
 
