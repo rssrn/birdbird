@@ -156,14 +156,14 @@ To publish highlights to the web, configure Cloudflare R2:
 8. **Set up the web viewer** (one-time):
    - Copy the viewer template to your website repo:
      ```bash
-     cp src/birdbird/templates/viewer.html /path/to/your/website/index.html
+     cp src/birdbird/templates/index.html /path/to/your/website/index.html
      ```
    - Deploy to your web host (Cloudflare Pages, GitHub Pages, etc.)
 
    For local testing before deployment:
    ```bash
    npx serve -l 3000 src/birdbird/templates
-   # Open http://localhost:3000/viewer.html
+   # Open http://localhost:3000/index.html
    ```
 
 9. **Test publishing**:

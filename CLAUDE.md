@@ -56,8 +56,8 @@ birdbird songs /path/to/clips --min-conf 0.3 --limit 10
 
 # Preview viewer changes locally (before deploying)
 npx serve -l 3000 src/birdbird/templates
-# Then open: http://localhost:3000/viewer.html
-# Edit src/birdbird/templates/viewer.html and refresh browser to see changes
+# Then open: http://localhost:3000/index.html
+# Edit src/birdbird/templates/index.html and refresh browser to see changes
 # Note: R2 bucket CORS must include http://localhost:3000
 ```
 
@@ -75,7 +75,7 @@ src/birdbird/
 ├── publish.py       # publish_to_r2() - R2 upload with batch management
 ├── songs.py         # analyze_songs() - BirdNET audio analysis for bird vocalizations
 └── templates/
-    ├── viewer.html  # Static web viewer template
+    ├── index.html   # Static web viewer template
     └── credits.html # Credits page listing dependencies and licenses
 ```
 
@@ -92,13 +92,13 @@ src/birdbird/
 **Chrome headless screenshots**: When evaluating viewer designs or capturing UI state, use Chrome headless mode:
 ```bash
 # Basic screenshot
-google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,900 http://localhost:3000/viewer.html 2>/dev/null
+google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,900 http://localhost:3000/index.html 2>/dev/null
 
 # For pages that need load time (JavaScript content)
-google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,2400 --virtual-time-budget=5000 http://localhost:3000/viewer.html 2>/dev/null
+google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,2400 --virtual-time-budget=5000 http://localhost:3000/index.html 2>/dev/null
 
 # For specific tabs or query parameters
-google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,2400 --virtual-time-budget=5000 'http://localhost:3000/viewer.html?tab=audio' 2>/dev/null
+google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,2400 --virtual-time-budget=5000 'http://localhost:3000/index.html?tab=audio' 2>/dev/null
 ```
 - Use `--virtual-time-budget=5000` (5 seconds) to allow async content to load
 - Larger `--window-size` (e.g., 1400x2400) captures more of the page

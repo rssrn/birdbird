@@ -57,6 +57,6 @@ When invoked with `/plan`:
 
 ## Domain Guide
 
-- **Frontend**: Changes to `templates/viewer.html` or `templates/credits.html`. Test with `npx serve`.
+- **Frontend**: Changes to `templates/index.html` or `templates/credits.html`. Test with `npx serve`.
 - **Backend**: Changes to Python modules in `src/birdbird/`. Test with `birdbird` CLI commands.
 - **Both**: Changes spanning templates and Python code.
