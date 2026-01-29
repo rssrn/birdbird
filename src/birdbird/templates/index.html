@@ -11,6 +11,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Lato:wght@400;500;700&family=EB+Garamond:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="config.js"></script>
+    <script src="config-loader.js"></script>
     <style>
         /* Viewer-specific styles only */
         .container {
@@ -938,8 +940,9 @@
     </template>
 
     <script>
-        // R2 bucket URL (CORS configured to allow localhost and production)
-        const R2_BASE_URL = 'https://pub-975f47bf9a614239932c993acd009ad5.r2.dev';
+        // R2 bucket URL is loaded from config.js via config-loader.js
+        // Access it via window.R2_BASE_URL
+        const R2_BASE_URL = window.R2_BASE_URL || '';
 
         // Get batch ID from URL query parameter (e.g., ?batch=20250116-01)
         const urlParams = new URLSearchParams(window.location.search);

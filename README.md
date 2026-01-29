@@ -154,10 +154,30 @@ To publish highlights to the web, configure Cloudflare R2:
      ```
 
 8. **Set up the web viewer** (one-time):
-   - Copy the viewer template to your website repo:
+   - Copy the viewer templates to your website repo:
      ```bash
-     cp src/birdbird/templates/index.html /path/to/your/website/index.html
+     cp src/birdbird/templates/*.html /path/to/your/website/
+     cp src/birdbird/templates/*.css /path/to/your/website/
+     cp src/birdbird/templates/*.js /path/to/your/website/
+     cp src/birdbird/templates/*.png /path/to/your/website/
+     cp src/birdbird/templates/*.ico /path/to/your/website/
      ```
+
+   - **IMPORTANT: Configure the viewer** by editing `config.js`:
+     ```bash
+     nano /path/to/your/website/config.js
+     ```
+
+     Update these required values:
+     ```javascript
+     window.BIRDBIRD_CONFIG = {
+       r2BaseUrl: 'https://pub-YOUR-BUCKET-ID.r2.dev',  // Your R2 public URL from step 6
+       siteName: 'Bird Feeder Highlights',               // Your site name
+       siteSubtitle: 'Your Location • Description',      // Your location and description
+       analytics: ''                                      // Optional: analytics code snippet
+     };
+     ```
+
    - Deploy to your web host (Cloudflare Pages, GitHub Pages, etc.)
 
    For local testing before deployment:
@@ -165,6 +185,8 @@ To publish highlights to the web, configure Cloudflare R2:
    npx serve -l 3000 src/birdbird/templates
    # Open http://localhost:3000/index.html
    ```
+
+   **Note:** If you deploy without configuring `config.js`, a warning overlay will appear with instructions.
 
 9. **Test publishing**:
    ```bash
