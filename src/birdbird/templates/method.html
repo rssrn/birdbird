@@ -63,16 +63,52 @@
         }
 
         /* Hidden checkbox for accessibility */
-        #mode-toggle {
+        .toggle-checkbox {
             position: absolute;
             opacity: 0;
             width: 0;
             height: 0;
         }
 
-        #mode-toggle:focus + .toggle-switch {
+        .toggle-checkbox:focus + .toggle-switch {
             outline: 2px solid var(--forest-deep);
             outline-offset: 4px;
+        }
+
+        /* Pipeline Toggle (inline after arrow) */
+        .pipeline-toggle-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .pipeline-label {
+            color: var(--text-secondary);
+            font-family: 'Lato', sans-serif;
+            font-size: 0.85em;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .pipeline-label.active {
+            color: var(--forest-deep);
+            font-weight: 700;
+        }
+
+        /* Pipeline visibility */
+        .video-pipeline,
+        .audio-pipeline {
+            display: none;
+        }
+
+        body.video-mode .video-pipeline {
+            display: block;
+        }
+
+        body.audio-mode .audio-pipeline {
+            display: block;
         }
 
         /* Pipeline Flow */
@@ -243,6 +279,7 @@
                        tabindex="0">
                     <input type="checkbox"
                            id="mode-toggle"
+                           class="toggle-checkbox"
                            aria-label="Toggle between summary and detail descriptions">
                     <span class="toggle-slider"></span>
                 </label>
@@ -278,6 +315,27 @@
                 </div>
 
                 <div class="connection-arrow">⬇️</div>
+
+                <!-- Pipeline Toggle -->
+                <div class="pipeline-toggle-container">
+                    <span class="pipeline-label active" id="video-label">Video Pipeline</span>
+                    <label class="toggle-switch"
+                           role="switch"
+                           aria-checked="false"
+                           aria-labelledby="video-label audio-label"
+                           tabindex="0"
+                           id="pipeline-toggle-switch">
+                        <input type="checkbox"
+                               id="pipeline-toggle"
+                               class="toggle-checkbox"
+                               aria-label="Toggle between video and audio pipeline">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="pipeline-label" id="audio-label">Audio Pipeline</span>
+                </div>
+
+                <!-- VIDEO PIPELINE -->
+                <section class="video-pipeline" aria-label="Video processing pipeline">
 
                 <!-- Step 2: Filter -->
                 <div class="pipeline-step">
@@ -387,6 +445,66 @@
                     </div>
                 </div>
 
+                </section><!-- /video-pipeline -->
+
+                <!-- AUDIO PIPELINE -->
+                <section class="audio-pipeline" aria-label="Audio processing pipeline">
+
+                <!-- Audio Step 1: Extract Audio -->
+                <div class="pipeline-step">
+                    <div class="process-box">
+                        <div class="process-header">
+                            <div class="process-icon">🔊</div>
+                            <h2 class="process-title">Extract Audio Track</h2>
+                        </div>
+                        <p class="process-description summary">
+                            Extract the audio from each video clip for acoustic analysis.
+                        </p>
+                        <p class="process-description detail">
+                            FFmpeg extracts audio tracks from AVI files to temporary WAV files (16kHz mono PCM).
+                            This format is required by the BirdNET analyser. Files are processed in batches and
+                            temporary WAVs are cleaned up after analysis.
+                        </p>
+                        <div class="data-flow">
+                            <div class="data-output">
+                                <span class="data-icon">🎵</span>
+                                <span class="data-text summary">Audio files for analysis</span>
+                                <span class="data-text detail">Temporary WAV files (16kHz mono) extracted from each clip</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connection-arrow">⬇️</div>
+
+                <!-- Audio Step 2: BirdNET Analysis -->
+                <div class="pipeline-step">
+                    <div class="process-box">
+                        <div class="process-header">
+                            <div class="process-icon">🐦</div>
+                            <h2 class="process-title">BirdNET Analysis</h2>
+                        </div>
+                        <p class="process-description summary">
+                            Identify bird species by their songs and calls using acoustic analysis.
+                        </p>
+                        <p class="process-description detail">
+                            BirdNET-Analyzer processes audio in 3-second segments, detecting bird vocalisations and
+                            identifying species. Outputs include common and scientific names, confidence scores, and
+                            timestamps. Optional location filtering (latitude/longitude) restricts results to regionally
+                            appropriate species. The web viewer selects the highest-scoring clip per species.
+                        </p>
+                        <div class="data-flow">
+                            <div class="data-output">
+                                <span class="data-icon">📊</span>
+                                <span class="data-text summary">Species detections with confidence scores</span>
+                                <span class="data-text detail">songs.json with species names, confidence scores, source clips, and timestamps</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                </section><!-- /audio-pipeline -->
+
                 <div class="connection-arrow">⬇️</div>
 
                 <!-- Step 6: Web Viewer -->
@@ -431,19 +549,19 @@
     <script>
         // Toggle between summary and detail modes
         const modeToggle = document.getElementById('mode-toggle');
-        const toggleSwitch = document.querySelector('.toggle-switch');
+        const modeToggleSwitch = modeToggle.closest('label');
         const summaryLabel = document.getElementById('summary-label');
         const detailLabel = document.getElementById('detail-label');
 
         function updateMode(isTechnical) {
             if (isTechnical) {
                 document.body.classList.add('detail-mode');
-                toggleSwitch.setAttribute('aria-checked', 'true');
+                modeToggleSwitch.setAttribute('aria-checked', 'true');
                 summaryLabel.classList.remove('active');
                 detailLabel.classList.add('active');
             } else {
                 document.body.classList.remove('detail-mode');
-                toggleSwitch.setAttribute('aria-checked', 'false');
+                modeToggleSwitch.setAttribute('aria-checked', 'false');
                 summaryLabel.classList.add('active');
                 detailLabel.classList.remove('active');
             }
@@ -455,13 +573,13 @@
         });
 
         // Handle click on toggle switch
-        toggleSwitch.addEventListener('click', () => {
+        modeToggleSwitch.addEventListener('click', () => {
             modeToggle.checked = !modeToggle.checked;
             updateMode(modeToggle.checked);
         });
 
         // Handle keyboard navigation (Space/Enter on toggle)
-        toggleSwitch.addEventListener('keydown', (e) => {
+        modeToggleSwitch.addEventListener('keydown', (e) => {
             if (e.key === ' ' || e.key === 'Enter') {
                 e.preventDefault();
                 modeToggle.checked = !modeToggle.checked;
@@ -480,8 +598,62 @@
             updateMode(true);
         });
 
-        // Initialize
+        // Pipeline toggle (video/audio)
+        const pipelineToggle = document.getElementById('pipeline-toggle');
+        const pipelineToggleSwitch = document.getElementById('pipeline-toggle-switch');
+        const videoLabel = document.getElementById('video-label');
+        const audioLabel = document.getElementById('audio-label');
+
+        function updatePipeline(isAudio) {
+            if (isAudio) {
+                document.body.classList.remove('video-mode');
+                document.body.classList.add('audio-mode');
+                pipelineToggleSwitch.setAttribute('aria-checked', 'true');
+                videoLabel.classList.remove('active');
+                audioLabel.classList.add('active');
+            } else {
+                document.body.classList.remove('audio-mode');
+                document.body.classList.add('video-mode');
+                pipelineToggleSwitch.setAttribute('aria-checked', 'false');
+                videoLabel.classList.add('active');
+                audioLabel.classList.remove('active');
+            }
+        }
+
+        // Handle checkbox change
+        pipelineToggle.addEventListener('change', (e) => {
+            updatePipeline(e.target.checked);
+        });
+
+        // Handle click on toggle switch
+        pipelineToggleSwitch.addEventListener('click', () => {
+            pipelineToggle.checked = !pipelineToggle.checked;
+            updatePipeline(pipelineToggle.checked);
+        });
+
+        // Handle keyboard navigation
+        pipelineToggleSwitch.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                pipelineToggle.checked = !pipelineToggle.checked;
+                updatePipeline(pipelineToggle.checked);
+            }
+        });
+
+        // Handle label clicks
+        videoLabel.addEventListener('click', () => {
+            pipelineToggle.checked = false;
+            updatePipeline(false);
+        });
+
+        audioLabel.addEventListener('click', () => {
+            pipelineToggle.checked = true;
+            updatePipeline(true);
+        });
+
+        // Initialize both toggles
         updateMode(modeToggle.checked);
+        updatePipeline(pipelineToggle.checked);
     </script>
 </body>
 </html>
