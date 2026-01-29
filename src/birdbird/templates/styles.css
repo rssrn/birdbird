@@ -147,6 +147,32 @@ h1 {
     text-decoration: none;
 }
 
+.breadcrumb {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin: -10px 0 12px 0;
+}
+
+.breadcrumb a {
+    color: var(--forest-mid);
+    text-decoration: none;
+    border-bottom: none;
+}
+
+.breadcrumb a:hover {
+    color: var(--forest-deep);
+    border-bottom: 1px solid var(--forest-deep);
+}
+
+.breadcrumb .separator {
+    margin: 0 6px;
+    opacity: 0.5;
+}
+
+.breadcrumb .current {
+    color: var(--text-primary);
+}
+
 h2 {
     font-family: 'Merriweather', Georgia, serif;
     color: var(--text-primary);
