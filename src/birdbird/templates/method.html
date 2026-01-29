@@ -259,12 +259,13 @@
                             <h2 class="process-title">Raw Video Clips</h2>
                         </div>
                         <p class="process-description summary">
-                            Motion capture camera records bird activity, creating many 10-second video clips.
+                            Motion capture camera records bird activity, producing many video clips.
                         </p>
                         <p class="process-description detail">
-                            Input source: AVI format (MJPEG codec, 1440x1080, 30fps). Typical batch contains several hundred 10-second clips.
-                            Filename convention: DDHHmmss00.avi encodes day and time. Date metadata extracted from parent
-                            directory name (YYYYMMDD format) to handle camera clock drift scenarios.
+                            A typical batch could contain several hundred 10-second clips.  Downloading/moving from the capture device is not handled by the app.
+                            The entry point for the app is a folder in YYYYMMDD format, named for the date they were taken off the device.
+                            The actual clips in that folder could cover several days.  Filename timestamps could be unreliable so the folder name is the source of truth.
+                            If files are named like DDHHmmss00.avi this will be used to capture the start date of the batch.
                         </p>
                         <div class="data-flow">
                             <div class="data-output">
@@ -283,21 +284,22 @@
                     <div class="process-box">
                         <div class="process-header">
                             <div class="process-icon">⚙️</div>
-                            <h2 class="process-title">Check Each Clip</h2>
+                            <h2 class="process-title">Discard Clips With No Birds</h2>
                         </div>
                         <p class="process-description summary">
+                            Some clips might not have any birds if the motion capture was triggered by wind movement.
                             Automatically scan each video to detect bird presence. Only keep clips containing birds.
                         </p>
                         <p class="process-description detail">
-                            Detection pipeline: Weighted frame sampling (4× in first second, then 1fps) feeds YOLOv8-nano inference
+                            We capture a few frames (4× in first second, then 1fps) and run these through YOLOv8-nano inference
                             for COCO class 14 (bird). Outputs detections.json with confidence scores, bounding box coordinates, and
-                            frame timestamps. Clips without bird detections are moved to a separate directory. Typical detection rate: 20-30% of input clips.
+                            frame timestamps. Clips without bird detections are moved to a separate directory. Typical detection rate in original testing: 20-30% of input clips.
                         </p>
                         <div class="data-flow">
                             <div class="data-output">
                                 <span class="data-icon">✓</span>
-                                <span class="data-text summary">Fewer clips with birds detected</span>
-                                <span class="data-text detail">Filtered clips + detections.json (bbox coordinates, confidence scores)</span>
+                                <span class="data-text summary">Smaller set of clips</span>
+                                <span class="data-text detail">Filtered clips, and data file detections.json with confidence scores and timestamps per frame</span>
                             </div>
                         </div>
                     </div>
@@ -313,18 +315,18 @@
                             <h2 class="process-title">Make Highlights Reel</h2>
                         </div>
                         <p class="process-description summary">
-                            Trim each clip to show only the bird activity, then combine all segments into one video file.
+                            Trim each clip to show only the bird activity, then combine all segments into one highlights video.
                         </p>
                         <p class="process-description detail">
-                            Binary search algorithm identifies optimal segment boundaries using cached detection timestamps from filter step.
+                            Binary search algorithm identifies optimal segment boundaries using cached detection timestamps from the filter step.
                             Each clip is trimmed to show only portions with bird activity. FFmpeg concatenates all segments using stream copy
-                            (no re-encoding) for fast processing. Output: single H.264 MP4 file, typically 5-10 minutes duration.
+                            (no re-encoding) for fast processing. Output: highlights.mp4 - in our tests typically 5-10 minutes duration.
                         </p>
                         <div class="data-flow">
                             <div class="data-output">
                                 <span class="data-icon">🎞️</span>
                                 <span class="data-text summary">One highlights file</span>
-                                <span class="data-text detail">highlights.mp4 (H.264, variable duration, segment timestamps)</span>
+                                <span class="data-text detail">highlights.mp4 (H.264, variable duration)</span>
                             </div>
                         </div>
                     </div>
@@ -340,18 +342,19 @@
                             <h2 class="process-title">Identify Species</h2>
                         </div>
                         <p class="process-description summary">
-                            Analyze the highlights to determine which bird species appear, with confidence scores and timing.
+                            Analyse the highlights to determine which bird species appear, with confidence scores and timing.
                         </p>
                         <p class="process-description detail">
-                            BioCLIP vision-language model performs zero-shot species identification on keyframes from the highlights video.
-                            Multi-modal embedding space matches visual features against bird species taxonomies. Runs on remote GPU server
-                            for efficient batch processing. Output metadata includes common/scientific names, temporal bounds, and confidence scores.
+                            We take frame captures from highlights.mp4 at short intervals (every 2 seconds in our testing).  This could miss birds which
+                            appear very briefly, it's a trade-off with the time-consuming processing.  The BioCLIP vision-language model performs zero-shot
+                            species identification on the frames.  To further speed up the matching, we pass a fixed list of species.
+                            The matching requires a GPU for reasonable performance - there's an option to run on remote GPU server.  The model scores each match with &percnt; confidence.
                         </p>
                         <div class="data-flow">
                             <div class="data-output">
                                 <span class="data-icon">📊</span>
                                 <span class="data-text summary">Timeline, counts, confidence scores</span>
-                                <span class="data-text detail">Species metadata JSON (taxonomy, temporal bounds, confidence distributions)</span>
+                                <span class="data-text detail">Output metadata in species.json includes timestamps, common/scientific names, and confidence scores.</span>
                             </div>
                         </div>
                     </div>
@@ -367,18 +370,18 @@
                             <h2 class="process-title">Find Best Sections</h2>
                         </div>
                         <p class="process-description summary">
-                            Rank video segments by species diversity and quality to suggest the most interesting timestamps. (Planned feature)
+                            Rank video segments by species diversity and quality to suggest the most interesting timestamps to view.
                         </p>
                         <p class="process-description detail">
-                            Planned: Multi-criteria scoring algorithm will rank segments based on species diversity, detection confidence,
-                            and temporal uniqueness. Sliding window analysis with configurable segment length to identify peak activity periods.
-                            Will output ranked timestamp suggestions highlighting the best moments for each species observed.
+                            Using the frame timeline from the previous step, for each species we identify the "best" short segment for viewing.
+                            For example the "best" point in the highlights for robins is scored as the 8 consecutive frames (14 seconds) with the highest cumulative
+                            confidence for robins.  Later when we select the robins button the video will seek to the start of the identified segment.
                         </p>
                         <div class="data-flow">
                             <div class="data-output">
                                 <span class="data-icon">🎯</span>
-                                <span class="data-text summary">Suggested best timestamps per species</span>
-                                <span class="data-text detail">Ranked timestamp suggestions with scoring justifications and quality metrics</span>
+                                <span class="data-text summary">Suggested best timestamps and count per species</span>
+                                <span class="data-text detail">For each species: counts of frames where it was found, best segment timestamp.  File species.json.</span>
                             </div>
                         </div>
                     </div>
@@ -397,15 +400,15 @@
                             Upload highlights and data to the cloud. View video with playback controls and visual/audio statistics.
                         </p>
                         <p class="process-description detail">
-                            Highlights video and metadata uploaded to Cloudflare R2 object storage using YYYYMMDD-NN batch versioning.
-                            Static HTML viewer fetches content via client-side JavaScript. The latest.json index maintains current batch
-                            information and archive links. Deployed to Cloudflare Workers for global CDN distribution.
+                            Highlights video and JSON metadata uploaded to Amazon S3 (or compatible stores, in our testing we used Cloudflare R2) object storage, organised per batch.
+                            Static HTML viewer fetches content directly from S3/R2 via client-side JavaScript. The latest.json index drives the navigation controls for batch selection.
+                            The viewer is deployed to Cloudflare Workers for global CDN distribution.
                         </p>
                         <div class="data-flow">
                             <div class="data-output">
                                 <span class="data-icon">📱</span>
                                 <span class="data-text summary">Interactive web app with player and stats</span>
-                                <span class="data-text detail">Static HTML viewer + MP4 hosted on Cloudflare R2 with latest.json index</span>
+                                <span class="data-text detail">Static HTML viewer + MP4 hosted on S3-compatible object store with latest.json index and timeline data</span>
                             </div>
                         </div>
                     </div>
