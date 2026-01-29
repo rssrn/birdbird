@@ -33,6 +33,17 @@ Installed automatically via `pip install -e .`:
 - **boto3** (≥1.42.0) - AWS/R2 SDK for cloud publishing (optional)
 - **birdnet-analyzer** (≥2.4.0) - Bird song detection from audio
 
+### Remote GPU (Optional - for Species Identification)
+
+Species identification uses **BioCLIP** running on a remote GPU to avoid local system slowdown. The remote machine requires:
+
+- **Python 3.10+** with BioCLIP environment
+- **BioCLIP** - Vision-language model for bird species classification
+- **SSH access** from your local machine
+- **GPU** - CUDA-capable GPU recommended for faster processing
+
+Note: BioCLIP is NOT installed locally - the `species` command transfers frames to the remote GPU for processing.
+
 ## Quickstart
 
 ```bash
@@ -50,11 +61,10 @@ birdbird process /path/to/clips
 birdbird process /path/to/clips --limit 10
 
 # Or run steps separately:
-birdbird filter /path/to/clips
-birdbird highlights /path/to/clips/has_birds/
-
-# Detect bird songs from audio (standalone step)
-birdbird songs /path/to/clips
+birdbird filter /path/to/clips                    # 1. Filter clips with birds
+birdbird highlights /path/to/clips/has_birds/     # 2. Generate highlights reel
+birdbird species /path/to/clips                   # 3. Identify species (requires remote GPU)
+birdbird songs /path/to/clips                     # 4. Detect bird songs from audio
 
 # Optional: Publish to web (requires R2 setup - see below)
 birdbird publish /path/to/clips
@@ -83,6 +93,60 @@ nano ~/.birdbird/config.json
 **Supported settings:**
 
 - `location.lat` / `location.lon` - Default coordinates for BirdNET species filtering in the `songs` command. Speeds up analysis by limiting to species found in your region. Can be overridden with `--lat`/`--lon` CLI flags.
+
+### Remote GPU Configuration (Optional - for Species Identification)
+
+To use the `species` command for visual species identification, configure a remote GPU:
+
+1. **Set up remote machine** with BioCLIP:
+   ```bash
+   # On the remote machine
+   python3 -m venv ~/bioclip_env
+   source ~/bioclip_env/bin/activate
+   pip install bioclip torch
+   ```
+
+2. **Configure SSH access** - Ensure passwordless SSH from your local machine:
+   ```bash
+   # On your local machine
+   ssh-copy-id user@remote-hostname
+   ssh user@remote-hostname  # Test connection
+   ```
+
+3. **Add remote config** to `~/.birdbird/config.json`:
+   ```json
+   {
+     "location": {
+       "lat": 51.35,
+       "lon": -2.15
+     },
+     "species": {
+       "processing": {
+         "mode": "remote",
+         "remote": {
+           "host": "user@remote-hostname",
+           "shell": "bash",
+           "python_env": "~/bioclip_env"
+         }
+       },
+       "min_confidence": 0.5,
+       "samples_per_minute": 6.0,
+       "labels_file": "~/.birdbird/bird_labels.txt"
+     }
+   }
+   ```
+
+4. **Create labels file** at `~/.birdbird/bird_labels.txt` with species to detect:
+   ```
+   Blue Tit
+   Great Tit
+   Robin
+   Blackbird
+   House Sparrow
+   # Add more species...
+   ```
+
+**Note:** For WSL remote targets, use `"shell": "wsl"` instead of `"bash"`.
 
 ### Cloudflare R2 Configuration (Optional - for Publishing)
 
@@ -212,15 +276,30 @@ src/birdbird/
 ├── filter.py        # Batch filtering logic
 ├── frames.py        # Quality-based frame extraction and ranking
 ├── highlights.py    # Highlights reel generation
+├── species.py       # BioCLIP species identification (remote GPU)
+├── best_clips.py    # Best viewing windows for each species
+├── songs.py         # BirdNET audio analysis
+├── paths.py         # Path management utilities
 ├── publish.py       # R2 upload with batch management
-└── songs.py         # BirdNET audio analysis
+└── templates/       # Web viewer HTML/CSS/JS
 ```
 
 ### Detection Approach
 
-Uses **YOLOv8-nano** pre-trained on [COCO](https://cocodataset.org/) (Common Objects in Context), a dataset with 80 object categories including birds. This allows detection without custom training:
+The pipeline uses a two-stage approach:
 
-- **Bird detection**: COCO class 14 (bird) with default confidence threshold 0.2 (configurable via `--bird-conf`)
+**Stage 1: Bird Detection (Filter)**
+- Uses **YOLOv8-nano** pre-trained on [COCO](https://cocodataset.org/) (Common Objects in Context)
+- Detects presence of birds (COCO class 14) with confidence threshold 0.2 (configurable via `--bird-conf`)
+- Fast, lightweight detection to eliminate false positives (wind, shadows, etc.)
+- Runs locally without GPU
+
+**Stage 2: Species Identification (Species)**
+- Uses **BioCLIP** (vision-language model) on remote GPU
+- Samples frames from highlights video (default: 6 frames/minute)
+- Classifies each frame against custom species labels
+- Produces species.json with timestamps, confidence scores, and top predictions
+- Requires remote GPU configuration (see Setup section)
 
 ### Frame Sampling Strategy
 
@@ -231,11 +310,63 @@ To balance speed and accuracy, frames are sampled with weighted density:
 
 This allows processing ~10s clips in ~2.3 seconds while catching brief bird appearances.
 
+### Pipeline Flow
+
+**Core Pipeline** (run together via `birdbird process` or individually):
+
+1. **Filter** (`birdbird filter`) - Detect clips containing birds
+   - Scans all AVI files in input directory
+   - Uses YOLOv8-nano to detect birds in sampled frames
+   - Copies clips with birds to `has_birds/` subdirectory
+   - Saves `detections.json` with timestamps
+
+2. **Highlights** (`birdbird highlights`) - Extract active segments
+   - Uses detection timestamps from filter step
+   - Binary search for segment start/end boundaries
+   - Concatenates segments into `highlights.mp4`
+
+3. **Songs** (`birdbird songs`) - Detect bird vocalizations
+   - Extracts audio from AVI files to temporary WAV
+   - Runs BirdNET-Analyzer for audio classification
+   - Saves `songs.json` with all detections
+   - Creates normalized audio clips per species
+
+4. **Species** (`birdbird species`) - Identify species [Optional]
+   - Samples frames from highlights video
+   - Transfers frames to remote GPU via SSH
+   - Runs BioCLIP inference with custom labels
+   - Saves `species.json` and `best_clips.json`
+   - Included in `process` if enabled in config or `--species` flag
+
+**Publishing** (separate step):
+
+5. **Publish** (`birdbird publish`) - Upload to web
+   - Uploads highlights.mp4, species.json, songs.json to Cloudflare R2
+   - Manages batch naming (YYYYMMDD-NN format)
+   - Updates latest.json index for web viewer
+   - Prompts before deleting old batches (>5)
+   - Run separately after processing
+
 ### Output
 
-- **Filter**: Clips containing detected birds are copied to a `has_birds/` subdirectory
-- **Highlights**: MP4 reel concatenating bird activity segments
-- **Songs**: JSON file with bird vocalizations detected by BirdNET (species, confidence, timestamps), plus normalized audio clips for each species
+The pipeline produces the following outputs in the input directory:
+
+- **Filter** → `has_birds/` subdirectory + `detections.json`
+  - Clips containing detected birds copied to `has_birds/`
+  - Detection metadata with timestamps and confidence scores
+
+- **Highlights** → `has_birds/highlights.mp4`
+  - MP4 reel concatenating bird activity segments
+  - Extracted using binary search on detection timestamps
+
+- **Species** → `species.json` + `best_clips.json`
+  - Species identifications with timestamps and confidence scores
+  - Best viewing windows for each species (used by web viewer seek buttons)
+  - Top 3 runner-up predictions for each detection
+
+- **Songs** → `songs.json` + `normalized_audio/*.wav`
+  - Bird vocalizations detected by BirdNET (species, confidence, timestamps)
+  - Normalized audio clips for each detected species
 
 ## Problem
 
