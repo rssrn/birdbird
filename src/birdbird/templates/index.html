@@ -16,32 +16,8 @@
     <script src="config-loader.js"></script>
     <style>
         /* Viewer-specific styles only */
-        .container {
-            max-width: 1400px;
-        }
-
         .content {
             padding: 25px 40px 40px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 80px 20px;
-            color: var(--text-secondary);
-            font-size: 1.1em;
-            font-family: 'Lato', sans-serif;
-            font-weight: 400;
-        }
-
-        .error {
-            text-align: center;
-            padding: 80px 20px;
-            color: #b85450;
-            font-size: 1.1em;
-            background: rgba(184, 84, 80, 0.06);
-            border: 2px solid rgba(184, 84, 80, 0.2);
-            border-radius: 2px;
-            margin: 20px;
         }
 
         .video-container {
@@ -350,18 +326,6 @@
 
         .tab-content.hidden {
             display: none;
-        }
-
-        .audio-explainer {
-            background: var(--parchment-light);
-            padding: 18px 22px;
-            border-radius: 2px;
-            margin-bottom: 30px;
-            color: var(--text-secondary);
-            font-size: 0.95em;
-            line-height: 1.7;
-            border-left: 4px solid var(--sky-blue);
-            font-family: 'Lato', sans-serif;
         }
 
         .audio-stats {
@@ -877,7 +841,7 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container container--wide">
         <header>
             <h1>Bird Feeder Highlights</h1>
             <div class="subtitle">Holt, Wiltshire • Automated bird activity highlights from motion-triggered clips</div>
@@ -936,7 +900,7 @@
 
                 <!-- Video Stats Tab -->
                 <div class="tab-content hidden" id="video-stats-tab" role="tabpanel" aria-labelledby="tab-video-stats">
-                    <div class="audio-explainer">
+                    <div class="info-callout">
                         Bird species are visually identified using BioCLIP analysis of motion-triggered video clips. Detections represent birds visible on camera during recording periods.
                     </div>
                     <div class="audio-stats" id="video-stats-container">
@@ -946,7 +910,7 @@
 
                 <!-- Audio Stats Tab -->
                 <div class="tab-content hidden" id="audio-stats-tab" role="tabpanel" aria-labelledby="tab-audio-stats">
-                    <div class="audio-explainer">
+                    <div class="info-callout">
                         Bird vocalisations detected from background sound in motion-triggered clips. Birds were likely off-camera.
                     </div>
                     <div class="audio-stats" id="audio-stats-container">
