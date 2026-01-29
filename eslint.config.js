@@ -2,7 +2,7 @@ import html from "eslint-plugin-html";
 
 export default [
   {
-    ignores: ["eslint.config.js", "node_modules/**"],
+    ignores: ["eslint.config.js", "stylelint.config.js", "node_modules/**"],
   },
   {
     files: ["**/*.js"],

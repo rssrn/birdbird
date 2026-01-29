@@ -54,6 +54,10 @@ source .venv/bin/activate
 # Install in development mode
 pip install -e .
 
+# Install pre-commit hooks (validates HTML/JS/CSS syntax)
+npm install
+pre-commit install
+
 # Process clips: filter + highlights + songs in one step
 birdbird process /path/to/clips
 

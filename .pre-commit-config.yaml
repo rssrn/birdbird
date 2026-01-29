@@ -7,3 +7,9 @@ repos:
         language: system
         files: \.(html|js)$
         types: [file]
+      - id: stylelint
+        name: Validate CSS
+        entry: npx stylelint --allow-empty-input
+        language: system
+        files: \.(css|html)$
+        types: [file]
