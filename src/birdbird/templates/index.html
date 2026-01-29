@@ -660,6 +660,174 @@
         .metadata-item:nth-child(2) { animation-delay: 0.1s; }
         .metadata-item:nth-child(3) { animation-delay: 0.15s; }
         .metadata-item:nth-child(4) { animation-delay: 0.2s; }
+
+        /* Info Icon & Overlay System */
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: auto;
+            height: auto;
+            margin-left: 6px;
+            background: #A8D5F2;
+            border: 1px solid #7BB8DC;
+            border-radius: 3px;
+            color: #1a1a1a;
+            font-size: 1.05em;
+            font-weight: 400;
+            font-family: 'Lato', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            vertical-align: middle;
+            padding: 3px 7px;
+            line-height: 1;
+        }
+
+        .info-icon:hover,
+        .info-icon:focus {
+            background: #8DC2E8;
+            border-color: #5BA3CC;
+            color: #000;
+            transform: translateY(-1px);
+            outline: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .info-icon:focus-visible {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
+        }
+
+        /* Info Overlay Modal */
+        .info-overlay-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(45, 47, 34, 0.75);
+            backdrop-filter: blur(3px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .info-overlay-backdrop.visible {
+            opacity: 1;
+        }
+
+        .info-overlay {
+            background: var(--cream-white);
+            border: 3px solid var(--forest-mid);
+            border-radius: 2px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            transform: translateY(20px);
+            transition: transform 0.25s ease;
+            position: relative;
+        }
+
+        .info-overlay-backdrop.visible .info-overlay {
+            transform: translateY(0);
+        }
+
+        .info-overlay-header {
+            background: var(--parchment-light);
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .info-overlay-title {
+            font-family: 'Merriweather', Georgia, serif;
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .info-overlay-close {
+            background: transparent;
+            border: none;
+            color: var(--bark-brown);
+            font-size: 1.8em;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+        }
+
+        .info-overlay-close:hover,
+        .info-overlay-close:focus {
+            background: var(--parchment-dark);
+            color: var(--forest-deep);
+            outline: none;
+        }
+
+        .info-overlay-close:focus-visible {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
+        }
+
+        .info-overlay-content {
+            padding: 24px;
+            font-family: 'Lato', sans-serif;
+            line-height: 1.7;
+            color: var(--text-primary);
+        }
+
+        .info-overlay-content p {
+            margin: 0 0 16px 0;
+        }
+
+        .info-overlay-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-overlay-content strong {
+            color: var(--forest-deep);
+            font-weight: 600;
+        }
+
+        .info-overlay-content ul {
+            margin: 12px 0;
+            padding-left: 24px;
+        }
+
+        .info-overlay-content li {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .info-overlay {
+                max-height: 90vh;
+            }
+
+            .info-overlay-header {
+                padding: 16px 20px;
+            }
+
+            .info-overlay-content {
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -751,6 +919,21 @@
         </footer>
     </div>
 
+    <!-- Info Overlay Content Templates -->
+    <template id="info-best-sighting">
+        <div class="info-overlay-content">
+            <p>For each bird species we detect, we find the "best sighting" by analysing all the moments where that bird appeared in the video.</p>
+
+            <p><strong>How it works:</strong></p>
+            <p>We look at every possible 10-15 second window in the video and add up the confidence scores for each detection of that species within the window. The window with the highest total score becomes the "best sighting" for that bird.</p>
+
+            <p>This means the best moment is usually when the species appears multiple times, stays in view longer, or when we're very confident in the identification - or a combination of all three.</p>
+
+            <p>When you click on a species name, the video jumps to that moment so the following few seconds are the best view this highlights video can offer of that type of bird.</p>
+                <p></p>The same species may also occur in other parts of the highlights video.</p>
+        </div>
+    </template>
+
     <script>
         // R2 bucket URL (CORS configured to allow localhost and production)
         const R2_BASE_URL = 'https://pub-975f47bf9a614239932c993acd009ad5.r2.dev';
@@ -758,6 +941,179 @@
         // Get batch ID from URL query parameter (e.g., ?batch=20250116-01)
         const urlParams = new URLSearchParams(window.location.search);
         const requestedBatch = urlParams.get('batch');
+
+        // Info Overlay System
+        class InfoOverlayManager {
+            constructor() {
+                this.activeOverlay = null;
+                this.triggerElement = null;
+                this.init();
+            }
+
+            init() {
+                // Event delegation for info icons
+                document.addEventListener('click', (e) => {
+                    const infoIcon = e.target.closest('.info-icon');
+                    if (infoIcon) {
+                        e.preventDefault();
+                        this.show(infoIcon.dataset.infoId, infoIcon);
+                    }
+                });
+
+                // Keyboard support for info icons
+                document.addEventListener('keydown', (e) => {
+                    const infoIcon = e.target.closest('.info-icon');
+                    if (infoIcon && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        this.show(infoIcon.dataset.infoId, infoIcon);
+                    }
+                });
+            }
+
+            show(contentId, triggerElement) {
+                // Store trigger element for focus return
+                this.triggerElement = triggerElement;
+
+                // Get content from template
+                const template = document.getElementById(`info-${contentId}`);
+                if (!template) {
+                    console.error(`Info template not found: info-${contentId}`);
+                    return;
+                }
+
+                // Create backdrop and overlay
+                const backdrop = document.createElement('div');
+                backdrop.className = 'info-overlay-backdrop';
+                backdrop.setAttribute('role', 'dialog');
+                backdrop.setAttribute('aria-modal', 'true');
+                backdrop.setAttribute('aria-labelledby', 'info-overlay-title');
+
+                const overlay = document.createElement('div');
+                overlay.className = 'info-overlay';
+
+                // Create header
+                const header = document.createElement('div');
+                header.className = 'info-overlay-header';
+
+                const title = document.createElement('h2');
+                title.className = 'info-overlay-title';
+                title.id = 'info-overlay-title';
+                title.textContent = this.getTitleForContent(contentId);
+
+                const closeButton = document.createElement('button');
+                closeButton.className = 'info-overlay-close';
+                closeButton.innerHTML = '×';
+                closeButton.setAttribute('aria-label', 'Close information overlay');
+                closeButton.addEventListener('click', () => this.hide());
+
+                header.appendChild(title);
+                header.appendChild(closeButton);
+
+                // Clone content from template
+                const content = template.content.cloneNode(true);
+
+                overlay.appendChild(header);
+                overlay.appendChild(content);
+                backdrop.appendChild(overlay);
+
+                // Add to document
+                document.body.appendChild(backdrop);
+                this.activeOverlay = backdrop;
+
+                // Trap focus within overlay
+                this.trapFocus(overlay);
+
+                // Show with animation (trigger reflow for CSS transition)
+                requestAnimationFrame(() => {
+                    backdrop.classList.add('visible');
+                });
+
+                // Focus close button
+                setTimeout(() => closeButton.focus(), 100);
+
+                // Close on backdrop click
+                backdrop.addEventListener('click', (e) => {
+                    if (e.target === backdrop) {
+                        this.hide();
+                    }
+                });
+
+                // Close on ESC key
+                this.escapeHandler = (e) => {
+                    if (e.key === 'Escape') {
+                        this.hide();
+                    }
+                };
+                document.addEventListener('keydown', this.escapeHandler);
+            }
+
+            hide() {
+                if (!this.activeOverlay) return;
+
+                // Remove visible class for exit animation
+                this.activeOverlay.classList.remove('visible');
+
+                // Remove from DOM after animation
+                setTimeout(() => {
+                    if (this.activeOverlay && this.activeOverlay.parentNode) {
+                        this.activeOverlay.parentNode.removeChild(this.activeOverlay);
+                    }
+                    this.activeOverlay = null;
+
+                    // Return focus to trigger element
+                    if (this.triggerElement) {
+                        this.triggerElement.focus();
+                        this.triggerElement = null;
+                    }
+                }, 250);
+
+                // Remove ESC key listener
+                if (this.escapeHandler) {
+                    document.removeEventListener('keydown', this.escapeHandler);
+                    this.escapeHandler = null;
+                }
+            }
+
+            trapFocus(container) {
+                // Get all focusable elements within the overlay
+                const focusableElements = container.querySelectorAll(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+
+                if (focusableElements.length === 0) return;
+
+                const firstFocusable = focusableElements[0];
+                const lastFocusable = focusableElements[focusableElements.length - 1];
+
+                container.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Tab') return;
+
+                    if (e.shiftKey) {
+                        // Shift+Tab
+                        if (document.activeElement === firstFocusable) {
+                            e.preventDefault();
+                            lastFocusable.focus();
+                        }
+                    } else {
+                        // Tab
+                        if (document.activeElement === lastFocusable) {
+                            e.preventDefault();
+                            firstFocusable.focus();
+                        }
+                    }
+                });
+            }
+
+            getTitleForContent(contentId) {
+                const titles = {
+                    'best-sighting': 'How We Find the Best Sighting'
+                };
+                return titles[contentId] || 'Information';
+            }
+        }
+
+        // Initialize info overlay system
+        const infoOverlayManager = new InfoOverlayManager();
 
         // Track current active tab for persistence across batch changes
         let currentActiveTab = urlParams.get('tab') || 'highlights';
@@ -967,10 +1323,10 @@
             header.textContent = 'Species Detections';
             speciesContainer.appendChild(header);
 
-            // Add subtitle
+            // Add subtitle with info icon
             const subtitle = document.createElement('div');
             subtitle.className = 'species-nav-subtitle';
-            subtitle.textContent = 'Click to jump to best sighting';
+            subtitle.innerHTML = `Click to jump to best sighting <button class="info-icon" data-info-id="best-sighting" aria-label="Learn how we find the best sighting">ℹ</button>`;
             speciesContainer.appendChild(subtitle);
 
             // Group clips by category
