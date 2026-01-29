@@ -35,6 +35,14 @@
     "WCAG",
     "passwordless",
     "reflow",
-    "hrefs"
+    "hrefs",
+    "siloed",
+    "scannability",
+    "scannable",
+    "crosshatch",
+    "spacebar",
+    "librosa",
+    "scipy",
+    "wavesurfer"
   ]
 }

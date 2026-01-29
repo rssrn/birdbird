@@ -79,13 +79,13 @@ Now they want to add more clutter :) I'm not convinced this adds much value - ab
 **Status:** ✅ Accepted / QuickWin
 
 **Description:**
-Add introductory element or FAQ explaining why Video Stats and Audio Stats show different species lists, and what the detection methods reveal about bird behavior.
+Add introductory element or FAQ explaining why Video Stats and Audio Stats show different species lists, and what the detection methods reveal about bird behaviour.
 
 **Rationale:**
 
 - Users may wonder why Blue Tit dominates video (115) but Common Wood-Pigeon dominates audio (19) (Claude Opus 4.5)
 - This reveals genuinely different patterns (visual vs audio detection, different species vocalize more)
-- Adds educational value about bird behavior and detection methodology
+- Adds educational value about bird behaviour and detection methodology
 - Helps users interpret apparent discrepancies between views
 
 **Suggested by:** Claude Opus 4.5 (#23 Data Presentation)

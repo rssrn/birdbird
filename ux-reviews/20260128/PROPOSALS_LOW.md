@@ -99,8 +99,8 @@ Add indicators for first-time sightings, seasonal patterns, or changes in freque
 Add ability to select two date ranges and display side-by-side comparisons: species counts, new appearances, differences in audio vs video patterns.
 
 **Rationale:**
-- Power-user feature for analyzing patterns (Gemini 3)
-- Helps identify seasonal changes, weather impacts, or behavioral shifts
+- Power-user feature for analysing patterns (Gemini 3)
+- Helps identify seasonal changes, weather impacts, or behavioural shifts
 - Extends LOW-03 trends feature with interactive comparison
 - "Compare this week to last week" use case
 
@@ -193,7 +193,7 @@ When showing a detection, optionally display the top 2-3 alternative species if 
 - Add expandable section in Highlights view: "Other possibilities: ..."
 - Show in tooltip on hover in Video Stats
 - Only show alternatives if runner-up confidence is >50% or within 20% of top prediction
-- Style alternatives differently (grayed out or with "Possible alternative" label)
+- Style alternatives differently (greyed out or with "Possible alternative" label)
 
 **Response:**
 
