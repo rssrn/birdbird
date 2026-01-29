@@ -58,6 +58,10 @@ pip install -e .
 npm install
 pre-commit install
 
+# Run runtime accessibility tests (before deploying viewer changes)
+npm run serve              # In one terminal - starts local server on :3000
+npm run test:a11y          # In another terminal - runs pa11y tests
+
 # Process clips: filter + highlights + songs in one step
 birdbird process /path/to/clips
 

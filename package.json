@@ -2,11 +2,17 @@
   "name": "birdbird-lint",
   "private": true,
   "type": "module",
+  "scripts": {
+    "serve": "npx serve -l 3000 src/birdbird/templates",
+    "test:a11y": "EXIT=0; pa11y http://localhost:3000/index.html || EXIT=1; pa11y http://localhost:3000/credits.html || EXIT=1; pa11y http://localhost:3000/method.html || EXIT=1; pa11y http://localhost:3000/accessibility.html || EXIT=1; exit $EXIT"
+  },
   "devDependencies": {
     "eslint": "^9.0.0",
     "eslint-plugin-html": "^8.0.0",
     "html-validate": "^9.0.0",
+    "pa11y": "^8.0.0",
     "postcss-html": "^1.7.0",
+    "serve": "^14.0.0",
     "stylelint": "^16.0.0",
     "stylelint-config-standard": "^37.0.0"
   }
