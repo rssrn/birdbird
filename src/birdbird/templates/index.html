@@ -220,10 +220,38 @@
             margin-bottom: 20px;
         }
 
+        .archive-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
         .archive-list {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+        }
+
+        .method-link {
+            padding: 12px 22px;
+            background: #A8D5F2;
+            color: #1a1a1a;
+            text-decoration: none;
+            border-radius: 2px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            border: 2px solid #7BB8DC;
+            font-size: 0.95em;
+            white-space: nowrap;
+            margin-left: auto;
+        }
+
+        .method-link:hover {
+            background: #8DC2E8;
+            color: #000;
+            border-color: #5BA3CC;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .archive-link {
@@ -618,6 +646,17 @@
                 font-size: 0.95em;
             }
 
+            .archive-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .method-link {
+                text-align: center;
+                margin-left: 0;
+            }
+
             .species-row {
                 flex-wrap: wrap;
             }
@@ -848,8 +887,11 @@
             <div id="error" class="error" style="display: none;" role="alert"></div>
             <div id="main-content" style="display: none;">
                 <!-- Archive -->
-                <div class="archive" id="archive-section" style="display: none;">
-                    <div class="archive-list" id="archive-list"></div>
+                <div class="archive" id="archive-section">
+                    <div class="archive-header">
+                        <div class="archive-list" id="archive-list" style="display: none;"></div>
+                        <a href="method.html" class="method-link">How it works</a>
+                    </div>
                 </div>
 
                 <!-- Tab Navigation -->
@@ -1205,9 +1247,8 @@
 
             // Render archive links
             if (allBatches.length > 1) {
-                const archiveSection = document.getElementById('archive-section');
                 const archiveList = document.getElementById('archive-list');
-                archiveSection.style.display = 'block';
+                archiveList.style.display = 'flex';
                 archiveList.innerHTML = '';
 
                 allBatches.forEach(batch => {
