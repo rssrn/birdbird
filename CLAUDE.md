@@ -131,6 +131,9 @@ Use `/plan` to list plans or `/plan <name>` to load details. Plans are stored in
 | `publish` | Implemented | Both | M2.2: R2 upload, static web viewer |
 | `audio-tab` | Ready | Frontend | Audio statistics tab in viewer |
 | `m4-species` | Ready | Backend | BioCLIP visual species identification |
+| `test-layer1-unit` | Ready | Testing | Pure unit tests (config, paths, parsing) |
+| `test-layer2-mocked` | Ready | Testing | Mocked unit tests (detector, filter, etc.) |
+| `test-layer3-integration` | Ready | Testing | Integration tests with real dependencies |
 
 **Key references** (available in full plans):
 - Website repo: `/home/ross/src/birdbird-website/` (auto-deploys on push)
