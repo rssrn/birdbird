@@ -896,9 +896,9 @@
 
                 <!-- Tab Navigation -->
                 <div class="tabs" role="tablist" aria-label="Content tabs">
-                    <button class="tab-button active" data-tab="highlights" role="tab" id="tab-highlights" aria-selected="true" aria-controls="highlights-tab">Highlights</button>
-                    <button class="tab-button" data-tab="video-stats" role="tab" id="tab-video-stats" aria-selected="false" aria-controls="video-stats-tab">Video Stats</button>
-                    <button class="tab-button" data-tab="audio-stats" role="tab" id="tab-audio-stats" aria-selected="false" aria-controls="audio-stats-tab">Audio Stats</button>
+                    <button type="button" class="tab-button active" data-tab="highlights" role="tab" id="tab-highlights" aria-selected="true" aria-controls="highlights-tab">Highlights</button>
+                    <button type="button" class="tab-button" data-tab="video-stats" role="tab" id="tab-video-stats" aria-selected="false" aria-controls="video-stats-tab">Video Stats</button>
+                    <button type="button" class="tab-button" data-tab="audio-stats" role="tab" id="tab-audio-stats" aria-selected="false" aria-controls="audio-stats-tab">Audio Stats</button>
                 </div>
 
                 <!-- Highlights Tab -->
@@ -914,9 +914,9 @@
                                     <source id="video-source" src="" type="video/mp4">
                                     Your browser does not support the video tag.
                                 </video>
-                                <div class="play-overlay" id="play-overlay" role="button" tabindex="0" aria-label="Play video">
-                                    <div class="play-button"></div>
-                                </div>
+                                <button type="button" class="play-overlay" id="play-overlay" aria-label="Play video">
+                                    <span class="play-button"></span>
+                                </button>
                             </div>
 
                             <!-- Metadata -->
@@ -978,7 +978,7 @@
             <p>This means the best moment is usually when the species appears multiple times, stays in view longer, or when we're very confident in the identification - or a combination of all three.</p>
 
             <p>When you click on a species name, the video jumps to that moment so the following few seconds are the best view this highlights video can offer of that type of bird.</p>
-                <p></p>The same species may also occur in other parts of the highlights video.</p>
+            <p>The same species may also occur in other parts of the highlights video.</p>
         </div>
     </template>
 

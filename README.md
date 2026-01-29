@@ -54,7 +54,7 @@ source .venv/bin/activate
 # Install in development mode
 pip install -e .
 
-# Install pre-commit hooks (validates HTML/JS/CSS syntax)
+# Install pre-commit hooks (validates HTML structure, JS syntax, CSS syntax, WCAG accessibility)
 npm install
 pre-commit install
 

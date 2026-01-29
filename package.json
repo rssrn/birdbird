@@ -5,6 +5,7 @@
   "devDependencies": {
     "eslint": "^9.0.0",
     "eslint-plugin-html": "^8.0.0",
+    "html-validate": "^9.0.0",
     "postcss-html": "^1.7.0",
     "stylelint": "^16.0.0",
     "stylelint-config-standard": "^37.0.0"

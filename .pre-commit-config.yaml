@@ -1,8 +1,14 @@
 repos:
   - repo: local
     hooks:
+      - id: html-validate
+        name: Validate HTML structure
+        entry: npx html-validate
+        language: system
+        files: \.html$
+        types: [file]
       - id: eslint
-        name: Validate HTML and JavaScript
+        name: Validate JavaScript
         entry: npx eslint --no-warn-ignored
         language: system
         files: \.(html|js)$
