@@ -20,3 +20,7 @@ build/
 
 # Local development config (contains production R2 URL)
 src/birdbird/templates/config.local.js
+
+# Node.js (for ESLint HTML linting)
+node_modules/
+package-lock.json

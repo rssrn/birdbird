@@ -1,0 +1,9 @@
+{
+  "name": "birdbird-html-lint",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "eslint-plugin-html": "^8.0.0"
+  }
+}

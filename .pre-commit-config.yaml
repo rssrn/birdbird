@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: eslint
+        name: Validate HTML and JavaScript
+        entry: npx eslint --no-warn-ignored
+        language: system
+        files: \.(html|js)$
+        types: [file]
