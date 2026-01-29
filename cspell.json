@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en-GB",
+  "dictionaries": ["en-gb"],
+  "files": ["**/*.html", "**/*.md"],
+  "ignorePaths": [
+    "node_modules",
+    ".venv",
+    "*.json",
+    "*.lock"
+  ],
+  "ignoreRegExpList": [
+    "/BirdNET-Analyzer/gi"
+  ],
+  "words": [
+    "birdbird",
+    "rossarn",
+    "BirdNET",
+    "BioCLIP",
+    "YOLO",
+    "YOLOv8",
+    "ffmpeg",
+    "Cloudflare",
+    "MJPEG",
+    "Hmmss",
+    "venv",
+    "Typer",
+    "typer",
+    "tqdm",
+    "boto",
+    "pyproject",
+    "ultralytics",
+    "CUDA",
+    "WCAG",
+    "passwordless",
+    "reflow",
+    "hrefs"
+  ]
+}

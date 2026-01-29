@@ -19,6 +19,12 @@ repos:
         language: system
         files: \.(css|html)$
         types: [file]
+      - id: cspell
+        name: Spellcheck (British English)
+        entry: npx cspell --no-progress --no-summary
+        language: system
+        files: \.(html|md)$
+        types: [file]
       - id: a11y-reminder
         name: Accessibility reminder
         entry: "bash -c 'echo; echo \"Tip: Run runtime accessibility tests before deploying\"; echo \"  npm run serve        # terminal 1\"; echo \"  npm run test:a11y   # terminal 2\"; echo; exit 0'"

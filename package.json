@@ -7,6 +7,8 @@
     "test:a11y": "EXIT=0; pa11y http://localhost:3000/index.html || EXIT=1; pa11y http://localhost:3000/credits.html || EXIT=1; pa11y http://localhost:3000/method.html || EXIT=1; pa11y http://localhost:3000/accessibility.html || EXIT=1; exit $EXIT"
   },
   "devDependencies": {
+    "@cspell/dict-en-gb": "^5.0.0",
+    "cspell": "^8.0.0",
     "eslint": "^9.0.0",
     "eslint-plugin-html": "^8.0.0",
     "html-validate": "^9.0.0",

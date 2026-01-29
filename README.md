@@ -54,9 +54,18 @@ source .venv/bin/activate
 # Install in development mode
 pip install -e .
 
-# Install pre-commit hooks (validates HTML structure, JS syntax, CSS syntax, WCAG accessibility)
+# Install pre-commit hooks
 npm install
 pre-commit install
+
+# Run all pre-commit hooks manually (without committing)
+pre-commit run --all-files
+
+# Run individual hooks manually:
+npx html-validate src/birdbird/templates/*.html          # HTML structure validation
+npx eslint src/birdbird/templates/*.html                 # JavaScript validation
+npx stylelint src/birdbird/templates/*.html              # CSS validation
+npx cspell "**/*.html" "**/*.md"                         # Spellcheck (British English)
 
 # Run runtime accessibility tests (before deploying viewer changes)
 npm run serve              # In one terminal - starts local server on :3000
@@ -413,7 +422,7 @@ A bird feeder camera captures 10-second AVI clips on motion detection, but:
 | F1  | Other objects                 | If other misc objects are detected with a separate confidence threshold, note those. Might get some squirrels, cats, etc.                                                                                     |        |
 | F2  | Upload progress reporting     | Add progress bar/percentage for R2 uploads in publish command (especially for large video files)                                                                                                              | Done   |
 | F3  | Corrupted input file handling | Improve detection and handling of corrupted MJPEG frames (camera recording issues, SD card errors). Could validate files before processing, skip severely corrupted clips, or log warnings for manual review. |        |
-| F4  | Multiple bird detection       | Detect and count multiple birds in a single frame. Currently returns first detection only. Would enable richer captions (e.g., "2 Birds 85%, 72%"), social behavior tracking, and better statistics.          |        |
+| F4  | Multiple bird detection       | Detect and count multiple birds in a single frame. Currently returns first detection only. Would enable richer captions (e.g., "2 Birds 85%, 72%"), social behaviour tracking, and better statistics.          |        |
 | F5  | Audio species detection       | Species detection from audio using BirdNET. Extracts normalized audio clips for each species and publishes to web viewer with playback.                                                                       | Done   |
 | F6  | Credits page                  | Links to other projects/modules we are using, including licensing info                                                                                                                                        | Done   |
 | F7  | Analytics                     | Add some lightweight analytics, for example Umami using Umami Cloud Free tier.                                                                                                                                |        |
