@@ -186,6 +186,13 @@ To publish highlights to the web, configure Cloudflare R2:
    # Open http://localhost:3000/index.html
    ```
 
+   **Local Development Tip:** To avoid manually copying config changes during development iterations, create a `config.local.js` file in `src/birdbird/templates/` with your production values. This file is git-ignored and will be loaded preferentially by the viewer, allowing you to test directly from the templates directory without syncing to your website repo.
+
+   ```bash
+   # One-time setup for local development
+   cp /path/to/your/website/config.js src/birdbird/templates/config.local.js
+   ```
+
    **Note:** If you deploy without configuring `config.js`, a warning overlay will appear with instructions.
 
 9. **Test publishing**:

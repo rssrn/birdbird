@@ -5,7 +5,9 @@
  * Replace the placeholder values below with your actual site information.
  */
 
-window.BIRDBIRD_CONFIG = {
+// Only set config if not already defined (allows config.local.js to take precedence)
+if (typeof window.BIRDBIRD_CONFIG === 'undefined') {
+  window.BIRDBIRD_CONFIG = {
   // REQUIRED: Your R2/S3 bucket public URL
   // Find this in your Cloudflare R2 dashboard under Settings → Public Access
   // Example: 'https://pub-abc123def456.r2.dev'
@@ -22,4 +24,5 @@ window.BIRDBIRD_CONFIG = {
   // Example: Umami Cloud, Google Analytics, Plausible, etc.
   // This will be injected at the end of <body>
   analytics: ''
-};
+  };
+}
