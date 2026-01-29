@@ -41,13 +41,14 @@
             font-family: 'Lato', sans-serif;
         }
 
-        th.section-header {
+        td.section-header {
             background: var(--forest-mid);
             color: var(--cream-white);
             font-size: 1.1em;
             padding: 15px;
             font-family: 'Merriweather', Georgia, serif;
             letter-spacing: -0.3px;
+            font-weight: 600;
         }
 
         td {
@@ -82,7 +83,7 @@
             border-radius: 2px;
         }
 
-        tr:last-child td {
+        tbody:last-child tr:last-child td {
             border-bottom: none;
         }
 
@@ -97,7 +98,7 @@
             }
 
             /* Section headers remain visible */
-            th.section-header {
+            td.section-header {
                 display: block;
                 margin-top: 20px;
                 border-radius: 2px;
@@ -182,9 +183,9 @@
                         <th scope="col" style="width: 25%">License</th>
                     </tr>
                 </thead>
-                <tbody id="credits-body">
+                <tbody>
                     <tr>
-                        <th scope="colgroup" colspan="4" class="section-header">Birdbird Codebase</th>
+                        <td colspan="4" class="section-header" role="rowheader">Birdbird Codebase</td>
                     </tr>
                     <tr>
                         <td class="icon-col"></td>
@@ -204,11 +205,13 @@
                         <td>AI Coding Assistant - collaborated on some elements.</td>
                         <td>Commercial Service</td>
                     </tr>
+                </tbody>
+                <tbody>
                     <tr>
-                        <th scope="colgroup" colspan="4" class="section-header">Core ML &amp; Vision/Audio Inference</th>
+                        <td colspan="4" class="section-header" role="rowheader">Core ML &amp; Vision/Audio Inference</td>
                     </tr>
                     <tr>
-                        <td class="icon-col"><a href="https://docs.ultralytics.com/models/yolov8/" aria-label="YOLOv8 documentation"></a></td>
+                        <td class="icon-col"><a href="https://docs.ultralytics.com/models/yolov8/" aria-label="YOLOv8 documentation"><img src="https://www.google.com/s2/favicons?domain=ultralytics.com&sz=32" class="favicon-img" alt="YOLOv8 documentation"></a></td>
                         <td><a href="https://github.com/ultralytics/ultralytics" target="_blank">YOLOv8</a></td>
                         <td>Object detection model for real-time bird detection</td>
                         <td><a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank">AGPL-3.0</a></td>
@@ -226,7 +229,7 @@
                         <td><a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a></td>
                     </tr>
                     <tr>
-                        <td class="icon-col"><a href="https://birdnet.cornell.edu/" aria-label="BirdNET website"></a></td>
+                        <td class="icon-col"><a href="https://birdnet.cornell.edu/" aria-label="BirdNET website"><img src="https://www.google.com/s2/favicons?domain=birdnet.cornell.edu&sz=32" class="favicon-img" alt="BirdNET website"></a></td>
                         <td><a href="https://github.com/birdnet-team/BirdNET-Analyzer" target="_blank">BirdNET</a></td>
                         <td>Deep learning model for bird song identification from audio recordings</td>
                         <td><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a></td>
@@ -243,9 +246,10 @@
                         <td>Deep learning framework for ML model inference and GPU acceleration</td>
                         <td><a href="https://github.com/pytorch/pytorch/blob/main/LICENSE" target="_blank">BSD-3-Clause</a></td>
                     </tr>
-
+                </tbody>
+                <tbody>
                     <tr>
-                        <th scope="colgroup" colspan="4" class="section-header">Video Processing</th>
+                        <td colspan="4" class="section-header" role="rowheader">Video Processing</td>
                     </tr>
                     <tr>
                         <td class="icon-col"></td>
@@ -253,9 +257,10 @@
                         <td>Video segment extraction and concatenation</td>
                         <td><a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html" target="_blank">LGPL 2.1+</a></td>
                     </tr>
-
+                </tbody>
+                <tbody>
                     <tr>
-                        <th scope="colgroup" colspan="4" class="section-header">Python and Python Libraries</th>
+                        <td colspan="4" class="section-header" role="rowheader">Python and Python Libraries</td>
                     </tr>
                     <tr>
                         <td class="icon-col"></td>
@@ -264,26 +269,27 @@
                         <td><a href="https://docs.python.org/3/license.html" target="_blank">PSF License</a></td>
                     </tr>
                     <tr>
-                        <td class="icon-col"><a href="https://typer.tiangolo.com/" aria-label="Typer documentation"></a></td>
+                        <td class="icon-col"><a href="https://typer.tiangolo.com/" aria-label="Typer documentation"><img src="https://www.google.com/s2/favicons?domain=typer.tiangolo.com&sz=32" class="favicon-img" alt="Typer documentation"></a></td>
                         <td><a href="https://github.com/fastapi/typer" target="_blank">Typer</a></td>
                         <td>Command-line interface framework with intuitive argument parsing</td>
                         <td><a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a></td>
                     </tr>
                     <tr>
-                        <td class="icon-col"><a href="https://tqdm.github.io/" aria-label="tqdm website"></a></td>
+                        <td class="icon-col"><a href="https://tqdm.github.io/" aria-label="tqdm website"><img src="https://www.google.com/s2/favicons?domain=tqdm.github.io&sz=32" class="favicon-img" alt="tqdm website"></a></td>
                         <td><a href="https://github.com/tqdm/tqdm" target="_blank">tqdm</a></td>
                         <td>Progress bars for batch processing operations</td>
                         <td><a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a> / <a href="https://www.mozilla.org/en-US/MPL/2.0/" target="_blank">MPL 2.0</a></td>
                     </tr>
                     <tr>
-                        <td class="icon-col"><a href="https://aws.amazon.com/" aria-label="AWS website"></a></td>
+                        <td class="icon-col"><a href="https://aws.amazon.com/" aria-label="AWS website"><img src="https://www.google.com/s2/favicons?domain=aws.amazon.com&sz=32" class="favicon-img" alt="AWS website"></a></td>
                         <td><a href="https://github.com/boto/boto3" target="_blank">boto3</a></td>
                         <td>AWS SDK, used for cloud object storage uploads</td>
                         <td><a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a></td>
                     </tr>
-
+                </tbody>
+                <tbody>
                     <tr>
-                        <th scope="colgroup" colspan="4" class="section-header">Infrastructure &amp; Hosting</th>
+                        <td colspan="4" class="section-header" role="rowheader">Infrastructure &amp; Hosting</td>
                     </tr>
                     <tr>
                         <td class="icon-col"></td>
@@ -297,9 +303,10 @@
                         <td>Serverless platform for hosting the web viewer application</td>
                         <td>Commercial Service</td>
                     </tr>
-
+                </tbody>
+                <tbody>
                     <tr>
-                        <th scope="colgroup" colspan="4" class="section-header">Media &amp; Design Assets</th>
+                        <td colspan="4" class="section-header" role="rowheader">Media &amp; Design Assets</td>
                     </tr>
                     <tr>
                         <td class="icon-col"></td>
@@ -307,9 +314,10 @@
                         <td>Favicon derived from photograph by Francis C. Franklin (© Francis C. Franklin, 2015). Image cropped and resized to favicon format.</td>
                         <td><a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank">CC BY-SA 3.0</a></td>
                     </tr>
-
+                </tbody>
+                <tbody>
                     <tr>
-                        <th scope="colgroup" colspan="4" class="section-header">Development &amp; Testing</th>
+                        <td colspan="4" class="section-header" role="rowheader">Development &amp; Testing</td>
                     </tr>
                     <tr>
                         <td class="icon-col"></td>
@@ -323,9 +331,10 @@
                         <td>Runtime accessibility testing in headless browser</td>
                         <td><a href="https://www.gnu.org/licenses/lgpl-3.0.html" target="_blank">LGPL-3.0</a></td>
                     </tr>
-
+                </tbody>
+                <tbody>
                     <tr>
-                        <th scope="colgroup" colspan="4" class="section-header">This Project</th>
+                        <td colspan="4" class="section-header" role="rowheader">This Project</td>
                     </tr>
                     <tr>
                         <td class="icon-col"></td>
@@ -352,23 +361,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 link.appendChild(srText);
             });
 
-            const rows = document.querySelectorAll('#credits-body tr');
+            const rows = document.querySelectorAll('tbody tr');
 
             rows.forEach(row => {
                 const iconCell = row.querySelector('.icon-col');
                 const mainLink = row.querySelector('td:nth-child(2) a');
-                
+
                 if (!iconCell) return;
+
+                // Skip if already has an image (added inline in HTML)
+                if (iconCell.querySelector('img')) return;
 
                 const overrideLink = iconCell.querySelector('a');
                 let targetUrl = null;
                 let targetContainer = null;
 
-                // 1. Check for Override (<a> tag exists in icon-col)
+                // 1. Check for Override (<a> tag exists in icon-col without image)
                 if (overrideLink) {
                     targetUrl = overrideLink.href;
                     targetContainer = overrideLink;
-                } 
+                }
                 // 2. Check for Default (icon-col is totally empty)
                 else if (iconCell.innerHTML.trim() === "" && mainLink) {
                     targetUrl = mainLink.href;
@@ -380,13 +392,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         const domain = new URL(targetUrl).hostname;
                         const iconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-                        
+
                         const img = document.createElement('img');
                         img.src = iconUrl;
                         img.className = 'favicon-img';
-                        img.alt = '';
+                        // For images inside links, use aria-label as alt; otherwise decorative
+                        if (overrideLink && overrideLink.getAttribute('aria-label')) {
+                            img.alt = overrideLink.getAttribute('aria-label');
+                        } else {
+                            img.alt = '';
+                        }
                         img.onerror = () => { img.style.display = 'none'; };
-                        
+
                         targetContainer.appendChild(img);
                     } catch (e) {
                         console.error("Invalid URL:", targetUrl);
