@@ -87,6 +87,47 @@ birdbird songs /path/to/clips                     # 4. Detect bird songs from au
 birdbird publish /path/to/clips
 ```
 
+## Testing
+
+The project includes comprehensive unit tests for core functionality.
+
+### Running Tests
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Install test dependencies
+pip install -e ".[test]"
+
+# Run all tests
+pytest tests/
+
+# Run with verbose output
+pytest tests/ -v
+
+# Run with coverage report
+pytest tests/ --cov=src/birdbird --cov-report=term-missing
+
+# Run specific test file
+pytest tests/test_config.py -v
+
+# Run specific test class
+pytest tests/test_best_clips.py::TestFindBestClipForSpecies -v
+```
+
+### Test Coverage
+
+Current test suite includes **86 tests** covering:
+
+- **config.py**: Configuration loading, location parsing, species config (100% coverage)
+- **paths.py**: Path construction, directory creation, detection loading (100% coverage)
+- **best_clips.py**: Sliding window algorithm for best viewing windows (94% coverage)
+- **publish.py**: Date extraction, date range validation, batch ID generation (24% coverage - parsing functions only)
+- **songs.py**: Timestamp parsing, BirdNET CSV parsing, validation logic (49% coverage - parsing functions only)
+
+All tests are pure unit tests with no external dependencies (no mocking of ffmpeg, YOLO, BirdNET required), providing fast feedback on core logic.
+
 ## Setup
 
 ### General Configuration

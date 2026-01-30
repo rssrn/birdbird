@@ -30,6 +30,7 @@
     "tqdm",
     "boto",
     "pyproject",
+    "pytest",
     "ultralytics",
     "CUDA",
     "WCAG",
