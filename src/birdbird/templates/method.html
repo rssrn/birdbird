@@ -269,6 +269,15 @@
                 <span class="current">How It Works</span>
             </nav>
 
+            <div style="margin-bottom: 30px; color: var(--text-secondary); line-height: 1.6;">
+                <p>This page shows how birdbird processes raw video clips into highlights with species identification.
+                The pipeline has two parallel branches: <strong>video processing</strong> (visual bird detection) and
+                <strong>audio processing</strong> (song/call identification).</p>
+                <p style="margin-top: 12px;">Use the toggles below to switch between <strong>Summary</strong> and
+                <strong>Detail</strong> descriptions, and to view either the <strong>Video</strong> or
+                <strong>Audio</strong> pipeline.</p>
+            </div>
+
             <!-- Mode Toggle -->
             <div class="mode-toggle-container">
                 <span class="mode-label active" id="summary-label">Summary</span>
@@ -349,7 +358,7 @@
                             Automatically scan each video to detect bird presence. Only keep clips containing birds.
                         </p>
                         <p class="process-description detail">
-                            We capture a few frames (4× in first second, then 1fps) and run these through YOLOv8-nano inference
+                            We capture a few frames (4× in first second, then 1fps) and run these through <a href="https://github.com/ultralytics/ultralytics" target="_blank" rel="noopener noreferrer">YOLOv8-nano</a> inference
                             for COCO class 14 (bird). Outputs detections.json with confidence scores, bounding box coordinates, and
                             frame timestamps. Clips without bird detections are moved to a separate directory. Typical detection rate in original testing: 20-30% of input clips.
                         </p>
@@ -377,7 +386,7 @@
                         </p>
                         <p class="process-description detail">
                             Binary search algorithm identifies optimal segment boundaries using cached detection timestamps from the filter step.
-                            Each clip is trimmed to show only portions with bird activity. FFmpeg concatenates all segments using stream copy
+                            Each clip is trimmed to show only portions with bird activity. <a href="https://ffmpeg.org/" target="_blank" rel="noopener noreferrer">FFmpeg</a> concatenates all segments using stream copy
                             (no re-encoding) for fast processing. Output: highlights.mp4 - in our tests typically 5-10 minutes duration.
                         </p>
                         <div class="data-flow">
@@ -404,7 +413,7 @@
                         </p>
                         <p class="process-description detail">
                             We take frame captures from highlights.mp4 at short intervals (every 2 seconds in our testing).  This could miss birds which
-                            appear very briefly, it's a trade-off with the time-consuming processing.  The BioCLIP vision-language model performs zero-shot
+                            appear very briefly, it's a trade-off with the time-consuming processing.  The <a href="https://github.com/Imageomics/bioclip" target="_blank" rel="noopener noreferrer">BioCLIP</a> vision-language model performs zero-shot
                             species identification on the frames.  To further speed up the matching, we pass a fixed list of species.
                             The matching requires a GPU for reasonable performance - there's an option to run on remote GPU server.  The model scores each match with &percnt; confidence.
                         </p>
@@ -461,7 +470,7 @@
                             Extract the audio from each video clip for acoustic analysis.
                         </p>
                         <p class="process-description detail">
-                            FFmpeg extracts audio tracks from AVI files to temporary WAV files (16kHz mono PCM).
+                            <a href="https://ffmpeg.org/" target="_blank" rel="noopener noreferrer">FFmpeg</a> extracts audio tracks from AVI files to temporary WAV files (16kHz mono PCM).
                             This format is required by the BirdNET analyser. Files are processed in batches and
                             temporary WAVs are cleaned up after analysis.
                         </p>
@@ -488,7 +497,7 @@
                             Identify bird species by their songs and calls using acoustic analysis.
                         </p>
                         <p class="process-description detail">
-                            BirdNET-Analyzer processes audio in 3-second segments, detecting bird vocalisations and
+                            <a href="https://github.com/kahst/BirdNET-Analyzer" target="_blank" rel="noopener noreferrer">BirdNET-Analyzer</a> processes audio in 3-second segments, detecting bird vocalisations and
                             identifying species. Outputs include common and scientific names, confidence scores, and
                             timestamps. Optional location filtering (latitude/longitude) restricts results to regionally
                             appropriate species. The web viewer selects the highest-scoring clip per species.
@@ -512,15 +521,15 @@
                     <div class="process-box">
                         <div class="process-header">
                             <div class="process-icon">🌐</div>
-                            <h2 class="process-title">Present on Website</h2>
+                            <h2 class="process-title">Publish to Web</h2>
                         </div>
                         <p class="process-description summary">
                             Upload highlights and data to the cloud. View video with playback controls and visual/audio statistics.
                         </p>
                         <p class="process-description detail">
-                            Highlights video and JSON metadata uploaded to Amazon S3 (or compatible stores, in our testing we used Cloudflare R2) object storage, organised per batch.
+                            Highlights video and JSON metadata uploaded to <a href="https://aws.amazon.com/s3/" target="_blank" rel="noopener noreferrer">Amazon S3</a> (or compatible stores, in our testing we used <a href="https://www.cloudflare.com/developer-platform/r2/" target="_blank" rel="noopener noreferrer">Cloudflare R2</a>) object storage, organised per batch.
                             Static HTML viewer fetches content directly from S3/R2 via client-side JavaScript. The latest.json index drives the navigation controls for batch selection.
-                            The viewer is deployed to Cloudflare Workers for global CDN distribution.
+                            The viewer is deployed to <a href="https://workers.cloudflare.com/" target="_blank" rel="noopener noreferrer">Cloudflare Workers</a> for global CDN distribution.
                         </p>
                         <div class="data-flow">
                             <div class="data-output">
