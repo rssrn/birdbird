@@ -595,10 +595,10 @@ def frames(
 @app.command()
 def publish(
     input_dir: Path = typer.Argument(..., help="Directory containing birdbird/assets/ (output from process)"),
-    config_file: Path = typer.Option("~/.birdbird/cloudflare.json", "--config", "-c", help="Cloudflare config file"),
+    config_file: Path = typer.Option("~/.birdbird/cloud-storage.json", "--config", "-c", help="Cloud storage config file (S3-compatible)"),
     new_batch: bool = typer.Option(False, "--new-batch", "-n", help="Create new batch sequence (for additional footage same day)"),
 ) -> None:
-    """Publish highlights to Cloudflare R2.
+    """Publish highlights to cloud storage (Cloudflare R2, AWS S3, or S3-compatible).
 
     By default, replaces existing batch for the same date. Use --new-batch to create
     a new sequence (e.g., 20260114_02) when you collected additional footage same day.
@@ -623,7 +623,7 @@ def publish(
         typer.echo("", err=True)
         typer.echo("Create config file with:", err=True)
         typer.echo("  mkdir -p ~/.birdbird", err=True)
-        typer.echo("  nano ~/.birdbird/cloudflare.json", err=True)
+        typer.echo("  nano ~/.birdbird/cloud-storage.json", err=True)
         typer.echo("", err=True)
         typer.echo("See README.md for setup instructions", err=True)
         raise typer.Exit(1)

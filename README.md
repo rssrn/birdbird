@@ -67,6 +67,11 @@ This will create:
 - Python 3.10 or later
 - ffmpeg (for video processing)
 
+**Supported Platforms:**
+- **Linux** - Tested on Ubuntu 22.04 (primary development platform)
+- **macOS** - Untested, but toolchain should work (Python, ffmpeg, and all dependencies are cross-platform). Please report any issues.
+- **Windows** - Untested, may require additional setup for ffmpeg and path handling
+
 ```bash
 # Ubuntu/Debian
 sudo apt install python3 python3-venv ffmpeg
@@ -224,24 +229,14 @@ This produces `species.json` with timestamps and confidence scores, plus `best_c
 
 ### Publishing to Web
 
-Publish your highlights to Cloudflare R2 for web viewing:
+Publish your highlights to cloud storage and deploy a web viewer to browse results.
 
 **Quick setup:**
 
-1. Create an R2 bucket in Cloudflare dashboard
-2. Generate API token with read/write permissions
-3. Create `~/.birdbird/cloudflare.json`:
-   ```json
-   {
-     "r2_access_key_id": "YOUR_KEY",
-     "r2_secret_access_key": "YOUR_SECRET",
-     "r2_bucket_name": "birdbird-highlights",
-     "r2_account_id": "YOUR_ACCOUNT_ID",
-     "r2_endpoint": "https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com"
-   }
-   ```
-4. Deploy the web viewer (templates in `src/birdbird/templates/`)
-5. Publish:
+1. **Choose your storage backend** (see Infrastructure Options below)
+2. Create `~/.birdbird/cloud-storage.json` with your storage credentials
+3. Deploy the web viewer (see Hosting the Web Viewer below)
+4. Publish:
    ```bash
    birdbird publish /path/to/clips
    ```
@@ -251,6 +246,99 @@ The web viewer provides:
 - Audio statistics tab with song clips
 - Date range filtering for multiple batches
 - Responsive design for mobile/desktop
+
+#### Infrastructure Options
+
+**Storage Backend:**
+
+birdbird uses the S3 API via boto3, so it works with any S3-compatible storage. Tested and untested options:
+
+- **Cloudflare R2** (recommended, tested)
+  - Free tier: 10GB storage, no egress fees
+  - Fast CDN-backed delivery
+  - Create bucket in [Cloudflare dashboard](https://dash.cloudflare.com/?to=/:account/r2)
+  - Config example:
+    ```json
+    {
+      "r2_access_key_id": "YOUR_KEY",
+      "r2_secret_access_key": "YOUR_SECRET",
+      "r2_bucket_name": "birdbird-highlights",
+      "r2_account_id": "YOUR_ACCOUNT_ID",
+      "r2_endpoint": "https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com"
+    }
+    ```
+
+- **AWS S3** (untested, should work)
+  - Standard S3 pricing applies (storage + bandwidth)
+  - Config example:
+    ```json
+    {
+      "r2_access_key_id": "YOUR_AWS_ACCESS_KEY",
+      "r2_secret_access_key": "YOUR_AWS_SECRET_KEY",
+      "r2_bucket_name": "birdbird-highlights",
+      "r2_account_id": "us-east-1",
+      "r2_endpoint": "https://s3.us-east-1.amazonaws.com"
+    }
+    ```
+
+- **Other S3-compatible storage** (untested)
+  - DigitalOcean Spaces, Backblaze B2, Wasabi, MinIO, etc.
+  - Adjust `r2_endpoint` and credentials accordingly
+  - May require CORS configuration for web viewer access
+
+**Note:** Despite the `r2_` prefix in config keys (historical naming), these settings work with any S3-compatible API.
+
+#### Hosting the Web Viewer
+
+The viewer is static HTML/CSS/JS (no build step required) located in `src/birdbird/templates/`. Deploy it anywhere that serves static files:
+
+**Option 1: Cloudflare Pages** (recommended if using R2)
+```bash
+# From birdbird-website repo
+git add . && git commit -m "Update viewer"
+git push  # Auto-deploys via Cloudflare Pages integration
+```
+
+**Option 2: GitHub Pages** (free, simple)
+```bash
+# Copy templates to gh-pages branch
+cp -r src/birdbird/templates/* docs/
+git add docs/ && git commit -m "Deploy viewer"
+git push origin main
+# Enable GitHub Pages in repo settings → Pages → Source: docs/
+```
+
+**Option 3: Netlify/Vercel** (free tier, drag-and-drop)
+- Create new site
+- Upload `src/birdbird/templates/` directory
+- No build configuration needed
+
+**Option 4: Self-hosted** (any web server)
+```bash
+# nginx example
+sudo cp -r src/birdbird/templates/* /var/www/birdbird/
+# Configure nginx to serve /var/www/birdbird/
+
+# Or simple Python server for testing
+cd src/birdbird/templates && python3 -m http.server 8000
+```
+
+**Option 5: Local development**
+```bash
+npx serve -l 3000 src/birdbird/templates
+# Open http://localhost:3000/index.html
+```
+
+**Important:** Configure CORS on your storage bucket to allow requests from your viewer domain. For R2:
+```json
+[
+  {
+    "AllowedOrigins": ["https://yourdomain.com", "http://localhost:3000"],
+    "AllowedMethods": ["GET"],
+    "AllowedHeaders": ["*"]
+  }
+]
+```
 
 ---
 

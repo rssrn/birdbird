@@ -20,8 +20,8 @@ from birdbird.publish import (
 
 
 def load_config() -> dict:
-    """Load Cloudflare R2 configuration."""
-    config_path = Path.home() / ".birdbird" / "cloudflare.json"
+    """Load cloud storage configuration (Cloudflare R2 or S3-compatible)."""
+    config_path = Path.home() / ".birdbird" / "cloud-storage.json"
     if not config_path.exists():
         raise FileNotFoundError(f"Config not found: {config_path}")
 
