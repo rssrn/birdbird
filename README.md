@@ -1,183 +1,184 @@
 # birdbird
 
-Automated bird feeder video analysis pipeline. Processes motion-triggered clips from a bird feeder camera to identify bird species, generate highlight reels, and produce summary reports.
+> Automated bird feeder video analysis - turn hundreds of motion-triggered clips into highlight reels with species identification
 
-First used with a "Wilde & Oakes Bird Feeder with Smart Camera" set to capture 10-second clips.
+![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-## Dependencies
+## What is this?
 
-### System Requirements
+If you have a bird feeder camera that captures motion-triggered clips, you probably have:
+- Hundreds of 10-second videos to review
+- Many false positives (wind, shadows, leaves)
+- No easy way to identify which birds visited
+- No quick way to find the "good" footage
 
-- **Python 3.10+** - Core runtime
-- **ffmpeg** - Video processing (segment extraction, concatenation, encoding)
+**birdbird** solves this by automatically:
+1. **Filtering** clips to find actual bird activity (eliminates ~70% of false positives)
+2. **Identifying** species using AI vision models
+3. **Detecting** bird songs from audio tracks
+4. **Generating** highlight reels of the best moments
+5. **Publishing** to a web viewer with timestamps and audio clips
 
-  ```bash
-  # Ubuntu/Debian
-  sudo apt install ffmpeg
+### Example Output
 
-  # macOS
-  brew install ffmpeg
+From a batch of 498 motion-triggered clips (4 hours of footage), birdbird automatically produces:
+- A filtered set of 149 clips with actual birds (29.9% detection rate)
+- A 23-minute highlight reel showing only active segments
+- Species identifications with confidence scores and timestamps
+- Bird song detections with audio clips
+- An interactive web viewer to explore the results
 
-  # Verify installation
-  ffmpeg -version
-  ```
+[See a live example →](https://birdbird.rossarn.workers.dev/)
 
-### Python Packages
+## Quick Start
 
-Installed automatically via `pip install -e .`:
-
-- **ultralytics** (≥8.0.0) - YOLOv8 object detection model
-- **opencv-python** (≥4.8.0) - Video/image processing
-- **typer** (≥0.9.0) - CLI framework
-- **tqdm** (≥4.66.0) - Progress bars
-- **boto3** (≥1.42.0) - AWS/R2 SDK for cloud publishing (optional)
-- **birdnet-analyzer** (≥2.4.0) - Bird song detection from audio
-
-### Remote GPU (Optional - for Species Identification)
-
-Species identification uses **BioCLIP** running on a remote GPU to avoid local system slowdown. The remote machine requires:
-
-- **Python 3.10+** with BioCLIP environment
-- **BioCLIP** - Vision-language model for bird species classification
-- **SSH access** from your local machine
-- **GPU** - CUDA-capable GPU recommended for faster processing
-
-Note: BioCLIP is NOT installed locally - the `species` command transfers frames to the remote GPU for processing.
-
-## Quickstart
+> **First time?** See [Installation](#installation) below for system requirements.
 
 ```bash
-# Create and activate a virtual environment
+# Install birdbird
+git clone https://github.com/rssrn/birdbird.git
+cd birdbird
 python3 -m venv .venv
 source .venv/bin/activate
-
-# Install in development mode
 pip install -e .
 
-# Install pre-commit hooks
-npm install
-pre-commit install
+# Process your clips (filter + highlights + songs)
+birdbird process /path/to/your/clips
 
-# Run all pre-commit hooks manually (without committing)
-pre-commit run --all-files
-
-# Run individual hooks manually:
-npx html-validate src/birdbird/templates/*.html          # HTML structure validation
-npx eslint src/birdbird/templates/*.html                 # JavaScript validation
-npx stylelint src/birdbird/templates/*.html              # CSS validation
-npx cspell "**/*.html" "**/*.md"                         # Spellcheck (British English)
-
-# Run runtime accessibility tests (before deploying viewer changes)
-npm run serve              # In one terminal - starts local server on :3000
-npm run test:a11y          # In another terminal - runs pa11y tests
-
-# Process clips: filter + highlights + songs in one step
-birdbird process /path/to/clips
-
-# Test with limited clips first
-birdbird process /path/to/clips --limit 10
-
-# Or run steps separately:
-birdbird filter /path/to/clips                    # 1. Filter clips with birds
-birdbird highlights /path/to/clips/has_birds/     # 2. Generate highlights reel
-birdbird species /path/to/clips                   # 3. Identify species (requires remote GPU)
-birdbird songs /path/to/clips                     # 4. Detect bird songs from audio
-
-# Optional: Publish to web (requires R2 setup - see below)
-birdbird publish /path/to/clips
+# Test with just 10 clips first
+birdbird process /path/to/your/clips --limit 10
 ```
 
-## Testing
+This will create:
+- `birdbird/working/` - Temporary processing files (symlinks to filtered clips, intermediate data)
+- `birdbird/working/filter/detections.json` - Bird detection timestamps
+- `birdbird/assets/highlights.mp4` - Concatenated highlight reel
+- `birdbird/assets/songs.json` - Bird song detections
+- `birdbird/assets/song_clips/` - Audio clips per species
 
-The project includes comprehensive unit tests for core functionality.
+---
 
-### Running Tests
+## For Users: Getting Started
+
+### Installation
+
+**System Requirements:**
+- Python 3.10 or later
+- ffmpeg (for video processing)
 
 ```bash
-# Activate virtual environment
-source .venv/bin/activate
+# Ubuntu/Debian
+sudo apt install python3 python3-venv ffmpeg
 
-# Install test dependencies
-pip install -e ".[test]"
+# macOS
+brew install python@3.10 ffmpeg
 
-# Run all tests
-pytest tests/
-
-# Run with verbose output
-pytest tests/ -v
-
-# Run with coverage report
-pytest tests/ --cov=src/birdbird --cov-report=term-missing
-
-# Run specific test file
-pytest tests/test_config.py -v
-
-# Run specific test class
-pytest tests/test_best_clips.py::TestFindBestClipForSpecies -v
+# Verify
+python3 --version  # Should be 3.10+
+ffmpeg -version
 ```
 
-### Test Coverage
+**Install birdbird:**
 
-Current test suite includes **86 tests** covering:
+```bash
+# Clone and setup
+git clone https://github.com/rssrn/birdbird.git
+cd birdbird
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -e .
+```
 
-- **config.py**: Configuration loading, location parsing, species config (100% coverage)
-- **paths.py**: Path construction, directory creation, detection loading (100% coverage)
-- **best_clips.py**: Sliding window algorithm for best viewing windows (94% coverage)
-- **publish.py**: Date extraction, date range validation, batch ID generation (24% coverage - parsing functions only)
-- **songs.py**: Timestamp parsing, BirdNET CSV parsing, validation logic (49% coverage - parsing functions only)
+Python packages (installed automatically):
+- **ultralytics** - YOLOv8 object detection
+- **opencv-python** - Video/image processing
+- **typer** - CLI framework
+- **tqdm** - Progress bars
+- **birdnet-analyzer** - Bird song detection
+- **boto3** - Cloud publishing (optional)
 
-All tests are pure unit tests with no external dependencies (no mocking of ffmpeg, YOLO, BirdNET required), providing fast feedback on core logic.
+### Basic Usage
 
-## Setup
+**Process a batch of clips:**
 
-### General Configuration
+```bash
+# All-in-one: filter + highlights + songs
+birdbird process /path/to/clips
 
-Create a config file at `~/.birdbird/config.json` for user-specific settings:
+# Or run steps individually:
+birdbird filter /path/to/clips                    # 1. Find clips with birds
+birdbird highlights /path/to/clips                # 2. Generate highlight reel
+birdbird songs /path/to/clips                     # 3. Detect bird songs
+```
+
+**Useful options:**
+
+```bash
+# Test with 10 clips first
+birdbird process /path/to/clips --limit 10
+
+# Adjust bird detection sensitivity (0.0-1.0, higher = more confident, default: 0.2)
+# Lower values detect more birds but may include false positives
+# Higher values (e.g., 0.3-0.5) reduce false positives but may miss some birds
+birdbird filter /path/to/clips --bird-conf 0.3
+
+# Clear previous results and reprocess
+birdbird process /path/to/clips --force
+```
+
+### Input Format
+
+birdbird expects video files from motion-triggered cameras:
+- **Format**: AVI, MP4, or other ffmpeg-compatible formats
+- **Directory structure**: All clips in one directory (e.g., `20260114/`)
+- **Filename convention**: `DDHHmmss00.avi` (day + time; month/year from parent directory name)
+
+Tested with "Wilde & Oakes Bird Feeder with Smart Camera" producing MJPEG AVI (1440x1080, 30fps, ~10s, ~27MB each).
+
+### Configuration
+
+**Optional:** Create `~/.birdbird/config.json` for location-based species filtering:
 
 ```bash
 mkdir -p ~/.birdbird
-nano ~/.birdbird/config.json
-```
-
-```json
+cat > ~/.birdbird/config.json << 'EOF'
 {
   "location": {
     "lat": 51.35,
     "lon": -2.15
   }
 }
+EOF
 ```
 
-**Supported settings:**
+This helps BirdNET focus on species in your region, speeding up audio analysis. You can override with `--lat`/`--lon` flags.
 
-- `location.lat` / `location.lon` - Default coordinates for BirdNET species filtering in the `songs` command. Speeds up analysis by limiting to species found in your region. Can be overridden with `--lat`/`--lon` CLI flags.
+---
 
-### Remote GPU Configuration (Optional - for Species Identification)
+## Advanced Features
 
-To use the `species` command for visual species identification, configure a remote GPU:
+### Visual Species Identification
 
-1. **Set up remote machine** with BioCLIP:
+The `species` command uses **BioCLIP** (vision-language model) to identify bird species from video frames. This requires a GPU for reasonable performance, so birdbird can offload processing to a remote machine via SSH.
+
+**Setup remote GPU:**
+
+1. On the remote machine:
    ```bash
-   # On the remote machine
    python3 -m venv ~/bioclip_env
    source ~/bioclip_env/bin/activate
    pip install bioclip torch
    ```
 
-2. **Configure SSH access** - Ensure passwordless SSH from your local machine:
+2. On your local machine, configure SSH access:
    ```bash
-   # On your local machine
    ssh-copy-id user@remote-hostname
-   ssh user@remote-hostname  # Test connection
    ```
 
-3. **Add remote config** to `~/.birdbird/config.json`:
+3. Add to `~/.birdbird/config.json`:
    ```json
    {
-     "location": {
-       "lat": 51.35,
-       "lon": -2.15
-     },
      "species": {
        "processing": {
          "mode": "remote",
@@ -186,294 +187,267 @@ To use the `species` command for visual species identification, configure a remo
            "shell": "bash",
            "python_env": "~/bioclip_env"
          }
-       },
-       "min_confidence": 0.5,
-       "samples_per_minute": 6.0,
-       "labels_file": "~/.birdbird/bird_labels.txt"
+       }
      }
    }
    ```
 
-4. **Create labels file** at `~/.birdbird/bird_labels.txt` with species to detect:
+4. **(Optional)** Customize species labels - By default, birdbird uses a built-in list of 67 common UK garden birds. To customize for your region or further narrow the search space, create `~/.birdbird/bird_labels.txt`:
    ```
    Blue Tit
    Great Tit
    Robin
    Blackbird
    House Sparrow
-   # Add more species...
    ```
 
-**Note:** For WSL remote targets, use `"shell": "wsl"` instead of `"bash"`.
-
-### Cloudflare R2 Configuration (Optional - for Publishing)
-
-To publish highlights to the web, configure Cloudflare R2:
-
-1. **Create R2 bucket** in Cloudflare dashboard:
-   - Navigate to R2 in left sidebar
-   - Click "Create bucket"
-   - Name it `birdbird-highlights`
-
-2. **Generate R2 API token**:
-   - In R2 section, click "Manage R2 API Tokens"
-   - Click "Create API Token"
-   - Name: `birdbird-upload`
-   - Permissions: Object Read & Write for your bucket
-   - Save the Access Key ID and Secret Access Key (you won't see the secret again!)
-
-3. **Find your Account ID**:
-   - Visible in R2 dashboard sidebar or in the URL
-
-4. **Create config file**:
-
-   ```bash
-   mkdir -p ~/.birdbird
-   nano ~/.birdbird/cloudflare.json
-   ```
-
-   Paste and fill in your values:
-
+   Then add to your config:
    ```json
    {
-     "r2_access_key_id": "YOUR_ACCESS_KEY_ID",
-     "r2_secret_access_key": "YOUR_SECRET_ACCESS_KEY",
+     "species": {
+       "processing": { ... },
+       "labels_file": "~/.birdbird/bird_labels.txt"
+     }
+   }
+   ```
+
+   **Why this matters:** BioCLIP is a general-purpose vision-language model trained on millions of images including plants, animals, fungi, and more. Without restricting the search space to specific bird species, it performs much slower because it's comparing each frame against a massive vocabulary. The built-in default (67 UK garden birds) provides a good balance for most UK users. For other regions or to further optimize performance, create a custom list with only birds you're likely to see in your area - this can speed up inference 10-100x and improve accuracy by eliminating irrelevant categories. BioCLIP will rank each frame against only these labels and return confidence scores for each species.
+
+5. Run species detection:
+   ```bash
+   birdbird species /path/to/clips
+   # Or include in process step:
+   birdbird process /path/to/clips --species
+   ```
+
+This produces `species.json` with timestamps and confidence scores, plus `best_clips.json` for web viewer navigation.
+
+### Publishing to Web
+
+Publish your highlights to Cloudflare R2 for web viewing:
+
+**Quick setup:**
+
+1. Create an R2 bucket in Cloudflare dashboard
+2. Generate API token with read/write permissions
+3. Create `~/.birdbird/cloudflare.json`:
+   ```json
+   {
+     "r2_access_key_id": "YOUR_KEY",
+     "r2_secret_access_key": "YOUR_SECRET",
      "r2_bucket_name": "birdbird-highlights",
      "r2_account_id": "YOUR_ACCOUNT_ID",
      "r2_endpoint": "https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com"
    }
    ```
-
-5. **Secure the file**:
-
-   ```bash
-   chmod 600 ~/.birdbird/cloudflare.json
-   ```
-
-6. **Configure R2 bucket for public access**:
-   - In Cloudflare R2 dashboard, select your bucket
-   - Go to Settings → Public Access
-   - Enable "Allow Access" and note the public R2.dev URL (e.g., `https://pub-xxxxx.r2.dev`)
-   - This URL will be used in the viewer HTML
-
-7. **Configure CORS for R2 bucket** (required for web viewer):
-   - In Cloudflare R2 dashboard, select your bucket
-   - Go to Settings → CORS Policy
-   - Add a CORS rule allowing your production domain and localhost for development:
-     ```json
-     [
-       {
-         "AllowedOrigins": [
-           "https://your-production-domain.com",
-           "http://localhost:3000"
-         ],
-         "AllowedMethods": ["GET"],
-         "AllowedHeaders": ["*"],
-         "ExposeHeaders": [],
-         "MaxAgeSeconds": 3600
-       }
-     ]
-     ```
-
-8. **Set up the web viewer** (one-time):
-   - Copy the viewer templates to your website repo:
-     ```bash
-     cp src/birdbird/templates/*.html /path/to/your/website/
-     cp src/birdbird/templates/*.css /path/to/your/website/
-     cp src/birdbird/templates/*.js /path/to/your/website/
-     cp src/birdbird/templates/*.png /path/to/your/website/
-     cp src/birdbird/templates/*.ico /path/to/your/website/
-     ```
-
-   - **IMPORTANT: Configure the viewer** by editing `config.js`:
-     ```bash
-     nano /path/to/your/website/config.js
-     ```
-
-     Update these required values:
-     ```javascript
-     window.BIRDBIRD_CONFIG = {
-       r2BaseUrl: 'https://pub-YOUR-BUCKET-ID.r2.dev',  // Your R2 public URL from step 6
-       siteName: 'Bird Feeder Highlights',               // Your site name
-       siteSubtitle: 'Your Location • Description',      // Your location and description
-       analytics: ''                                      // Optional: analytics code snippet
-     };
-     ```
-
-   - Deploy to your web host (Cloudflare Pages, GitHub Pages, etc.)
-
-   For local testing before deployment:
-   ```bash
-   npx serve -l 3000 src/birdbird/templates
-   # Open http://localhost:3000/index.html
-   ```
-
-   **Local Development Tip:** To avoid manually copying config changes during development iterations, create a `config.local.js` file in `src/birdbird/templates/` with your production values. This file is git-ignored and will be loaded preferentially by the viewer, allowing you to test directly from the templates directory without syncing to your website repo.
-
-   ```bash
-   # One-time setup for local development
-   cp /path/to/your/website/config.js src/birdbird/templates/config.local.js
-   ```
-
-   **Note:** If you deploy without configuring `config.js`, a warning overlay will appear with instructions.
-
-9. **Test publishing**:
+4. Deploy the web viewer (templates in `src/birdbird/templates/`)
+5. Publish:
    ```bash
    birdbird publish /path/to/clips
    ```
 
-## Technical Overview
+The web viewer provides:
+- Video player with species seek buttons
+- Audio statistics tab with song clips
+- Date range filtering for multiple batches
+- Responsive design for mobile/desktop
+
+---
+
+## For Developers: Contributing
+
+### Development Setup
+
+**Clone and install:**
+
+```bash
+git clone https://github.com/rssrn/birdbird.git
+cd birdbird
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[test]"  # Includes test dependencies
+```
+
+**Install pre-commit hooks:**
+
+```bash
+npm install
+pre-commit install
+```
+
+This sets up:
+- Python linting (ruff)
+- HTML validation (html-validate)
+- JavaScript linting (eslint)
+- CSS linting (stylelint)
+- Spell checking (cspell - British English by default)
+- Accessibility testing (pa11y)
+
+**Changing spell check language:** Edit `.cspell.json` and change `"language": "en-GB"` to your preferred locale (e.g., `"en-US"` for American English, `"fr"` for French, etc.).
+
+**Run tests:**
+
+```bash
+# Fast unit tests (runs in pre-commit)
+pytest -m "not slow"
+
+# All tests including integration tests
+pytest
+
+# With coverage
+pytest --cov=src/birdbird --cov-report=term-missing
+```
+
+**Test the web viewer locally:**
+
+```bash
+# Terminal 1: Start local server
+npm run serve
+
+# Terminal 2: Run accessibility tests
+npm run test:a11y
+
+# Or manually:
+npx serve -l 3000 src/birdbird/templates
+# Open http://localhost:3000/index.html
+```
 
 ### Architecture
 
+**Directory structure:**
+
 ```
 src/birdbird/
-├── cli.py           # Typer CLI entry point
-├── config.py        # User config loading (~/.birdbird/config.json)
-├── detector.py      # BirdDetector class (YOLOv8-nano)
-├── filter.py        # Batch filtering logic
-├── frames.py        # Quality-based frame extraction and ranking
-├── highlights.py    # Highlights reel generation
-├── species.py       # BioCLIP species identification (remote GPU)
-├── best_clips.py    # Best viewing windows for each species
-├── songs.py         # BirdNET audio analysis
+├── __init__.py      # Package metadata
+├── cli.py           # CLI entry point (Typer)
+├── config.py        # User config (~/.birdbird/config.json)
 ├── paths.py         # Path management utilities
+├── detector.py      # YOLOv8 bird detection
+├── species.py       # BioCLIP species identification
+├── songs.py         # BirdNET audio analysis
+├── filter.py        # Batch filtering logic
+├── highlights.py    # Highlight reel generation
+├── best_clips.py    # Best viewing windows per species
+├── frames.py        # Frame extraction and scoring
 ├── publish.py       # R2 upload with batch management
-└── templates/       # Web viewer HTML/CSS/JS
+└── templates/       # Web viewer (HTML/CSS/JS)
 ```
 
-### Detection Approach
+**Key concepts:**
 
-The pipeline uses a two-stage approach:
+- **src-layout**: Python package lives in `src/birdbird/`, not top-level
+- **Entry point**: Installed as `birdbird` command via `pyproject.toml`
+- **Config files**: User settings in `~/.birdbird/` (not in project repo)
+- **Output structure**: Creates `birdbird/working/` for temp files and `birdbird/assets/` for final outputs
 
-**Stage 1: Bird Detection (Filter)**
-- Uses **YOLOv8-nano** pre-trained on [COCO](https://cocodataset.org/) (Common Objects in Context)
-- Detects presence of birds (COCO class 14) with confidence threshold 0.2 (configurable via `--bird-conf`)
-- Fast, lightweight detection to eliminate false positives (wind, shadows, etc.)
-- Runs locally without GPU
+### How It Works
 
-**Stage 2: Species Identification (Species)**
-- Uses **BioCLIP** (vision-language model) on remote GPU
-- Samples frames from highlights video (default: 6 frames/minute)
-- Classifies each frame against custom species labels
-- Produces species.json with timestamps, confidence scores, and top predictions
-- Requires remote GPU configuration (see Setup section)
+**Detection pipeline:**
 
-### Frame Sampling Strategy
+1. **Filter** - YOLOv8-nano detects birds in sampled frames
+   - Samples ~4 frames in first second (motion trigger), then 1fps
+   - COCO class 14 ("bird") with 0.2 confidence threshold
+   - Creates symlinks in `birdbird/working/filter/clips/` and saves `detections.json`
+   - Processes ~10s clips in ~2.3 seconds on CPU
 
-To balance speed and accuracy, frames are sampled with weighted density:
+2. **Highlights** - Extract and concatenate active segments
+   - Binary search on detection timestamps to find segment boundaries
+   - Concatenates segments with ffmpeg into `highlights.mp4`
+   - Typical 500-clip batch: 4 hours → 23 minutes of highlights
 
-- **First second**: ~4 samples (every 0.25s) — captures the motion trigger event
-- **Remaining duration**: 1 sample per second — catches birds that land after initial motion
+3. **Songs** - BirdNET audio analysis
+   - Extracts audio from clips, runs BirdNET classifier
+   - Location-based filtering (if configured) for faster analysis
+   - Saves `songs.json` + audio clips per species in `song_clips/`
 
-This allows processing ~10s clips in ~2.3 seconds while catching brief bird appearances.
+4. **Species** (optional) - BioCLIP visual identification
+   - Samples frames from highlights (default: 6/minute)
+   - SSH transfer to remote GPU for inference
+   - Custom species labels (Blue Tit, Robin, etc.)
+   - Saves `species.json` with timestamps and `best_clips.json` for navigation
 
-### Pipeline Flow
+5. **Publish** (optional) - Upload to Cloudflare R2
+   - Manages YYYYMMDD-NN batch naming
+   - Updates `latest.json` index for web viewer
+   - Prompts before deleting old batches (keeps 5)
 
-**Core Pipeline** (run together via `birdbird process` or individually):
+**Tech stack:**
+- **Detection**: YOLOv8-nano (Ultralytics) on CPU
+- **Species ID**: BioCLIP vision-language model on remote GPU
+- **Audio**: BirdNET-Analyzer with location filtering
+- **Video processing**: ffmpeg for extraction/concatenation
+- **Web viewer**: Vanilla HTML/CSS/JS (no build step)
+- **Storage**: Cloudflare R2 (S3-compatible)
 
-1. **Filter** (`birdbird filter`) - Detect clips containing birds
-   - Scans all AVI files in input directory
-   - Uses YOLOv8-nano to detect birds in sampled frames
-   - Copies clips with birds to `has_birds/` subdirectory
-   - Saves `detections.json` with timestamps
+### Testing
 
-2. **Highlights** (`birdbird highlights`) - Extract active segments
-   - Uses detection timestamps from filter step
-   - Binary search for segment start/end boundaries
-   - Concatenates segments into `highlights.mp4`
+**Test organization:**
 
-3. **Songs** (`birdbird songs`) - Detect bird vocalizations
-   - Extracts audio from AVI files to temporary WAV
-   - Runs BirdNET-Analyzer for audio classification
-   - Saves `songs.json` with all detections
-   - Creates normalized audio clips per species
+```bash
+tests/
+├── test_config.py        # Config loading, validation (100% coverage)
+├── test_paths.py         # Path utilities (100% coverage)
+├── test_best_clips.py    # Sliding window algorithm (94% coverage)
+├── test_publish.py       # Date parsing, batch IDs (24% coverage)
+└── test_songs.py         # BirdNET CSV parsing (49% coverage)
+```
 
-4. **Species** (`birdbird species`) - Identify species [Optional]
-   - Samples frames from highlights video
-   - Transfers frames to remote GPU via SSH
-   - Runs BioCLIP inference with custom labels
-   - Saves `species.json` and `best_clips.json`
-   - Included in `process` if enabled in config or `--species` flag
+**86 tests total** - Pure unit tests (no mocking) for fast feedback.
 
-**Publishing** (separate step):
+**Pre-commit hooks** run fast tests automatically. Mark slow integration tests with `@pytest.mark.slow` to exclude them from pre-commit.
 
-5. **Publish** (`birdbird publish`) - Upload to web
-   - Uploads highlights.mp4, species.json, songs.json to Cloudflare R2
-   - Manages batch naming (YYYYMMDD-NN format)
-   - Updates latest.json index for web viewer
-   - Prompts before deleting old batches (>5)
-   - Run separately after processing
+```python
+@pytest.mark.slow
+def test_real_yolo_detection():
+    # Integration test with actual YOLO model
+    ...
+```
 
-### Output
+### Contributing
 
-The pipeline produces the following outputs in the input directory:
+Contributions welcome! Areas for improvement:
 
-- **Filter** → `has_birds/` subdirectory + `detections.json`
-  - Clips containing detected birds copied to `has_birds/`
-  - Detection metadata with timestamps and confidence scores
+- **Multiple bird detection** - Currently returns first detection only; could track multiple birds per frame
+- **Corrupted file handling** - Better detection/handling of corrupted MJPEG frames
+- **Database backend** - Structured storage for stats/graphs (species counts, time patterns)
+- **Email reports** - Automated summaries with highlights
 
-- **Highlights** → `has_birds/highlights.mp4`
-  - MP4 reel concatenating bird activity segments
-  - Extracted using binary search on detection timestamps
+To contribute:
+1. Fork the repo and create a feature branch
+2. Make your changes with tests
+3. Run pre-commit hooks: `pre-commit run --all-files`
+4. Submit a pull request
 
-- **Species** → `species.json` + `best_clips.json`
-  - Species identifications with timestamps and confidence scores
-  - Best viewing windows for each species (used by web viewer seek buttons)
-  - Top 3 runner-up predictions for each detection
+---
 
-- **Songs** → `songs.json` + `normalized_audio/*.wav`
-  - Bird vocalizations detected by BirdNET (species, confidence, timestamps)
-  - Normalized audio clips for each detected species
+## Project Status
 
-## Problem
+**Completed:**
+- ✅ Bird detection filter (YOLOv8)
+- ✅ Highlight reel generation
+- ✅ Visual species identification (BioCLIP)
+- ✅ Audio species detection (BirdNET)
+- ✅ Web viewer with R2 publishing
+- ✅ Accessibility testing (pa11y)
 
-A bird feeder camera captures 10-second AVI clips on motion detection, but:
+**Roadmap:**
+- 🔄 Highlight images (species-specific frame extraction)
+- 🔄 Best action sequence (algorithm to find most interesting 30-second segments)
+- 🔄 Email reports with statistics
+- 🔄 Database backend for historical trends
 
-- High false-positive rate (wind triggers recording)
-- No species identification
-- Manual review of hundreds of clips is impractical
+---
 
-## Goals
+## License
 
-- Filter clips to those containing actual bird activity
-- Identify bird species with timestamps
-- Extract best in-focus frames
-- Generate highlight reels of interesting footage
-- Produce summary reports (email, eventually database)
+MIT License - see [LICENSE](LICENSE) for details.
 
-## Milestones
+## Credits
 
-| #    | Milestone                  | Description                                                                                                      | Status |
-| ---- | -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ |
-| M1   | Bird detection filter      | Discard clips without birds (eliminate wind false positives)                                                     | Done   |
-| M2   | Highlights reel v1         | Concatenate segments with bird activity                                                                          | Done   |
-| M2.1 | Highlights reel seek       | Based on M4 output, provide buttons to seek to timestamps with highest confidence for each species               | Done   |
-| M2.2 | Publish highlights to web  | Upload to Cloudflare R2 with static web viewer showing video and audio stats                                     | Done   |
-| M3   | Highlight images           | Extract species-specific frames from M4 detections                                                               |        |
-| M4   | Visual species detection   | Identify species, generate timeline summary with frame capture                                                   | Done   |
-| M5   | Full report, stats         | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material                                      |        |
-| M6   | Best action sequence       | Curated "best action": algo to find best 30 second sequence based on max species variety and confidence and quantity.  Then expand on M2.1, button to seek to the start of that 30 seconds |        |
-| M7   | Structured storage         | database backend to get stats/graphs on species counts, times usually seen, etc                                  |        |
+Built with:
+- [YOLOv8](https://github.com/ultralytics/ultralytics) - Object detection
+- [BioCLIP](https://github.com/Imageomics/pybioclip) - Species identification
+- [BirdNET-Analyzer](https://github.com/kahst/BirdNET-Analyzer) - Audio classification
+- [ffmpeg](https://ffmpeg.org/) - Video processing
 
-## Other Feature Ideas
-
-| #   | Feature                       | Description                                                                                                                                                                                                   | Status |
-| --- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| F1  | Other objects                 | If other misc objects are detected with a separate confidence threshold, note those. Might get some squirrels, cats, etc.                                                                                     |        |
-| F2  | Upload progress reporting     | Add progress bar/percentage for R2 uploads in publish command (especially for large video files)                                                                                                              | Done   |
-| F3  | Corrupted input file handling | Improve detection and handling of corrupted MJPEG frames (camera recording issues, SD card errors). Could validate files before processing, skip severely corrupted clips, or log warnings for manual review. |        |
-| F4  | Multiple bird detection       | Detect and count multiple birds in a single frame. Currently returns first detection only. Would enable richer captions (e.g., "2 Birds 85%, 72%"), social behaviour tracking, and better statistics.          |        |
-| F5  | Audio species detection       | Species detection from audio using BirdNET. Extracts normalized audio clips for each species and publishes to web viewer with playback.                                                                       | Done   |
-| F6  | Credits page                  | Links to other projects/modules we are using, including licensing info                                                                                                                                        | Done   |
-| F7  | Analytics                     | Add some lightweight analytics, for example Umami using Umami Cloud Free tier.                                                                                                                                |        |
-| F8  | Staging                       | Add a staging target so viewer changes can be tested before going live                                                                                                                                        |        |
-| F9  | Ongoing accessibility         | Add accessibility testing in local pipeline, pre-commit, perhaps using playwright                                                                                                                             |        |
-| F10 | Add favicon | | |
-
-## Input Format
-
-- **Source**: Bird feeder camera with motion detection
-- **Format**: AVI (MJPEG, 1440x1080, 30fps, ~10 seconds, ~27MB each)
-- **Filename**: `DDHHmmss00.avi` (day + time; month/year from parent directory name)
-- **Batches**: Downloaded every few days into dated directories (e.g., `20260114/`)
+[See full credits and licenses](src/birdbird/templates/credits.html)

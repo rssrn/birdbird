@@ -48,9 +48,9 @@ birdbird filter /path/to/clips
 birdbird filter /path/to/clips
 
 # Generate highlights reel from filtered clips
-birdbird highlights /path/to/clips/has_birds/
+birdbird highlights /path/to/clips
 
-# Run filter + highlights + songs in one step (clears existing has_birds with --force)
+# Run filter + highlights + songs in one step (clears existing working directory with --force)
 birdbird process /path/to/clips --force
 
 # Test with limited clips
@@ -123,6 +123,10 @@ src/birdbird/
 
 **Important**: When adding new dependencies to `pyproject.toml`, update `templates/credits.html` with the new library, its purpose, and license information.
 
+**Output structure**: The pipeline creates two directories under `birdbird/`:
+- `birdbird/working/` - Temporary/intermediate files (symlinks to filtered clips, frame candidates, etc.)
+- `birdbird/assets/` - Final outputs that mirror R2 structure (highlights.mp4, detections.json, songs.json, species.json, etc.)
+
 **Detection approach**: Weighted frame sampling (4x in first second, then 1fps), YOLOv8-nano for COCO class 14 (bird).
 
 **Highlights approach**: Binary search for segment boundaries using cached detection timestamps from filter step. Concatenation via ffmpeg.
@@ -151,6 +155,9 @@ google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,2400 --
 
 **Configuration**: User settings stored in `~/.birdbird/config.json`. Currently supports:
 - `location.lat` / `location.lon` - Default coordinates for BirdNET species filtering (can be overridden with --lat/--lon CLI flags)
+- `species.labels_file` - Path to custom species labels file for BioCLIP (optional; defaults to built-in `src/birdbird/data/uk_garden_birds.txt` with 67 UK species)
+- `species.processing.mode` - Processing mode: "remote" (recommended), "local" (disabled to prevent slowdown), or "cloud" (not implemented)
+- `species.processing.remote.*` - Remote GPU configuration (host, shell, python_env, timeout)
 
 ## Milestone Tracker
 
