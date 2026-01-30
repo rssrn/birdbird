@@ -480,7 +480,11 @@
             margin-bottom: 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+        }
+
+        .species-group-label .info-icon {
+            margin-left: 0;
         }
 
         .species-group-label::before {
@@ -942,6 +946,42 @@
         </div>
     </template>
 
+    <template id="info-very-probable">
+        <div class="info-overlay-content">
+            <p><strong>Very Probable</strong> detections are species that appeared frequently in the highlights video.</p>
+
+            <p>These species were detected in 4 or more separate moments, indicating they were present around the feeder multiple times during the recording period.</p>
+
+            <p>The frequency of detections makes these identifications highly reliable, as the bird was captured from multiple angles or positions.</p>
+        </div>
+    </template>
+
+    <template id="info-probable">
+        <div class="info-overlay-content">
+            <p><strong>Probable</strong> detections are species identified with high confidence (80% or above) but appeared fewer than 4 times in the video.</p>
+
+            <p>While we have strong confidence in the identification based on visual features, these birds were seen less frequently than "Very Probable" detections.</p>
+
+            <p>This typically indicates a brief visit or a bird that stayed off-camera for most of its time near the feeder.</p>
+        </div>
+    </template>
+
+    <template id="info-possible">
+        <div class="info-overlay-content">
+            <p><strong>Possible</strong> detections are species identified with moderate confidence (below 80%) and appeared fewer than 4 times.</p>
+
+            <p>These identifications are less certain due to factors like:</p>
+            <ul>
+                <li>Partial view or obscured angle</li>
+                <li>Poor lighting conditions</li>
+                <li>Brief appearance in frame</li>
+                <li>Similar appearance to other species</li>
+            </ul>
+
+            <p>While these detections may be accurate, they should be viewed with some scepticism and ideally verified by reviewing the video footage.</p>
+        </div>
+    </template>
+
     <script>
         // R2 bucket URL is loaded from config.js via config-loader.js
         // Access it via window.R2_BASE_URL
@@ -1115,7 +1155,10 @@
 
             getTitleForContent(contentId) {
                 const titles = {
-                    'best-sighting': 'How We Find the Best Sighting'
+                    'best-sighting': 'How We Find the Best Sighting',
+                    'very-probable': 'Very Probable Detections',
+                    'probable': 'Probable Detections',
+                    'possible': 'Possible Detections'
                 };
                 return titles[contentId] || 'Information';
             }
@@ -1360,7 +1403,7 @@
 
                 const labelDiv = document.createElement('div');
                 labelDiv.className = `species-group-label ${groupKey.replace('_', '-')}`;
-                labelDiv.textContent = groupLabels[groupKey];
+                labelDiv.innerHTML = `${groupLabels[groupKey]} <button class="info-icon" data-info-id="${groupKey.replace('_', '-')}" aria-label="Learn about ${groupLabels[groupKey]} detections">ℹ</button>`;
                 groupDiv.appendChild(labelDiv);
 
                 const buttonsContainer = document.createElement('div');
