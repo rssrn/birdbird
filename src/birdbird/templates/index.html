@@ -687,7 +687,7 @@
             border: 1px solid #7BB8DC;
             border-radius: 3px;
             color: #1a1a1a;
-            font-size: 1.05em;
+            font-size: 1.05rem;
             font-weight: 400;
             font-family: 'Lato', sans-serif;
             cursor: pointer;
@@ -867,7 +867,7 @@
                 <div class="tabs" role="tablist" aria-label="Content tabs">
                     <button type="button" class="tab-button active" data-tab="highlights" role="tab" id="tab-highlights" aria-selected="true" aria-controls="highlights-tab">Highlights</button>
                     <button type="button" class="tab-button" data-tab="video-stats" role="tab" id="tab-video-stats" aria-selected="false" aria-controls="video-stats-tab">Video Stats</button>
-                    <button type="button" class="tab-button" data-tab="audio-stats" role="tab" id="tab-audio-stats" aria-selected="false" aria-controls="audio-stats-tab">Audio Stats</button>
+                    <button type="button" class="tab-button" data-tab="audio-stats" role="tab" id="tab-audio-stats" aria-selected="false" aria-controls="audio-stats-tab">Audio Samples and Stats</button>
                 </div>
 
                 <!-- Highlights Tab -->
@@ -904,9 +904,6 @@
 
                 <!-- Video Stats Tab -->
                 <div class="tab-content hidden" id="video-stats-tab" role="tabpanel" aria-labelledby="tab-video-stats">
-                    <div class="info-callout">
-                        Bird species are visually identified using BioCLIP analysis of motion-triggered video clips. Detections represent birds visible on camera during recording periods.
-                    </div>
                     <div class="audio-stats" id="video-stats-container">
                         <!-- Populated by JavaScript -->
                     </div>
@@ -979,6 +976,16 @@
             </ul>
 
             <p>While these detections may be accurate, they should be viewed with some scepticism and ideally verified by reviewing the video footage.</p>
+        </div>
+    </template>
+
+    <template id="info-video-stats">
+        <div class="info-overlay-content">
+            <p>Bird species are visually identified using BioCLIP analysis of motion-triggered video clips.</p>
+
+            <p>Detections represent birds visible on camera during recording periods.</p>
+
+            <p>The confidence percentages indicate how certain the AI model is about each identification, based on visual features like plumage patterns, body shape, and size.</p>
         </div>
     </template>
 
@@ -1158,7 +1165,8 @@
                     'best-sighting': 'How We Find the Best Sighting',
                     'very-probable': 'Very Probable Detections',
                     'probable': 'Probable Detections',
-                    'possible': 'Possible Detections'
+                    'possible': 'Possible Detections',
+                    'video-stats': 'Visual Bird Detection'
                 };
                 return titles[contentId] || 'Information';
             }
@@ -1377,7 +1385,7 @@
             // Add subtitle with info icon
             const subtitle = document.createElement('div');
             subtitle.className = 'species-nav-subtitle';
-            subtitle.innerHTML = `Click to jump to best sighting <button class="info-icon" data-info-id="best-sighting" aria-label="Learn how we find the best sighting">ℹ</button>`;
+            subtitle.innerHTML = `Click names below to jump to best sighting <button class="info-icon" data-info-id="best-sighting" aria-label="Learn how we find the best sighting">ℹ</button>`;
             speciesContainer.appendChild(subtitle);
 
             // Group clips by category
@@ -1660,7 +1668,7 @@
         function renderVideoStatsChart(speciesData, maxCount) {
             const container = document.getElementById('video-stats-container');
 
-            let html = '<h2>Bird Species Detected <span style="font-weight: normal; font-size: 0.75em; color: var(--text-secondary);">(with % confidence)</span></h2>';
+            let html = '<h2>Bird Species Detected <span style="font-weight: normal; font-size: 0.75em; color: var(--text-secondary);">(with % confidence)</span> <button class="info-icon" data-info-id="video-stats" aria-label="Learn about visual bird detection">ℹ</button></h2>';
 
             speciesData.forEach(([commonName, data]) => {
                 const { count, confidences } = data;
