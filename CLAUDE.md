@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 birdbird - Bird feeder video analysis pipeline. See README.md for full project description and milestones.
 
+## Directory Structure
+
+**Important for file operations**: This project uses Python src-layout:
+- Project root: `/home/ross/src/birdbird/`
+- Python package: `/home/ross/src/birdbird/src/birdbird/`
+- Template files: `/home/ross/src/birdbird/src/birdbird/templates/`
+
+When editing files, always use the full absolute path shown in Read tool results, not relative paths inferred from the architecture diagram.
+
 ## Input Data
 
 - Sample batch: `/home/ross/BIRDS/20260114/` (498 clips)
@@ -91,15 +100,25 @@ src/birdbird/
 ├── __init__.py      # Package metadata
 ├── cli.py           # Typer CLI entry point
 ├── config.py        # load_config() - reads ~/.birdbird/config.json
+├── paths.py         # Path utilities for output directories and file locations
 ├── detector.py      # BirdDetector class (YOLOv8-nano, COCO bird class)
+├── species.py       # SpeciesDetector class (BioCLIP visual species identification)
 ├── filter.py        # filter_clips() - batch processing, saves detections.json
 ├── highlights.py    # generate_highlights() - segment extraction + concatenation
+├── best_clips.py    # find_best_clips() - identifies best sighting moments per species
 ├── frames.py        # extract_and_score_frames() - standalone frame scoring (not in main pipeline)
 ├── publish.py       # publish_to_r2() - R2 upload with batch management
 ├── songs.py         # analyze_songs() - BirdNET audio analysis for bird vocalizations
-└── templates/
-    ├── index.html   # Static web viewer template
-    └── credits.html # Credits page listing dependencies and licenses
+└── templates/       # Static web viewer files
+    ├── index.html   # Main viewer page with tabs for highlights/video/audio stats
+    ├── method.html  # How it works page
+    ├── credits.html # Credits page listing dependencies and licenses
+    ├── accessibility.html # Accessibility statement
+    ├── styles.css   # Shared styles for all pages
+    ├── config.js    # R2 bucket URL configuration (deployed version)
+    ├── config.local.js # Local R2 URL override (gitignored, for development)
+    ├── config-loader.js # Config loading logic
+    └── favicon.*    # Site icons
 ```
 
 **Important**: When adding new dependencies to `pyproject.toml`, update `templates/credits.html` with the new library, its purpose, and license information.
