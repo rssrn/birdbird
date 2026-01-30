@@ -251,6 +251,27 @@ footer a:hover {
     border: 0;
 }
 
+/* Skip link - hidden until focused */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--forest-deep);
+    color: var(--cream-white);
+    padding: 12px 20px;
+    text-decoration: none;
+    font-weight: 600;
+    z-index: 100;
+    border-radius: 0 0 2px 0;
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: 2px solid var(--sky-blue);
+    outline-offset: 2px;
+}
+
 /* Container width modifiers */
 .container--narrow {
     max-width: 800px;

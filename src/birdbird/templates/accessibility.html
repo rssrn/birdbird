@@ -23,13 +23,14 @@
     </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="container container--narrow">
         <header>
             <h1>Accessibility</h1>
             <div class="subtitle">Our commitment to inclusive access</div>
         </header>
 
-        <div class="content">
+        <div class="content" id="main-content">
             <nav aria-label="Breadcrumb" class="breadcrumb">
                 <a href="index.html">Home</a>
                 <span class="separator">/</span>
@@ -41,13 +42,15 @@
 
             <h2>What we've done</h2>
             <ul>
+                <li>Skip links to bypass navigation and jump directly to main content</li>
                 <li>Keyboard navigation for all interactive elements</li>
-                <li>ARIA labels for screen reader compatibility</li>
-                <li>Sufficient colour contrast for text</li>
+                <li><a href="https://www.w3.org/WAI/standards-guidelines/aria/">ARIA</a> labels for screen reader compatibility</li>
+                <li>Colour contrast ratios meeting WCAG AA standards (4.5:1 for normal text, 3:1 for large text)</li>
                 <li>Semantic HTML structure</li>
+                <li>Responsive design for different screen sizes and devices</li>
                 <li>Labels for audio and video controls</li>
                 <li>Automated pre-commit validation using <a href="https://html-validate.org/">html-validate</a> to catch WCAG violations in source HTML</li>
-                <li>Runtime accessibility testing using <a href="https://pa11y.org/">pa11y</a> to verify the rendered page in a headless browser</li>
+                <li>Automated accessibility testing during development using <a href="https://pa11y.org/">pa11y</a> to verify WCAG compliance in a headless browser</li>
             </ul>
 
             <h2>Known limitations</h2>
@@ -62,9 +65,11 @@
         </div>
 
         <footer>
-            <a href="index.html">Highlights</a> |
-            <a href="method.html">How It Works</a> |
-            <a href="credits.html">Credits</a>
+            <nav aria-label="Footer navigation">
+                <a href="index.html">Highlights</a> |
+                <a href="method.html">How It Works</a> |
+                <a href="credits.html">Credits</a>
+            </nav>
             <div style="margin-top: 12px; color: var(--text-secondary); font-size: 0.9em;">
                 Powered by birdbird
             </div>

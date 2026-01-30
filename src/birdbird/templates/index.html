@@ -845,6 +845,7 @@
     </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="container container--wide">
         <header>
             <h1>Bird Feeder Highlights</h1>
@@ -879,7 +880,7 @@
                         <div class="video-wrapper">
                             <!-- Video player -->
                             <div class="video-container">
-                                <video id="highlights-player" controls preload="metadata">
+                                <video id="highlights-player" controls preload="metadata" aria-label="Bird feeder highlights video">
                                     <source id="video-source" src="" type="video/mp4">
                                     Your browser does not support the video tag.
                                 </video>
@@ -919,9 +920,11 @@
         </div>
 
         <footer>
-            <a href="method.html">How It Works</a> |
-            <a href="credits.html">Credits</a> |
-            <a href="accessibility.html">Accessibility</a>
+            <nav aria-label="Footer navigation">
+                <a href="method.html">How It Works</a> |
+                <a href="credits.html">Credits</a> |
+                <a href="accessibility.html">Accessibility</a>
+            </nav>
             <div style="margin-top: 12px; color: var(--text-secondary); font-size: 0.9em;">
                 Powered by birdbird
             </div>
