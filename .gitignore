@@ -7,6 +7,8 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.coverage
+htmlcov/
 
 # YOLO model weights (downloaded automatically)
 *.pt

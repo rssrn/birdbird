@@ -61,6 +61,29 @@ npx serve -l 3000 src/birdbird/templates
 # Note: R2 bucket CORS must include http://localhost:3000
 ```
 
+## Testing
+
+**Test organization**: Tests use pytest markers to distinguish between fast and slow tests:
+- Fast tests (all current tests): No marker needed - these run in pre-commit hooks
+- Slow tests (integration, real dependencies): Mark with `@pytest.mark.slow` - excluded from pre-commit
+
+**Running tests:**
+```bash
+# Fast tests only (runs in pre-commit)
+pytest -m "not slow"
+
+# All tests
+pytest
+
+# Only slow tests
+pytest -m slow
+```
+
+**When implementing new tests:**
+- Layer 1 (pure unit tests): No marker needed
+- Layer 2 (mocked unit tests): No marker unless unusually slow
+- Layer 3 (integration tests with real dependencies): Always use `@pytest.mark.slow`
+
 ## Architecture
 
 ```

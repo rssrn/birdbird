@@ -32,3 +32,9 @@ repos:
         files: \.(html|js)$
         pass_filenames: false
         verbose: true
+      - id: pytest-fast
+        name: Run fast tests
+        entry: .venv/bin/pytest -m "not slow"
+        language: system
+        pass_filenames: false
+        types: [python]
