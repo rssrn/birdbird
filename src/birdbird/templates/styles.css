@@ -147,6 +147,20 @@ h1 {
     text-decoration: none;
 }
 
+.back-link:focus {
+    outline: 2px solid var(--sky-blue);
+    outline-offset: 2px;
+}
+
+.back-link:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.back-link:focus-visible {
+    outline: 2px solid var(--sky-blue);
+    outline-offset: 2px;
+}
+
 .breadcrumb {
     font-size: 0.85em;
     color: var(--text-secondary);
@@ -159,7 +173,8 @@ h1 {
     border-bottom: none;
 }
 
-.breadcrumb a:hover {
+.breadcrumb a:hover,
+.breadcrumb a:focus {
     color: var(--forest-deep);
     border-bottom: 1px solid var(--forest-deep);
 }
@@ -217,6 +232,22 @@ a:hover {
     border-bottom-style: solid;
 }
 
+a:focus {
+    outline: 2px solid var(--sky-blue);
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
+a:focus:not(:focus-visible) {
+    outline: none;
+}
+
+a:focus-visible {
+    outline: 2px solid var(--sky-blue);
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
 footer {
     text-align: center;
     padding: 40px 30px;
@@ -236,6 +267,22 @@ footer a {
 footer a:hover {
     color: var(--forest-deep);
     border-bottom-style: solid;
+}
+
+footer a:focus {
+    outline: 2px solid var(--sky-blue);
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
+footer a:focus:not(:focus-visible) {
+    outline: none;
+}
+
+footer a:focus-visible {
+    outline: 2px solid var(--sky-blue);
+    outline-offset: 3px;
+    border-radius: 2px;
 }
 
 /* Screen-reader-only text */

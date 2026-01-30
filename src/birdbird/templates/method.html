@@ -29,11 +29,30 @@
             font-size: 0.9em;
             font-weight: 500;
             cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
         }
 
         .mode-label.active {
             color: var(--forest-deep);
             font-weight: 700;
+        }
+
+        .mode-label:focus {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 3px;
+            border-radius: 2px;
+        }
+
+        .mode-label:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        .mode-label:focus-visible {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 3px;
+            border-radius: 2px;
         }
 
         .toggle-switch {
@@ -71,7 +90,7 @@
         }
 
         .toggle-checkbox:focus + .toggle-switch {
-            outline: 2px solid var(--forest-deep);
+            outline: 2px solid var(--sky-blue);
             outline-offset: 4px;
         }
 
@@ -90,11 +109,30 @@
             font-size: 0.85em;
             font-weight: 500;
             cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
         }
 
         .pipeline-label.active {
             color: var(--forest-deep);
             font-weight: 700;
+        }
+
+        .pipeline-label:focus {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 3px;
+            border-radius: 2px;
+        }
+
+        .pipeline-label:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        .pipeline-label:focus-visible {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 3px;
+            border-radius: 2px;
         }
 
         /* Pipeline visibility */
@@ -281,7 +319,7 @@
 
             <!-- Mode Toggle -->
             <div class="mode-toggle-container">
-                <span class="mode-label active" id="summary-label">Summary</span>
+                <button type="button" class="mode-label active" id="summary-label" aria-label="Switch to summary view">Summary</button>
                 <label class="toggle-switch"
                        role="switch"
                        aria-checked="false"
@@ -293,7 +331,7 @@
                            aria-label="Toggle between summary and detail descriptions">
                     <span class="toggle-slider"></span>
                 </label>
-                <span class="mode-label" id="detail-label">Detail</span>
+                <button type="button" class="mode-label" id="detail-label" aria-label="Switch to detail view">Detail</button>
             </div>
 
             <!-- Pipeline Flow -->
@@ -328,7 +366,7 @@
 
                 <!-- Pipeline Toggle -->
                 <div class="pipeline-toggle-container">
-                    <span class="pipeline-label active" id="video-label">Video Pipeline</span>
+                    <button type="button" class="pipeline-label active" id="video-label" aria-label="Switch to video pipeline">Video Pipeline</button>
                     <label class="toggle-switch"
                            role="switch"
                            aria-checked="false"
@@ -341,7 +379,7 @@
                                aria-label="Toggle between video and audio pipeline">
                         <span class="toggle-slider"></span>
                     </label>
-                    <span class="pipeline-label" id="audio-label">Audio Pipeline</span>
+                    <button type="button" class="pipeline-label" id="audio-label" aria-label="Switch to audio pipeline">Audio Pipeline</button>
                 </div>
 
                 <!-- VIDEO PIPELINE -->
@@ -608,6 +646,23 @@
             updateMode(true);
         });
 
+        // Handle label keyboard navigation
+        summaryLabel.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                modeToggle.checked = false;
+                updateMode(false);
+            }
+        });
+
+        detailLabel.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                modeToggle.checked = true;
+                updateMode(true);
+            }
+        });
+
         // Pipeline toggle (video/audio)
         const pipelineToggle = document.getElementById('pipeline-toggle');
         const pipelineToggleSwitch = document.getElementById('pipeline-toggle-switch');
@@ -659,6 +714,23 @@
         audioLabel.addEventListener('click', () => {
             pipelineToggle.checked = true;
             updatePipeline(true);
+        });
+
+        // Handle label keyboard navigation
+        videoLabel.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                pipelineToggle.checked = false;
+                updatePipeline(false);
+            }
+        });
+
+        audioLabel.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                pipelineToggle.checked = true;
+                updatePipeline(true);
+            }
         });
 
         // Initialize both toggles

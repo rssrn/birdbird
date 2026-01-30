@@ -1,9 +1,15 @@
 {
-  "extends": ["html-validate:recommended"],
+  "extends": [
+    "html-validate:recommended",
+    "html-validate:a11y"
+  ],
   "rules": {
     "no-inline-style": "off",
     "require-sri": "off",
     "long-title": "off",
-    "tel-non-breaking": "off"
+    "tel-non-breaking": "off",
+    "wcag/h30": "error",
+    "wcag/h32": "error",
+    "wcag/h37": "error"
   }
 }

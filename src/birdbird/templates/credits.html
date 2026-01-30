@@ -60,7 +60,8 @@
             border-bottom: 1px dotted var(--forest-mid);
         }
 
-        td a:hover {
+        td a:hover,
+        td a:focus {
             color: var(--forest-deep);
             border-bottom-style: solid;
         }
@@ -83,6 +84,7 @@
             border-bottom: none;
         }
 
+        /* stylelint-disable-next-line a11y/selector-pseudo-class-focus -- Table rows are not focusable */
         tr:hover td {
             background: var(--parchment-light);
         }
@@ -327,6 +329,12 @@
                         <td><a href="https://pa11y.org/" target="_blank">pa11y</a></td>
                         <td>Runtime accessibility testing in headless browser</td>
                         <td><a href="https://www.gnu.org/licenses/lgpl-3.0.html" target="_blank">LGPL-3.0</a></td>
+                    </tr>
+                    <tr>
+                        <td class="icon-col"></td>
+                        <td><a href="https://www.npmjs.com/package/@double-great/stylelint-a11y" target="_blank">stylelint-a11y</a></td>
+                        <td>CSS accessibility linting to enforce WCAG best practices including focus indicators and motion preferences</td>
+                        <td><a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a></td>
                     </tr>
                     <tr>
                         <td class="icon-col"><a href="https://docs.pytest.org/" aria-label="pytest documentation"><img src="https://www.google.com/s2/favicons?domain=docs.pytest.org&sz=32" class="favicon-img" alt="pytest documentation"></a></td>

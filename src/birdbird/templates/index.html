@@ -38,6 +38,20 @@
             color: #b0c4d4;
         }
 
+        video:focus {
+            outline: 3px solid var(--sky-blue);
+            outline-offset: -3px;
+        }
+
+        video:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        video:focus-visible {
+            outline: 3px solid var(--sky-blue);
+            outline-offset: -3px;
+        }
+
         .play-overlay {
             position: absolute;
             top: 0;
@@ -62,6 +76,20 @@
             pointer-events: none;
         }
 
+        .play-overlay:focus {
+            outline: 3px solid var(--sky-blue);
+            outline-offset: -3px;
+        }
+
+        .play-overlay:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        .play-overlay:focus-visible {
+            outline: 3px solid var(--sky-blue);
+            outline-offset: -3px;
+        }
+
         .play-button {
             width: 110px;
             height: 110px;
@@ -75,6 +103,7 @@
             border: 3px solid var(--forest-mid);
         }
 
+        /* stylelint-disable-next-line a11y/selector-pseudo-class-focus -- Nested element inherits focus from .play-overlay */
         .play-overlay:hover .play-button {
             transform: scale(1.08);
             background: var(--cream-white);
@@ -113,6 +142,20 @@
 
         .metadata-header:hover {
             background: var(--cream-white);
+        }
+
+        .metadata-header:focus {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: -2px;
+        }
+
+        .metadata-header:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        .metadata-header:focus-visible {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: -2px;
         }
 
         .metadata h2 {
@@ -171,6 +214,7 @@
             transition: all 0.2s ease;
         }
 
+        /* stylelint-disable-next-line a11y/selector-pseudo-class-focus -- Non-focusable container, visual feedback only */
         .metadata-item:hover {
             border-left-width: 6px;
             background: var(--cream-white);
@@ -231,6 +275,20 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
+        .method-link:focus {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
+        }
+
+        .method-link:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        .method-link:focus-visible {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
+        }
+
         .archive-link {
             padding: 12px 22px;
             background: var(--cream-white);
@@ -259,10 +317,25 @@
             font-weight: 600;
         }
 
+        /* stylelint-disable-next-line a11y/selector-pseudo-class-focus -- Current/disabled state, not interactive */
         .archive-link.current:hover {
             background: var(--forest-mid);
             transform: none;
             box-shadow: none;
+        }
+
+        .archive-link:focus {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
+        }
+
+        .archive-link:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        .archive-link:focus-visible {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
         }
 
         .tabs {
@@ -316,6 +389,20 @@
             transform: scaleX(1);
         }
 
+        .tab-button:focus {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
+        }
+
+        .tab-button:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        .tab-button:focus-visible {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
+        }
+
         .tab-content {
             border: 3px solid var(--parchment-dark);
             border-top: none;
@@ -352,6 +439,7 @@
             transition: background 0.2s ease;
         }
 
+        /* stylelint-disable-next-line a11y/selector-pseudo-class-focus -- Non-focusable row, visual feedback only */
         .species-row:hover {
             background: var(--parchment-light);
             padding-left: 8px;
@@ -421,6 +509,20 @@
             min-width: 150px;
             max-width: 170px;
             border-radius: 2px;
+        }
+
+        .song-clip-player:focus {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
+        }
+
+        .song-clip-player:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        .song-clip-player:focus-visible {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
         }
 
         .song-clip-spacer {
@@ -550,6 +652,7 @@
             transform: translateX(2px);
         }
 
+        /* stylelint-disable-next-line a11y/selector-pseudo-class-focus -- Pseudo-element inherits focus from parent button */
         .species-seek-button:hover::before {
             opacity: 1;
             left: 12px;
@@ -557,6 +660,20 @@
 
         .species-seek-button:active {
             transform: translateX(4px);
+        }
+
+        .species-seek-button:focus {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
+        }
+
+        .species-seek-button:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        .species-seek-button:focus-visible {
+            outline: 2px solid var(--sky-blue);
+            outline-offset: 2px;
         }
 
         .species-seek-button.probable {
@@ -576,6 +693,7 @@
             color: var(--sage);
         }
 
+        /* stylelint-disable-next-line a11y/selector-pseudo-class-focus -- Variant styling inherits focus from base .species-seek-button */
         .species-seek-button.possible:hover {
             opacity: 1;
         }
