@@ -911,9 +911,6 @@
 
                 <!-- Audio Stats Tab -->
                 <div class="tab-content hidden" id="audio-stats-tab" role="tabpanel" aria-labelledby="tab-audio-stats">
-                    <div class="info-callout">
-                        Bird vocalisations detected from background sound in motion-triggered clips. Birds were likely off-camera.
-                    </div>
                     <div class="audio-stats" id="audio-stats-container">
                         <!-- Populated by JavaScript -->
                     </div>
@@ -986,6 +983,22 @@
             <p>Detections represent birds visible on camera during recording periods.</p>
 
             <p>The confidence percentages indicate how certain the AI model is about each identification, based on visual features like plumage patterns, body shape, and size.</p>
+        </div>
+    </template>
+
+    <template id="info-audio-stats">
+        <div class="info-overlay-content">
+            <p>Bird vocalisations are detected from background audio in motion-triggered video clips using BirdNET acoustic analysis.</p>
+
+            <p><strong>How it works:</strong></p>
+            <p>Audio is extracted from each video clip and analysed for bird songs, calls, and other vocalisations. The AI model identifies species based on acoustic patterns including frequency, rhythm, and tonal characteristics.</p>
+
+            <p><strong>Important context:</strong></p>
+            <p>These detections represent birds that were vocalising nearby during the recording, but were likely off-camera. The motion trigger that started the video was typically activated by a different bird or movement at the feeder.</p>
+
+            <p>Audio detections complement the visual detections by revealing the presence of species that may not have approached the feeder, but were active in the surrounding area.</p>
+
+            <p>The confidence percentages indicate how certain the AI model is about each species identification based on the acoustic signature of the vocalisation.</p>
         </div>
     </template>
 
@@ -1166,7 +1179,8 @@
                     'very-probable': 'Very Probable Detections',
                     'probable': 'Probable Detections',
                     'possible': 'Possible Detections',
-                    'video-stats': 'Visual Bird Detection'
+                    'video-stats': 'Visual Bird Detection',
+                    'audio-stats': 'Audio Bird Detection'
                 };
                 return titles[contentId] || 'Information';
             }
@@ -1577,7 +1591,7 @@
         function renderAudioChart(speciesData, maxCount, clipMap, batchId) {
             const container = document.getElementById('audio-stats-container');
 
-            let html = '<h2>Bird Vocalisations Detected <span style="font-weight: normal; font-size: 0.75em; color: var(--text-secondary);">(with % confidence)</span></h2>';
+            let html = '<h2>Bird Vocalisations Detected <span style="font-weight: normal; font-size: 0.75em; color: var(--text-secondary);">(with % confidence)</span> <button class="info-icon" data-info-id="audio-stats" aria-label="Learn about audio bird detection">ℹ</button></h2>';
 
             speciesData.forEach(([commonName, data]) => {
                 const { count, confidences } = data;
