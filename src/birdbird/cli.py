@@ -911,7 +911,8 @@ def species(
     """Identify bird species from highlights video using BioCLIP.
 
     Samples frames from highlights.mp4 and identifies species using BioCLIP
-    on a remote GPU. Produces species.json with timestamps and detections.
+    on a remote GPU. Produces species.json with timestamps and detections,
+    and automatically generates best_clips.json for viewer seek functionality.
 
     Requires remote GPU configuration in ~/.birdbird/config.json.
 
@@ -988,6 +989,19 @@ def species(
         # Save results
         save_species_results(results, output)
 
+        # Automatically generate best_clips.json for viewer seek functionality
+        best_clips_generated = False
+        if results.species_summary:
+            typer.echo("")
+            typer.echo("Generating best clips for viewer seek functionality...")
+            try:
+                best_clips = find_all_best_clips(output, window_duration_s=14.0)
+                save_best_clips(best_clips, paths.best_clips_json, window_duration_s=14.0)
+                typer.echo(f"  Found best clips for {len(best_clips)} species")
+                best_clips_generated = True
+            except Exception as e:
+                typer.echo(f"  Warning: Could not generate best clips: {e}")
+
         typer.echo("")
         typer.echo("Results:")
         typer.echo(f"  Frames analyzed:    {results.total_frames}")
@@ -995,8 +1009,9 @@ def species(
         typer.echo(f"  Processing time:    {results.processing_time_s:.1f}s")
         typer.echo(f"  Species detected:   {len(results.species_summary)}")
         typer.echo(f"  Output:             {output}")
+        if best_clips_generated:
+            typer.echo(f"  Best clips:         {paths.best_clips_json}")
         typer.echo("")
-        typer.echo("Tip: Run 'birdbird best-clips' to find optimal time windows for each species")
 
         if results.species_summary:
             typer.echo("")
