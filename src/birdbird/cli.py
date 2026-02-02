@@ -188,7 +188,7 @@ def highlights(
 @app.command()
 def process(
     input_dir: Path = typer.Argument(..., help="Directory containing .avi clips"),
-    output: Path = typer.Option(None, "--output", "-o", help="Output MP4 path (default: input_dir/has_birds/highlights.mp4)"),
+    output: Path = typer.Option(None, "--output", "-o", help="Output MP4 path (default: input_dir/birdbird/assets/highlights.mp4)"),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
     song_confidence: float = typer.Option(0.5, "--song-conf", "-s", help="Min confidence for song detection (0.0-1.0)"),
     buffer_before: float = typer.Option(1.0, "--buffer-before", help="Seconds before first bird detection"),
@@ -198,7 +198,7 @@ def process(
     lat: float = typer.Option(None, "--lat", help="Latitude for species filtering (default: from config)"),
     lon: float = typer.Option(None, "--lon", help="Longitude for species filtering (default: from config)"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
-    force: bool = typer.Option(False, "--force", "-f", help="Clear existing has_birds directory without prompting"),
+    force: bool = typer.Option(False, "--force", "-f", help="Clear existing birdbird/ directory without prompting"),
     highest_quality: bool = typer.Option(False, "--highest-quality", help="Use highest quality (1440x1080 @ 30fps, larger file)"),
     no_song_clips: bool = typer.Option(False, "--no-song-clips", help="Skip extracting audio clips for each species"),
     run_species: bool = typer.Option(None, "--species/--no-species", help="Run visual species identification (default: from config)"),
@@ -901,7 +901,7 @@ def best_clips(
 
 @app.command()
 def species(
-    input_dir: Path = typer.Argument(..., help="Directory containing has_birds/ with highlights.mp4"),
+    input_dir: Path = typer.Argument(..., help="Directory containing input clips (looks for birdbird/assets/highlights.mp4)"),
     output: Path = typer.Option(None, "--output", "-o", help="Output JSON path (default: input_dir/species.json)"),
     samples_per_minute: float = typer.Option(None, "--samples", "-s", help="Frames to sample per minute (default: from config or 6)"),
     min_confidence: float = typer.Option(None, "--min-conf", "-c", help="Min confidence threshold (default: from config or 0.5)"),
@@ -921,20 +921,17 @@ def species(
         typer.echo(f"Error: {input_dir} is not a directory", err=True)
         raise typer.Exit(1)
 
-    # Find highlights.mp4
-    has_birds_dir = input_dir / "has_birds"
-    highlights_path = has_birds_dir / "highlights.mp4"
+    # Find highlights.mp4 using BirdbirdPaths
+    paths = BirdbirdPaths.from_input_dir(input_dir)
+    highlights_path = paths.highlights_mp4
 
     if not highlights_path.exists():
-        # Also check input_dir directly
-        highlights_path = input_dir / "highlights.mp4"
-        if not highlights_path.exists():
-            typer.echo(f"Error: highlights.mp4 not found in {has_birds_dir} or {input_dir}", err=True)
-            typer.echo("Run 'birdbird process' first to generate highlights.", err=True)
-            raise typer.Exit(1)
+        typer.echo(f"Error: highlights.mp4 not found at {highlights_path}", err=True)
+        typer.echo("Run 'birdbird process' first to generate highlights.", err=True)
+        raise typer.Exit(1)
 
     if output is None:
-        output = input_dir / "species.json"
+        output = paths.species_json
 
     # Check if output file already exists
     if output.exists():
