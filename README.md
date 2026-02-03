@@ -34,6 +34,7 @@ From a batch of 498 motion-triggered clips (4 hours of footage), birdbird automa
 ## Quick Start
 
 > **First time?** See [Installation](#installation) below for system requirements.
+> **Need a camera?** See [BIRD_CAMERAS.md](BIRD_CAMERAS.md) for compatible hardware (works with any camera that saves video clips to SD card).
 
 ```bash
 # Install birdbird
@@ -139,7 +140,9 @@ birdbird expects video files from motion-triggered cameras:
 - **Directory structure**: All clips in one directory (e.g., `20260114/`)
 - **Filename convention**: `DDHHmmss00.avi` (day + time; month/year from parent directory name)
 
-Tested with "Wilde & Oakes Bird Feeder with Smart Camera" producing MJPEG AVI (1440x1080, 30fps, ~10s, ~27MB each).
+**Camera compatibility:** Works with any camera that saves video files locally (SD card storage). See [BIRD_CAMERAS.md](BIRD_CAMERAS.md) for a detailed guide on compatible hardware, including budget options (£30+), commercial smart feeders, and open-source alternatives.
+
+Tested with Wilde & Oakes Camera Bird Feeder (£30 from B&M, UK) producing MJPEG AVI files (1440x1080, 30fps, ~10s clips, ~27MB each).
 
 ### Configuration
 
