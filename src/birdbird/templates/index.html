@@ -1430,6 +1430,14 @@
                 button.addEventListener('click', () => {
                     const targetTab = button.dataset.tab;
 
+                    // Pause video when switching away from highlights tab
+                    if (targetTab !== 'highlights') {
+                        const video = document.getElementById('highlights-player');
+                        if (video && !video.paused) {
+                            video.pause();
+                        }
+                    }
+
                     // Save current tab for persistence
                     currentActiveTab = targetTab;
 
