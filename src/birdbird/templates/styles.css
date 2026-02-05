@@ -312,6 +312,12 @@ footer a:focus-visible {
     border-radius: 0 0 2px 0;
     transform: translateY(-100%);
     transition: transform 0.2s ease;
+    border-bottom: none;
+}
+
+.skip-link:hover {
+    color: var(--cream-white);
+    border-bottom: none;
 }
 
 .skip-link:focus {
