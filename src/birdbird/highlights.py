@@ -177,7 +177,7 @@ def find_bird_segments(
                         first_bird_time = t
                     last_bird_time = t
 
-            if first_bird_time is None:
+            if first_bird_time is None or last_bird_time is None:
                 cap.release()
                 return []
 
@@ -189,7 +189,8 @@ def find_bird_segments(
             if last_bird_time < end_time:
                 last_bird_time = _binary_search_exit(cap, detector, last_bird_time, end_time, fps)
 
-        # Apply buffers
+        # Apply buffers (both times guaranteed non-None by guard above)
+        assert first_bird_time is not None and last_bird_time is not None  # nosec B101
         segment_start = max(0, first_bird_time - buffer_before)
         segment_end = min(duration, last_bird_time + buffer_after)
 

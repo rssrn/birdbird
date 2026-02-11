@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 from pathlib import Path
+from typing import Any
 
 from tqdm import tqdm
 
@@ -58,7 +59,7 @@ def filter_clips(
         bird_confidence=bird_confidence,
     )
 
-    stats = {"total": len(clips), "with_birds": 0, "filtered_out": 0}
+    stats: dict[str, Any] = {"total": len(clips), "with_birds": 0, "filtered_out": 0}
     detections: dict[str, dict] = {}
 
     for clip_path in tqdm(clips, desc="Processing clips"):

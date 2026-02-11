@@ -198,7 +198,7 @@ def extract_and_score_frames(
         clip_names = clip_names[:limit]
 
     # Collect raw scores before normalization
-    raw_scores = {
+    raw_scores: dict[str, list[float]] = {
         'confidence': [],
         'sharpness': [],
         'bird_size': [],

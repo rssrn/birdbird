@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from tqdm import tqdm
 
@@ -316,7 +317,7 @@ def parse_birdnet_csv(
 
     @author Claude Opus 4.5 Anthropic
     """
-    detections = []
+    detections: list[SongDetection] = []
 
     if not csv_path.exists():
         return detections
@@ -557,7 +558,7 @@ def analyze_songs(
     files_with_detections = set(d.filename for d in all_detections)
 
     # Build config record
-    config = {
+    config: dict[str, Any] = {
         "min_confidence": min_confidence,
         "threads": threads,
         "sensitivity": 1.0,

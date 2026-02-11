@@ -279,7 +279,7 @@ class RemoteProcessor:
 
         @author Claude Opus 4.5 Anthropic
         """
-        paths_iter = local_paths
+        paths_iter: list[Path] | tqdm[Path] = local_paths
         if show_progress:
             paths_iter = tqdm(local_paths, desc="Transferring frames")
 
@@ -534,6 +534,7 @@ def identify_species(
         )
 
         # Process frames (tqdm progress bar shown for transfers)
+        assert config.remote is not None, "Remote config required for remote processing"  # nosec B101
         processor = RemoteProcessor(
             config=config.remote,
             labels=labels,

@@ -427,8 +427,8 @@ def upload_batch(
     if songs_path and songs_path.exists():
         songs_key = f"batches/{batch_id}/songs.json"
 
-        with open(songs_path) as f:
-            songs_data = json.load(f)
+        with open(songs_path) as songs_f:
+            songs_data = json.load(songs_f)
 
         if batch_exists and not should_upload_file(s3_client, bucket_name, songs_key, songs_path):
             typer.echo("  Skipping songs.json (unchanged)")
@@ -461,8 +461,8 @@ def upload_batch(
             # Load songs.json to get clip metadata (species, confidence, etc.)
             clips_data = {}
             if songs_path and songs_path.exists():
-                with open(songs_path) as f:
-                    songs_json = json.load(f)
+                with open(songs_path) as clips_meta_f:
+                    songs_json = json.load(clips_meta_f)
                     for clip in songs_json.get('clips', []):
                         clips_data[clip['filename']] = clip
 
@@ -474,11 +474,11 @@ def upload_batch(
                     skipped_files.append(f"song_clips/{clip_file.name}")
                 else:
                     typer.echo(f"    Uploading {clip_file.name}")
-                    with open(clip_file, 'rb') as f:
+                    with open(clip_file, 'rb') as clip_f:
                         s3_client.put_object(
                             Bucket=bucket_name,
                             Key=clip_key,
-                            Body=f,
+                            Body=clip_f,
                             ContentType='audio/wav'
                         )
                     uploaded_files.append(f"song_clips/{clip_file.name}")
@@ -516,8 +516,8 @@ def upload_batch(
     if species_path and species_path.exists():
         species_key = f"batches/{batch_id}/species.json"
 
-        with open(species_path) as f:
-            species_data = json.load(f)
+        with open(species_path) as species_f:
+            species_data = json.load(species_f)
 
         if batch_exists and not should_upload_file(s3_client, bucket_name, species_key, species_path):
             typer.echo("  Skipping species.json (unchanged)")
@@ -548,8 +548,8 @@ def upload_batch(
     if best_clips_path and best_clips_path.exists():
         best_clips_key = f"batches/{batch_id}/best_clips.json"
 
-        with open(best_clips_path) as f:
-            best_clips_data = json.load(f)
+        with open(best_clips_path) as best_clips_f:
+            best_clips_data = json.load(best_clips_f)
 
         if batch_exists and not should_upload_file(s3_client, bucket_name, best_clips_key, best_clips_path):
             typer.echo("  Skipping best_clips.json (unchanged)")
