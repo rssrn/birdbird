@@ -367,14 +367,31 @@ pre-commit install
 ```
 
 This sets up:
-- Python linting (ruff)
 - HTML validation (html-validate)
 - JavaScript linting (eslint)
 - CSS linting (stylelint)
 - Spell checking (cspell - British English by default)
-- Accessibility testing (pa11y)
+- Python tests (pytest - fast tests only, excludes `@pytest.mark.slow`)
+- Accessibility reminder (prompts you to run `npm run test:a11y` manually before deploying)
 
 **Changing spell check language:** Edit `.cspell.json` and change `"language": "en-GB"` to your preferred locale (e.g., `"en-US"` for American English, `"fr"` for French, etc.).
+
+**Security auditing:**
+
+Check for known vulnerabilities in Python dependencies:
+
+```bash
+# Install pip-audit (one-time, already included in dev dependencies)
+pip install pip-audit
+
+# Run security audit (uses OSV vulnerability database)
+.venv/bin/pip-audit --vulnerability-service osv --skip-editable
+
+# Or to include the editable birdbird package in the audit:
+.venv/bin/pip-audit --vulnerability-service osv
+```
+
+**Note:** Use `--vulnerability-service osv` instead of the default PyPI service, which has reliability issues. OSV (Open Source Vulnerabilities) is more stable and comprehensive.
 
 **Run tests:**
 
