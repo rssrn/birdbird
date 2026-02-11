@@ -56,8 +56,8 @@ def should_upload_file(s3_client, bucket_name: str, key: str, local_path: Path) 
     try:
         # Get existing object metadata
         response = s3_client.head_object(Bucket=bucket_name, Key=key)
-        remote_etag = response['ETag'].strip('"')  # Remove quotes from ETag
-        remote_size = response['ContentLength']
+        remote_etag: str = response['ETag'].strip('"')  # Remove quotes from ETag
+        remote_size: int = response['ContentLength']
 
         # Check if this is a multipart upload (ETag contains hyphen)
         if '-' in remote_etag:

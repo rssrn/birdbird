@@ -8,6 +8,7 @@ and assets directories (final outputs mirroring R2 structure).
 """
 
 import json
+from typing import Any
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -156,4 +157,5 @@ def load_detections(detections_path: Path) -> dict:
         )
 
     with open(detections_path) as f:
-        return json.load(f)
+        result: dict[str, Any] = json.load(f)
+        return result

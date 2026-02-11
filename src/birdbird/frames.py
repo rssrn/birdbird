@@ -40,7 +40,8 @@ def calculate_sharpness(frame: np.ndarray) -> float:
     @author Claude Sonnet 4.5 Anthropic
     """
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    return cv2.Laplacian(gray, cv2.CV_64F).var()
+    score: float = cv2.Laplacian(gray, cv2.CV_64F).var()
+    return score
 
 
 def calculate_bird_size(detector: BirdDetector, frame: np.ndarray) -> float:

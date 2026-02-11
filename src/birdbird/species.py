@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import time
 from dataclasses import dataclass
+from typing import Any
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -409,7 +410,8 @@ if __name__ == "__main__":
             # For WSL, use cat over SSH to fetch the file (exec_path is a WSL path)
             cmd = ["ssh", self.config.host, "wsl", "cat", f"{exec_path}/results.json"]
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            return json.loads(result.stdout)
+            parsed: dict[str, Any] = json.loads(result.stdout)
+            return parsed
         else:
             with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
                 local_path = Path(f.name)
@@ -419,7 +421,7 @@ if __name__ == "__main__":
             subprocess.run(cmd, check=True)
 
             with open(local_path) as f:
-                results = json.load(f)
+                results: dict[str, Any] = json.load(f)
 
             local_path.unlink()
             return results

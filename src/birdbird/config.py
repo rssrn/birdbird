@@ -64,7 +64,8 @@ def load_config() -> dict[str, Any]:
 
     try:
         with open(CONFIG_PATH) as f:
-            return json.load(f)
+            result: dict[str, Any] = json.load(f)
+            return result
     except (json.JSONDecodeError, OSError):
         return {}
 

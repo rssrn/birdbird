@@ -21,9 +21,9 @@ Phase 2: Enable mypy pre-commit hook
 - [x] Verify all tests pass with mypy enabled
 
 Phase 3: Increase strictness
-- [ ] Enable warn_return_any in pyproject.toml
-- [ ] Enable warn_unused_configs in pyproject.toml
-- [ ] Fix any new warnings
+- [x] Enable warn_return_any in pyproject.toml
+- [x] Enable warn_unused_configs in pyproject.toml
+- [x] Fix any new warnings
 
 Phase 4: Maximum type safety (optional)
 - [ ] Enable disallow_untyped_defs (require all functions have type hints)
