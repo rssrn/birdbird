@@ -25,6 +25,7 @@ birdbird = "birdbird.cli:app"
 test = [
     "pytest>=8.0",
     "pytest-cov",
+    "pytest-mock",
     "mypy>=1.13",
     "types-tqdm",
     "boto3-stubs[essential]",

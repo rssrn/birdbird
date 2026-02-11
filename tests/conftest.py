@@ -6,7 +6,9 @@
 import json
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock
 
+import numpy as np
 import pytest
 
 
@@ -112,3 +114,107 @@ def sample_birdnet_csv(tmp_path):
 """
     csv_path.write_text(csv_content)
     return csv_path
+
+
+# --- Layer 2 shared fixtures ---
+
+
+@pytest.fixture
+def mock_yolo_result():
+    """Factory for mock YOLO detection results.
+
+    @author Claude Opus 4.6 Anthropic
+    """
+    def _make(detections=None):
+        """Create mock YOLO result with given detections.
+
+        Args:
+            detections: List of (class_id, confidence) tuples.
+                        None means no boxes at all.
+        """
+        result = MagicMock()
+        if detections is None:
+            result.boxes = None
+            return [result]
+
+        boxes = MagicMock()
+        cls_list = [d[0] for d in detections]
+        conf_list = [d[1] for d in detections]
+        boxes.cls = cls_list
+        boxes.conf = conf_list
+        boxes.__len__ = lambda self: len(cls_list)
+
+        # For frames.py: set up individual box iteration
+        mock_boxes = []
+        for i, (cls_id, conf) in enumerate(detections):
+            box = MagicMock()
+            box.cls = [cls_id]
+            box.conf = [conf]
+            # xyxy format: [x1, y1, x2, y2]
+            xyxy_tensor = MagicMock()
+            xyxy_tensor.cpu.return_value.numpy.return_value = np.array([100, 100, 300, 300])
+            box.xyxy = [xyxy_tensor]
+            mock_boxes.append(box)
+
+        boxes.__iter__ = lambda self: iter(mock_boxes)
+        result.boxes = boxes
+        return [result]
+
+    return _make
+
+
+@pytest.fixture
+def mock_video_capture():
+    """Factory for mock cv2.VideoCapture with configurable frames/properties.
+
+    @author Claude Opus 4.6 Anthropic
+    """
+    def _make(
+        is_opened=True,
+        fps=30.0,
+        frame_count=300,
+        frames=None,
+    ):
+        """Create mock VideoCapture.
+
+        Args:
+            is_opened: Whether isOpened() returns True
+            fps: Frames per second
+            frame_count: Total frame count
+            frames: List of (success, frame) tuples for read() calls.
+                    If None, generates dummy frames.
+        """
+        cap = MagicMock()
+        cap.isOpened.return_value = is_opened
+
+        def get_prop(prop_id):
+            # cv2.CAP_PROP_FPS = 5, CAP_PROP_FRAME_COUNT = 7
+            if prop_id == 5:
+                return fps
+            if prop_id == 7:
+                return float(frame_count)
+            return 0.0
+
+        cap.get.side_effect = get_prop
+
+        if frames is not None:
+            cap.read.side_effect = frames
+        else:
+            # Default: return dummy frames then stop
+            dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            read_results = [(True, dummy_frame)] * frame_count + [(False, None)]
+            cap.read.side_effect = read_results
+
+        return cap
+
+    return _make
+
+
+@pytest.fixture
+def mock_s3_client():
+    """Mock boto3 S3 client with configurable responses.
+
+    @author Claude Opus 4.6 Anthropic
+    """
+    client = MagicMock()
+    return client

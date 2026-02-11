@@ -373,7 +373,7 @@ This sets up:
 - Spell checking (cspell - British English by default)
 - Security lint (bandit - checks Python code for common security issues)
 - Type checking (mypy - static type analysis of Python code)
-- Python tests (pytest - fast tests only, excludes `@pytest.mark.slow`)
+- Python tests (pytest - all tests including mocked unit tests)
 - Accessibility reminder (prompts you to run `npm run test:a11y` manually before deploying)
 
 **Changing spell check language:** Edit `.cspell.json` and change `"language": "en-GB"` to your preferred locale (e.g., `"en-US"` for American English, `"fr"` for French, etc.).
@@ -398,14 +398,14 @@ Both tools are included in dev dependencies (`pip install -e ".[test]"`). Bandit
 **Run tests:**
 
 ```bash
-# Fast unit tests (runs in pre-commit)
-pytest -m "not slow"
+# All tests (runs in pre-commit)
+.venv/bin/pytest
 
-# All tests including integration tests
-pytest
+# Only slow/integration tests
+.venv/bin/pytest -m slow
 
 # With coverage
-pytest --cov=src/birdbird --cov-report=term-missing
+.venv/bin/pytest --cov=src/birdbird --cov-report=term-missing
 ```
 
 **Test the web viewer locally:**
@@ -495,16 +495,23 @@ src/birdbird/
 
 ```bash
 tests/
-├── test_config.py        # Config loading, validation (100% coverage)
-├── test_paths.py         # Path utilities (100% coverage)
-├── test_best_clips.py    # Sliding window algorithm (94% coverage)
-├── test_publish.py       # Date parsing, batch IDs (24% coverage)
-└── test_songs.py         # BirdNET CSV parsing (49% coverage)
+├── conftest.py              # Shared fixtures (mock YOLO, cv2, S3)
+├── test_config.py           # Config loading, validation
+├── test_paths.py            # Path utilities
+├── test_best_clips.py       # Sliding window algorithm
+├── test_publish.py          # Date parsing, batch IDs (pure)
+├── test_songs.py            # BirdNET CSV parsing (pure)
+├── test_detector.py         # YOLO bird detection (mocked)
+├── test_filter_mock.py      # Clip filtering pipeline (mocked)
+├── test_highlights_mock.py  # Highlight reel generation (mocked)
+├── test_songs_mock.py       # Audio extraction + BirdNET (mocked)
+├── test_publish_mock.py     # R2 upload + cleanup (mocked)
+└── test_frames_mock.py      # Frame scoring + extraction (mocked)
 ```
 
-**86 tests total** - Pure unit tests (no mocking) for fast feedback.
+**158 tests total** - Layer 1 (pure unit tests) + Layer 2 (mocked unit tests), all fast.
 
-**Pre-commit hooks** run fast tests automatically. Mark slow integration tests with `@pytest.mark.slow` to exclude them from pre-commit.
+**Pre-commit hooks** run all tests automatically. Use `@pytest.mark.slow` to mark integration tests that need real dependencies.
 
 ```python
 @pytest.mark.slow

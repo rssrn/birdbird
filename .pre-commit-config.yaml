@@ -39,9 +39,9 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-      - id: pytest-fast
-        name: Fast tests (pytest)
-        entry: .venv/bin/pytest -m "not slow"
+      - id: pytest
+        name: Tests (pytest)
+        entry: .venv/bin/pytest
         language: system
         pass_filenames: false
         types: [python]
