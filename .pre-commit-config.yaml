@@ -51,10 +51,12 @@ repos:
         entry: bash -c 'PORT=$(python3 -c "import socket; s=socket.socket(); s.bind((\"\",0)); print(s.getsockname()[1]); s.close()"); npx serve -l $PORT src/birdbird/templates &>/dev/null & SERVER_PID=$!; sleep 2; PORT=$PORT npm run test:a11y; EXIT=$?; kill $SERVER_PID 2>/dev/null; exit $EXIT'
         language: system
         stages: [pre-push]
+        files: \.(html|css|js)$
         pass_filenames: false
       - id: pip-audit
         name: Security audit (pip-audit)
-        entry: .venv/bin/pip-audit --vulnerability-service osv --skip-editable
+        entry: bash -c 'MARKER=.venv/.pip-audit-last-run; if [ -f "$MARKER" ] && [ "$(date -r "$MARKER" +%Y%m%d)" = "$(date +%Y%m%d)" ]; then echo "pip-audit already ran today, skipping"; exit 0; fi; .venv/bin/pip-audit --vulnerability-service osv --skip-editable && touch "$MARKER"'
         language: system
         stages: [pre-push]
+        always_run: true
         pass_filenames: false
