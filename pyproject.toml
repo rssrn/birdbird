@@ -25,6 +25,9 @@ birdbird = "birdbird.cli:app"
 test = [
     "pytest>=8.0",
     "pytest-cov",
+    "mypy>=1.13",
+    "types-tqdm",
+    "boto3-stubs[essential]",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -35,3 +38,22 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
 ]
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.10"
+# warn_return_any = true  # Enable later
+# warn_unused_configs = true  # Enable later
+
+# Start lenient, enable later:
+# disallow_untyped_defs = true
+# strict = true
+
+# Ignore third-party packages without type stubs
+[[tool.mypy.overrides]]
+module = [
+    "birdnet.*",
+    "birdnet_analyzer",
+    "birdnet_analyzer.*",
+    "ultralytics.*",
+]
+ignore_missing_imports = true

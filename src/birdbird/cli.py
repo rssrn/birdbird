@@ -12,6 +12,7 @@ import typer
 
 from .config import get_location, get_species_config
 from .filter import filter_clips
+from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata
 from .highlights import generate_highlights, get_video_duration
 from .paths import BirdbirdPaths
 from .publish import publish_to_r2, extract_date_range

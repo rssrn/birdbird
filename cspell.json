@@ -31,6 +31,7 @@
     "boto",
     "pyproject",
     "pytest",
+    "mypy",
     "ultralytics",
     "CUDA",
     "WCAG",

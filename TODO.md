@@ -1,0 +1,31 @@
+# birdbird - TODO
+
+## Build / Safety Improvements
+
+[x] add mypy as a pre-commit hook to check/enforce type hints (infrastructure ready, disabled pending fixes below)
+
+### mypy Type Safety Roadmap
+
+Phase 1: Fix existing type errors (14 errors across 6 files)
+- [ ] Fix filter.py:84 - Type mismatch (BirdbirdPaths assigned to int variable)
+- [ ] Fix highlights.py:189-194 - None safety for float values (4 errors)
+- [ ] Fix species.py:284 - tqdm iterator assigned to list[Path] variable
+- [ ] Fix species.py:538 - RemoteConfig None handling in RemoteProcessor
+- [ ] Fix songs.py:319 - Add type annotation for detections variable
+- [ ] Fix songs.py:566 - dict[str, float] assigned to float variable
+- [ ] Fix publish.py - File handle type mismatches (4 errors at lines 430, 464, 519, 551)
+- [ ] Fix frames.py:201 - Add type annotation for raw_scores variable
+
+Phase 2: Enable mypy pre-commit hook
+- [ ] Uncomment mypy hook in .pre-commit-config.yaml
+- [ ] Verify all tests pass with mypy enabled
+
+Phase 3: Increase strictness
+- [ ] Enable warn_return_any in pyproject.toml
+- [ ] Enable warn_unused_configs in pyproject.toml
+- [ ] Fix any new warnings
+
+Phase 4: Maximum type safety (optional)
+- [ ] Enable disallow_untyped_defs (require all functions have type hints)
+- [ ] Enable strict mode for comprehensive type checking
+- [ ] Consider removing module overrides once upstream stubs are available
