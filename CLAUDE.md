@@ -72,6 +72,8 @@ npx serve -l 3000 src/birdbird/templates
 
 ## Testing
 
+**IMPORTANT**: This project maintains high test coverage (167 tests). When adding or modifying functionality, ALWAYS create corresponding mock tests following the existing patterns in `tests/`. Mock external dependencies (YOLO, BioCLIP, BirdNET, ffmpeg, S3, etc.) using `unittest.mock.patch` and `sys.modules` injection as shown in existing test files.
+
 **Test organization**: Tests use pytest markers to distinguish between fast and slow tests:
 - Fast tests (all current tests): No marker needed - these run in pre-commit hooks
 - Slow tests (integration, real dependencies): Mark with `@pytest.mark.slow` - excluded from pre-commit
@@ -88,10 +90,16 @@ pytest
 pytest -m slow
 ```
 
-**When implementing new tests:**
-- Layer 1 (pure unit tests): No marker needed
-- Layer 2 (mocked unit tests): No marker unless unusually slow
-- Layer 3 (integration tests with real dependencies): Always use `@pytest.mark.slow`
+**When implementing new functionality:**
+1. **Write code** in `src/birdbird/`
+2. **Write mock tests** in `tests/test_<module>_mock.py` - see `test_species_mock.py` for patterns
+3. **Run tests** with `pytest -m "not slow"` to verify
+4. Follow existing patterns: mock external dependencies, test edge cases, verify logic
+
+**Test layers:**
+- Layer 1 (pure unit tests): No marker needed - tests that don't require any external dependencies
+- Layer 2 (mocked unit tests): No marker unless unusually slow - mock external dependencies (torch, bioclip, ffmpeg, etc.)
+- Layer 3 (integration tests with real dependencies): Always use `@pytest.mark.slow` - tests that require actual GPU, video files, etc.
 
 ## Architecture
 

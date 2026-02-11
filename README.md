@@ -168,9 +168,12 @@ This helps BirdNET focus on species in your region, speeding up audio analysis. 
 
 ### Visual Species Identification
 
-The `species` command uses **BioCLIP** (vision-language model) to identify bird species from video frames. This requires a GPU for reasonable performance, so birdbird can offload processing to a remote machine via SSH.
+The `species` command uses **BioCLIP** (vision-language model) to identify bird species from video frames. This requires a GPU for reasonable performance. birdbird supports two processing modes:
 
-**Setup remote GPU:**
+1. **Remote GPU** (recommended, tested) - Offload processing to a remote machine via SSH
+2. **Local GPU** (untested, may cause system instability) - Run BioCLIP on your local GPU
+
+**Option 1: Setup remote GPU (recommended):**
 
 1. On the remote machine:
    ```bash
@@ -229,6 +232,33 @@ The `species` command uses **BioCLIP** (vision-language model) to identify bird 
    ```
 
 This produces `species.json` with timestamps and confidence scores, plus `best_clips.json` for web viewer navigation.
+
+**Option 2: Setup local GPU (untested):**
+
+> ⚠️ **Warning:** Local GPU processing is untested and may cause system slowdown or instability. The BioCLIP model and PyTorch can be resource-intensive. Use at your own risk. Remote GPU processing (Option 1) is strongly recommended.
+
+1. Install GPU dependencies:
+   ```bash
+   pip install -e ".[gpu]"
+   ```
+
+2. Configure in `~/.birdbird/config.json`:
+   ```json
+   {
+     "species": {
+       "processing": {
+         "mode": "local"
+       }
+     }
+   }
+   ```
+
+3. Run species detection:
+   ```bash
+   birdbird species /path/to/clips
+   ```
+
+**Note:** Local mode requires CUDA-compatible GPU and drivers. If CUDA is not available, it will fall back to CPU (which will be extremely slow). Verify GPU availability with `python -c "import torch; print(torch.cuda.is_available())"` after installing the gpu dependencies.
 
 ### Publishing to Web
 
@@ -509,7 +539,7 @@ tests/
 └── test_frames_mock.py      # Frame scoring + extraction (mocked)
 ```
 
-**158 tests total** - Layer 1 (pure unit tests) + Layer 2 (mocked unit tests), all fast.
+**167 tests total** - Layer 1 (pure unit tests) + Layer 2 (mocked unit tests), all fast.
 
 **Pre-commit hooks** run all tests automatically. Use `@pytest.mark.slow` to mark integration tests that need real dependencies.
 

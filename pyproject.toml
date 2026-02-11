@@ -32,6 +32,10 @@ test = [
     "bandit>=1.7",
     "pip-audit>=2.7",
 ]
+gpu = [
+    "torch>=2.0.0",
+    "bioclip>=0.1.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/birdbird"]
@@ -58,6 +62,10 @@ module = [
     "birdnet_analyzer",
     "birdnet_analyzer.*",
     "ultralytics.*",
+    "bioclip",
+    "bioclip.*",
+    "torch",
+    "torch.*",
 ]
 ignore_missing_imports = true
 

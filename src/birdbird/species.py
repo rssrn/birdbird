@@ -143,6 +143,69 @@ def check_remote_connection(config: RemoteConfig) -> tuple[bool, str]:
         return False, f"Connection error: {e}"
 
 
+class LocalProcessor:
+    """Process frames on local GPU.
+
+    @author Claude Sonnet 4.5 Anthropic
+    """
+
+    def __init__(self, labels: list[str], min_confidence: float = 0.5):
+        self.labels = labels
+        self.min_confidence = min_confidence
+
+    def process(
+        self,
+        frames: list[tuple[Path, float]],
+        progress_callback=None,
+    ) -> list[Detection]:
+        """Process frames with BioCLIP on local GPU.
+
+        @author Claude Sonnet 4.5 Anthropic
+        """
+        if not frames:
+            return []
+
+        # Import here so we fail fast if dependencies missing
+        import torch
+        from bioclip import CustomLabelsClassifier
+
+        # Initialize classifier with GPU if available
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        if progress_callback:
+            progress_callback(f"Loading BioCLIP with {len(self.labels)} labels on {device}...")
+
+        classifier = CustomLabelsClassifier(self.labels, device=device)
+
+        if progress_callback:
+            progress_callback(f"Processing {len(frames)} frames...")
+
+        detections = []
+        for frame_path, timestamp in tqdm(frames, desc="Running BioCLIP inference"):
+            # Classify - returns list of dicts with 'classification' and 'score' keys
+            predictions = classifier.predict(str(frame_path))
+
+            # Sort by score (descending)
+            sorted_preds = sorted(predictions, key=lambda x: x["score"], reverse=True)
+
+            top = sorted_preds[0]
+
+            if top["score"] >= self.min_confidence:
+                runners_up = [
+                    {"species": p["classification"], "confidence": round(p["score"], 4)}
+                    for p in sorted_preds[1:4]  # Top 3 runners-up
+                ]
+
+                detections.append(Detection(
+                    timestamp_s=timestamp,
+                    species=top["classification"],
+                    confidence=round(top["score"], 4),
+                    runners_up=runners_up,
+                ))
+
+        return detections
+
+
 class RemoteProcessor:
     """Process frames on a remote GPU via SSH.
 
@@ -509,10 +572,16 @@ def identify_species(
             raise RuntimeError(f"Remote GPU ({config.remote.host}) is not accessible: {msg}")
 
     elif config.processing_mode == "local":
-        raise ValueError(
-            "Local processing is disabled to prevent system slowdown.\n"
-            "Configure remote GPU in ~/.birdbird/config.json or use --mode remote"
-        )
+        # Check for required dependencies
+        try:
+            import torch  # noqa: F401
+            from bioclip import CustomLabelsClassifier  # noqa: F401
+        except ImportError:
+            raise ValueError(
+                "Local processing requires additional dependencies.\n"
+                "Install with: pip install 'birdbird[gpu]'\n"
+                "Or use remote processing: birdbird species /path --mode remote"
+            ) from None
 
     elif config.processing_mode == "cloud":
         raise ValueError("Cloud processing mode is not yet implemented")
@@ -535,15 +604,21 @@ def identify_species(
             samples_per_minute=config.samples_per_minute,
         )
 
-        # Process frames (tqdm progress bar shown for transfers)
-        assert config.remote is not None, "Remote config required for remote processing"  # nosec B101
-        processor = RemoteProcessor(
-            config=config.remote,
-            labels=labels,
-            min_confidence=config.min_confidence,
-        )
-
-        detections = processor.process(frames, progress_callback=progress_callback)
+        # Process frames based on mode
+        if config.processing_mode == "local":
+            local_processor = LocalProcessor(
+                labels=labels,
+                min_confidence=config.min_confidence,
+            )
+            detections = local_processor.process(frames, progress_callback=progress_callback)
+        else:  # remote mode
+            assert config.remote is not None, "Remote config required for remote processing"  # nosec B101
+            remote_processor = RemoteProcessor(
+                config=config.remote,
+                labels=labels,
+                min_confidence=config.min_confidence,
+            )
+            detections = remote_processor.process(frames, progress_callback=progress_callback)
 
     processing_time = time.perf_counter() - start_time
 
