@@ -108,7 +108,7 @@ def get_species_config() -> SpeciesConfig:
         if "host" in remote:
             remote_config = RemoteConfig(
                 host=remote["host"],
-                shell=remote.get("shell", "bash"),
+                shell=remote.get("shell", "bash"),  # nosec B604
                 python_env=remote.get("python_env", "~/bioclip_env"),
                 timeout=remote.get("timeout", 300),
             )

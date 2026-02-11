@@ -371,27 +371,25 @@ This sets up:
 - JavaScript linting (eslint)
 - CSS linting (stylelint)
 - Spell checking (cspell - British English by default)
+- Security lint (bandit - checks Python code for common security issues)
 - Python tests (pytest - fast tests only, excludes `@pytest.mark.slow`)
 - Accessibility reminder (prompts you to run `npm run test:a11y` manually before deploying)
 
 **Changing spell check language:** Edit `.cspell.json` and change `"language": "en-GB"` to your preferred locale (e.g., `"en-US"` for American English, `"fr"` for French, etc.).
 
-**Security auditing:**
-
-Check for known vulnerabilities in Python dependencies:
+**Security checks:**
 
 ```bash
-# Install pip-audit (one-time, already included in dev dependencies)
-pip install pip-audit
+# Static security analysis of birdbird source code (bandit)
+.venv/bin/bandit -r src/birdbird/ -c pyproject.toml
 
-# Run security audit (uses OSV vulnerability database)
+# Dependency vulnerability audit (uses OSV vulnerability database)
 .venv/bin/pip-audit --vulnerability-service osv --skip-editable
-
-# Or to include the editable birdbird package in the audit:
-.venv/bin/pip-audit --vulnerability-service osv
 ```
 
-**Note:** Use `--vulnerability-service osv` instead of the default PyPI service, which has reliability issues. OSV (Open Source Vulnerabilities) is more stable and comprehensive.
+Both tools are included in dev dependencies (`pip install -e ".[test]"`). Bandit runs automatically in pre-commit; pip-audit runs in pre-push. Bandit skip rules are configured in `pyproject.toml` under `[tool.bandit]`.
+
+**Note:** Use `--vulnerability-service osv` for pip-audit instead of the default PyPI service, which has reliability issues.
 
 **Run tests:**
 

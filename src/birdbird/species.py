@@ -441,7 +441,7 @@ if __name__ == "__main__":
 
             subprocess.run(ssh_cmd, capture_output=True, timeout=30)
         except Exception:
-            pass  # Best effort cleanup
+            pass  # nosec B110
 
 
 def aggregate_species_summary(detections: list[Detection]) -> dict[str, dict]:

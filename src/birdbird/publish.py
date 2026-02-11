@@ -36,7 +36,7 @@ def calculate_md5(file_path: Path) -> str:
 
     @author Claude Sonnet 4.5 Anthropic
     """
-    md5_hash = hashlib.md5()
+    md5_hash = hashlib.md5(usedforsecurity=False)
     with open(file_path, 'rb') as f:
         # Read in 8KB chunks for efficiency
         for chunk in iter(lambda: f.read(8192), b''):

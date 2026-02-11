@@ -37,6 +37,12 @@ repos:
         language: system
         stages: [pre-push]
         pass_filenames: false
+      - id: bandit
+        name: Security lint (bandit)
+        entry: .venv/bin/bandit -r src/birdbird/ -q -c pyproject.toml
+        language: system
+        types: [python]
+        pass_filenames: false
       - id: pytest-fast
         name: Run fast tests
         entry: .venv/bin/pytest -m "not slow"
