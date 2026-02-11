@@ -49,10 +49,9 @@ repos:
         language: system
         pass_filenames: false
         types: [python]
-      # TODO: Enable mypy hook after fixing type errors (see TODO.md)
-      # - id: mypy
-      #   name: Type check with mypy
-      #   entry: .venv/bin/mypy src/birdbird
-      #   language: system
-      #   types: [python]
-      #   pass_filenames: false
+      - id: mypy
+        name: Type check with mypy
+        entry: .venv/bin/mypy src/birdbird
+        language: system
+        types: [python]
+        pass_filenames: false

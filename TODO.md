@@ -17,8 +17,8 @@ Phase 1: Fix existing type errors (14 errors across 6 files)
 - [x] Fix frames.py:201 - Add type annotation for raw_scores variable
 
 Phase 2: Enable mypy pre-commit hook
-- [ ] Uncomment mypy hook in .pre-commit-config.yaml
-- [ ] Verify all tests pass with mypy enabled
+- [x] Uncomment mypy hook in .pre-commit-config.yaml
+- [x] Verify all tests pass with mypy enabled
 
 Phase 3: Increase strictness
 - [ ] Enable warn_return_any in pyproject.toml

@@ -372,14 +372,18 @@ This sets up:
 - CSS linting (stylelint)
 - Spell checking (cspell - British English by default)
 - Security lint (bandit - checks Python code for common security issues)
+- Type checking (mypy - static type analysis of Python code)
 - Python tests (pytest - fast tests only, excludes `@pytest.mark.slow`)
 - Accessibility reminder (prompts you to run `npm run test:a11y` manually before deploying)
 
 **Changing spell check language:** Edit `.cspell.json` and change `"language": "en-GB"` to your preferred locale (e.g., `"en-US"` for American English, `"fr"` for French, etc.).
 
-**Security checks:**
+**Code quality checks:**
 
 ```bash
+# Type checking (mypy)
+.venv/bin/mypy src/birdbird
+
 # Static security analysis of birdbird source code (bandit)
 .venv/bin/bandit -r src/birdbird/ -c pyproject.toml
 
