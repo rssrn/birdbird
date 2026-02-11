@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "serve": "npx serve -l 3000 src/birdbird/templates",
-    "test:a11y": "EXIT=0; pa11y http://localhost:3000/index.html || EXIT=1; pa11y http://localhost:3000/credits.html || EXIT=1; pa11y http://localhost:3000/method.html || EXIT=1; pa11y http://localhost:3000/accessibility.html || EXIT=1; exit $EXIT"
+    "test:a11y": "EXIT=0; for f in src/birdbird/templates/*.html; do pa11y http://localhost:${PORT:-3000}/$(basename $f) || EXIT=1; done; exit $EXIT"
   },
   "devDependencies": {
     "@cspell/dict-en-gb": "^5.0.0",
