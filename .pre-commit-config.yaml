@@ -1,32 +1,53 @@
 repos:
   - repo: local
     hooks:
+      # Frontend linting (fast, file-scoped)
       - id: html-validate
-        name: Validate HTML structure
+        name: HTML validation (html-validate)
         entry: npx html-validate
         language: system
         files: \.html$
         types: [file]
       - id: eslint
-        name: Validate JavaScript
+        name: JavaScript validation (eslint)
         entry: npx eslint --no-warn-ignored
         language: system
         files: \.(html|js)$
         types: [file]
       - id: stylelint
-        name: Validate CSS
+        name: CSS validation (stylelint)
         entry: npx stylelint --allow-empty-input
         language: system
         files: \.(css|html)$
         types: [file]
       - id: cspell
-        name: Spellcheck (British English)
+        name: Spell check (cspell)
         entry: npx cspell --no-progress --no-summary
         language: system
         files: \.(html|md)$
         types: [file]
+      # Python analysis (slower, project-scoped)
+      - id: bandit
+        name: Security lint (bandit)
+        entry: .venv/bin/bandit -r src/birdbird/ -q -c pyproject.toml
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: mypy
+        name: Type checking (mypy)
+        entry: .venv/bin/mypy src/birdbird
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: pytest-fast
+        name: Fast tests (pytest)
+        entry: .venv/bin/pytest -m "not slow"
+        language: system
+        pass_filenames: false
+        types: [python]
+      # Pre-push only (slowest)
       - id: a11y
-        name: Runtime accessibility tests (pa11y)
+        name: Accessibility testing (pa11y)
         entry: bash -c 'PORT=$(python3 -c "import socket; s=socket.socket(); s.bind((\"\",0)); print(s.getsockname()[1]); s.close()"); npx serve -l $PORT src/birdbird/templates &>/dev/null & SERVER_PID=$!; sleep 2; PORT=$PORT npm run test:a11y; EXIT=$?; kill $SERVER_PID 2>/dev/null; exit $EXIT'
         language: system
         stages: [pre-push]
@@ -36,22 +57,4 @@ repos:
         entry: .venv/bin/pip-audit --vulnerability-service osv --skip-editable
         language: system
         stages: [pre-push]
-        pass_filenames: false
-      - id: bandit
-        name: Security lint (bandit)
-        entry: .venv/bin/bandit -r src/birdbird/ -q -c pyproject.toml
-        language: system
-        types: [python]
-        pass_filenames: false
-      - id: pytest-fast
-        name: Run fast tests
-        entry: .venv/bin/pytest -m "not slow"
-        language: system
-        pass_filenames: false
-        types: [python]
-      - id: mypy
-        name: Type check with mypy
-        entry: .venv/bin/mypy src/birdbird
-        language: system
-        types: [python]
         pass_filenames: false
