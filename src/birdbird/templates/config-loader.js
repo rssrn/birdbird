@@ -89,9 +89,17 @@
   }
 
   function injectAnalytics(code) {
-    const script = document.createElement('div');
-    script.innerHTML = code;
-    document.body.appendChild(script);
+    // innerHTML cannot execute <script> tags - must create element programmatically
+    const temp = document.createElement('div');
+    temp.innerHTML = code;
+    const parsed = temp.querySelector('script');
+    if (!parsed) return;
+    const script = document.createElement('script');
+    Array.from(parsed.attributes).forEach(function(attr) {
+      script.setAttribute(attr.name, attr.value);
+    });
+    if (parsed.textContent) script.textContent = parsed.textContent;
+    document.head.appendChild(script);
   }
 
   function showConfigWarning(missingItems) {
