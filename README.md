@@ -422,10 +422,11 @@ This sets up:
 - JavaScript linting (eslint)
 - CSS linting (stylelint)
 - Spell checking (cspell - British English by default)
+- Python linting and formatting (ruff)
 - Security lint (bandit - checks Python code for common security issues)
 - Type checking (mypy - static type analysis of Python code)
 - Python tests (pytest - all tests including mocked unit tests)
-- Accessibility reminder (prompts you to run `npm run test:a11y` manually before deploying)
+- Accessibility testing (pa11y - runs automatically on pre-push)
 
 **Changing spell check language:** Edit `.cspell.json` and change `"language": "en-GB"` to your preferred locale (e.g., `"en-US"` for American English, `"fr"` for French, etc.).
 
@@ -557,7 +558,8 @@ tests/
 ├── test_highlights_mock.py  # Highlight reel generation (mocked)
 ├── test_songs_mock.py       # Audio extraction + BirdNET (mocked)
 ├── test_publish_mock.py     # R2 upload + cleanup (mocked)
-└── test_frames_mock.py      # Frame scoring + extraction (mocked)
+├── test_frames_mock.py      # Frame scoring + extraction (mocked)
+└── test_species_mock.py     # BioCLIP species identification (mocked)
 ```
 
 **167 tests total** - Layer 1 (pure unit tests) + Layer 2 (mocked unit tests), all fast.
@@ -608,7 +610,7 @@ To contribute:
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+GPL-3.0-or-later - see [LICENSE](LICENSE) for details.
 
 ## Credits
 
