@@ -3,9 +3,6 @@
 @author Claude Sonnet 4.5 Anthropic
 """
 
-import json
-import tempfile
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -36,7 +33,7 @@ def sample_config():
             "processing": {
                 "mode": "remote",
                 "remote": {
-                    "host": "devserver@192.168.1.146",
+                    "host": "user@gpu-server.local",
                     "shell": "bash",
                     "python_env": "~/bioclip_env",
                     "timeout": 300,
@@ -125,6 +122,7 @@ def mock_yolo_result():
 
     @author Claude Opus 4.6 Anthropic
     """
+
     def _make(detections=None):
         """Create mock YOLO result with given detections.
 
@@ -169,6 +167,7 @@ def mock_video_capture():
 
     @author Claude Opus 4.6 Anthropic
     """
+
     def _make(
         is_opened=True,
         fps=30.0,

@@ -4,13 +4,8 @@
 """
 
 import json
-from pathlib import Path
-from unittest.mock import patch
-
-import pytest
 
 from birdbird.config import (
-    CONFIG_PATH,
     DEFAULT_LABELS_FILE,
     RemoteConfig,
     SpeciesConfig,
@@ -138,7 +133,7 @@ class TestGetSpeciesConfig:
         assert species_config.min_confidence == 0.5
         assert species_config.processing_mode == "remote"
         assert isinstance(species_config.remote, RemoteConfig)
-        assert species_config.remote.host == "devserver@192.168.1.146"
+        assert species_config.remote.host == "user@gpu-server.local"
         assert species_config.remote.shell == "bash"
         assert species_config.remote.python_env == "~/bioclip_env"
         assert species_config.remote.timeout == 300

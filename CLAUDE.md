@@ -188,4 +188,4 @@ Use `/plan` to list plans or `/plan <name>` to load details. Plans are stored in
 **Key references** (available in full plans):
 - Website repo: `/home/ross/src/birdbird-website/` (auto-deploys on push)
 - Deployment URL: https://birdbird.rossarn.workers.dev/
-- Remote GPU: `ssh devserver@192.168.1.146` (for M4 species detection)
+- Remote GPU: `ssh user@gpu-server.local` (for M4 species detection)
