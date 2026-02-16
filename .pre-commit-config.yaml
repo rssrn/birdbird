@@ -55,7 +55,8 @@ repos:
         pass_filenames: false
       - id: pip-audit
         name: Security audit (pip-audit)
-        entry: bash -c 'MARKER=.venv/.pip-audit-last-run; if [ -f "$MARKER" ] && [ "$(date -r "$MARKER" +%Y%m%d)" = "$(date +%Y%m%d)" ]; then echo "pip-audit already ran today, skipping"; exit 0; fi; .venv/bin/pip-audit --vulnerability-service osv --skip-editable && touch "$MARKER"'
+        # CVE-2026-1669 (keras): no fix available; transitive dep via birdnet-analyzer->tensorflow->keras; not loading untrusted models
+        entry: bash -c 'MARKER=.venv/.pip-audit-last-run; if [ -f "$MARKER" ] && [ "$(date -r "$MARKER" +%Y%m%d)" = "$(date +%Y%m%d)" ]; then echo "pip-audit already ran today, skipping"; exit 0; fi; .venv/bin/pip-audit --vulnerability-service osv --skip-editable --ignore-vuln CVE-2026-1669 && touch "$MARKER"'
         language: system
         stages: [pre-push]
         always_run: true
