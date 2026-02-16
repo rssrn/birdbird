@@ -24,9 +24,19 @@ jobs:
           python-version: "3.12"
           cache: "pip"
 
-      # 3. Install the package with its [test] extras (pytest, mypy, etc.)
+      # 3. Install dependencies for CI.
+      #    We use --no-deps for the package itself to skip ultralytics and birdnet-analyzer:
+      #    both pull in multi-GB ML frameworks (PyTorch, TensorFlow) that exhaust the runner
+      #    disk. All tests mock these packages so they don't need to be installed.
+      #    Lightweight runtime deps (typer, boto3, etc.) are installed explicitly below.
       - name: Install dependencies
-        run: pip install -e ".[test]"
+        run: |
+          pip install --no-deps -e .
+          pip install \
+            pytest pytest-cov pytest-mock \
+            mypy types-tqdm "boto3-stubs[essential]" \
+            bandit pip-audit ruff \
+            "typer>=0.9.0" "tqdm>=4.66.0" "boto3>=1.42.0" "pillow>=12.1.1" "opencv-python>=4.8.0"
 
       # 4. Run only the fast tests (exclude @pytest.mark.slow)
       - name: Run tests
