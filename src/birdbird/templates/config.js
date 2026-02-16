@@ -23,6 +23,6 @@ if (typeof window.BIRDBIRD_CONFIG === 'undefined') {
   // Optional: Analytics code snippet (leave empty if not using analytics)
   // Example: Umami Cloud, Google Analytics, Plausible, etc.
   // This will be injected at the end of <body>
-  analytics: '<script defer src="https://cloud.umami.is/script.js" data-website-id="b289f3b8-d85a-41a3-b971-54b506146e17"></script>'
+  analytics: ''
   };
 }
