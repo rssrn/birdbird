@@ -2,6 +2,7 @@
 
 > Automated bird feeder video analysis - turn hundreds of motion-triggered clips into highlight reels with species identification
 
+[![Tests](https://github.com/rssrn/birdbird/actions/workflows/tests.yml/badge.svg)](https://github.com/rssrn/birdbird/actions/workflows/tests.yml)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
