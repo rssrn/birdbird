@@ -36,7 +36,7 @@ From a batch of 498 motion-triggered clips (4 hours of footage), birdbird automa
 
 ### Screenshots
 
-**Highlights viewer** — browse the highlight reel with per-species filtering
+**Highlights viewer** — browse the highlight reel with seek buttons per species
 
 <img src="docs/screenshots/viewer-highlights.png" width="700" alt="Highlights viewer showing video player with species filter sidebar">
 
