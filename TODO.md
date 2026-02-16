@@ -1,5 +1,20 @@
 # birdbird - TODO
 
+## Original Milestones
+
+These milestones were defined at project start and tracked in README.md (since removed).  Noted here for historical reference as the numbered refs are mentioned in the commit history.
+
+| #    | Milestone                  | Description                                                                                                                                                            | Status |
+| ---- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| M1   | Bird detection filter      | Discard clips without birds (eliminate wind false positives)                                                                                                           | Done   |
+| M2   | Highlights reel v1         | Concatenate segments with bird activity                                                                                                                                | Done   |
+| M2.1 | Highlights reel seek       | Based on M4 output, provide buttons to seek to timestamps with highest confidence for each species                                                                     | Done   |
+| M2.2 | Publish highlights to web  | Upload to Cloudflare R2 with static web viewer showing video and audio stats                                                                                           | Done   |
+| M3   | Highlight images           | Extract species-specific frames from M4 detections                                                                                                                     | Dropped |
+| M4   | Visual species detection   | Identify species, generate timeline summary with frame capture                                                                                                         | Done   |
+| M5   | Full report, stats         | Automated summary reports, expanding on M2.2 to showcase the M3/M4 material                                                                                           | Done    |
+
+
 ## Build / Safety Improvements
 
 [x] add mypy as a pre-commit hook to check/enforce type hints (infrastructure ready, disabled pending fixes below)
