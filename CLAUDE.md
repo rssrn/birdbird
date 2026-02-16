@@ -167,15 +167,6 @@ google-chrome --headless --screenshot=/tmp/output.png --window-size=1400,2400 --
 - `species.processing.mode` - Processing mode: "remote" (recommended), "local" (disabled to prevent slowdown), or "cloud" (not implemented)
 - `species.processing.remote.*` - Remote GPU configuration (host, shell, python_env, timeout)
 
-## Milestone Tracker
-
-- [x] M1: Bird detection filter (498 clips, 29.9% detection rate)
-- [x] M2: Highlights reel v1 (binary search for segment boundaries)
-- [ ] M3: Species-specific frame extraction (using M4 detections)
-- [x] M4: Species detection (BioCLIP visual identification)
-- [ ] M5: Email report
-- [ ] M6: Highlights reel v2
-- [ ] M7: Cloud storage
 
 ## Saved Plans
 
@@ -183,7 +174,7 @@ Use `/plan` to list plans or `/plan <name>` to load details. Plans are stored in
 
 | Name | Status | Domain | Summary |
 |------|--------|--------|---------|
-| `captions` | Planned | Backend | M2.1: Detection confidence overlay |
+| `captions` | Planned | Backend | Detection confidence overlay |
 
 **Key references** (available in full plans):
 - Website repo: `/home/ross/src/birdbird-website/` (auto-deploys on push)
