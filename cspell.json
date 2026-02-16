@@ -75,6 +75,7 @@
     "defaultdict",
     "expanduser",
     "fromisoformat",
-    "isoformat"
+    "isoformat",
+    "linters"
   ]
 }
