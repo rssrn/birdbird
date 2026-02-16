@@ -4,24 +4,24 @@
 
 | Date | Active Time | Summary |
 |------|------------|---------|
-| 2026-01-15 | 6.2 h | **Project kick-off** — initial commit, set up project structure, implemented bird detection filter and highlights reel, plus frame capture with quality scoring. |
-| 2026-01-16 | 6.4 h | **Publishing pipeline** — added Cloudflare R2 publishing with web-optimised video output, hardware encoder detection, and documented the captions feature idea. |
-| 2026-01-19 | 1.9 h | **Fixes and tidying** — fixed publish directory handling, corrected batch IDs to use data date, removed person detection, and integrated frames extraction into the process command. |
-| 2026-01-20 | 2.7 h | **Web viewer + BirdNET** — added date range support and cosmetic improvements to the viewer, built the credits page, and added the `songs` command for BirdNET bird vocalization detection. |
-| 2026-01-21 | 5.4 h | **Audio pipeline end-to-end** — integrated songs into the process pipeline, added an Audio tab to the viewer with species stats and audio clip players, fixed publish sync, and improved accessibility and mobile layout. |
-| 2026-01-23 | 3.1 h | **Species ID design** — researched and documented the BioCLIP visual species identification approach with remote GPU support. |
+| 2026-01-15 | 6 h | **Project kick-off** — initial commit, set up project structure, implemented bird detection filter and highlights reel, plus frame capture with quality scoring. |
+| 2026-01-16 | 6.5 h | **Publishing pipeline** — added Cloudflare R2 publishing with web-optimised video output, hardware encoder detection, and documented the captions feature idea. |
+| 2026-01-19 | 2 h | **Fixes and tidying** — fixed publish directory handling, corrected batch IDs to use data date, removed person detection, and integrated frames extraction into the process command. |
+| 2026-01-20 | 2.5 h | **Web viewer + BirdNET** — added date range support and cosmetic improvements to the viewer, built the credits page, and added the `songs` command for BirdNET bird vocalization detection. |
+| 2026-01-21 | 5.5 h | **Audio pipeline end-to-end** — integrated songs into the process pipeline, added an Audio tab to the viewer with species stats and audio clip players, fixed publish sync, and improved accessibility and mobile layout. |
+| 2026-01-23 | 3 h | **Species ID design** — researched and documented the BioCLIP visual species identification approach with remote GPU support. |
 | 2026-01-24 | 1.5 h | **Species ID implementation** — implemented visual species identification with remote GPU, added species.json publishing, and showed detected species in the viewer. |
-| 2026-01-25 | 0.8 h | **Small improvements** — added proposed accessibility pre-commit check feature. |
+| 2026-01-25 | 1 h | **Small improvements** — added proposed accessibility pre-commit check feature. |
 | 2026-01-26 | ~0 h | **README** — updated and improved project README. |
-| 2026-01-27 | 1.2 h | **Structural refactor** — refactored pipeline folder structure into working/assets separation. |
-| 2026-01-28 | 5.2 h | **Viewer redesign + best clips** — implemented field guide aesthetic across viewer, added Video Stats tab, added best clips feature with species seek buttons, and collected/evaluated UX improvement proposals. |
+| 2026-01-27 | 1 h | **Structural refactor** — refactored pipeline folder structure into working/assets separation. |
+| 2026-01-28 | 5 h | **Viewer redesign + best clips** — implemented field guide aesthetic across viewer, added Video Stats tab, added best clips feature with species seek buttons, and collected/evaluated UX improvement proposals. |
 | 2026-01-29 | 8.5 h | **Polish and tooling** — added method.html page, breadcrumb navigation, info overlays, favicon, local dev config system, pre-commit hooks (HTML/CSS/JS validation, pa11y accessibility, British English spellcheck). |
-| 2026-01-30 | 3.9 h | **Testing and accessibility** — added the first comprehensive unit test suite, pytest pre-commit hook, improved web accessibility with semantic nav and focus indicators, and tidied up viewer layout. |
-| 2026-02-02 | 0.6 h | **Bug fix** — fixed species command to use the new assets directory structure and auto-generate best_clips.json. |
-| 2026-02-03 | 0.6 h | **Documentation** — added a comprehensive camera compatibility guide. |
-| 2026-02-05 | 1.4 h | **Video UX** — paused video on tab switch, improved video loading UX, and fixed skip link and hover contrast issues. |
-| 2026-02-11 | 3.3 h | **Code quality infrastructure** — added mypy type checking, bandit security analysis, pip-audit, fixed all type errors across 6 files, and added 72 Layer 2 mocked unit tests. |
-| 2026-02-16 | 0.4 h | **Time estimation** — analysed session records and git history to produce this timeline. |
+| 2026-01-30 | 4 h | **Testing and accessibility** — added the first comprehensive unit test suite, pytest pre-commit hook, improved web accessibility with semantic nav and focus indicators, and tidied up viewer layout. |
+| 2026-02-02 | 0.5 h | **Bug fix** — fixed species command to use the new assets directory structure and auto-generate best_clips.json. |
+| 2026-02-03 | 0.5 h | **Documentation** — added a comprehensive camera compatibility guide. |
+| 2026-02-05 | 1.5 h | **Video UX** — paused video on tab switch, improved video loading UX, and fixed skip link and hover contrast issues. |
+| 2026-02-11 | 3.5 h | **Code quality infrastructure** — added mypy type checking, bandit security analysis, pip-audit, fixed all type errors across 6 files, and added 72 Layer 2 mocked unit tests. |
+| 2026-02-16 | 0.5 h | **Time estimation** — analysed session records and git history to produce this timeline. |
 | **Total** | **~53 h** | |
 
 ---
