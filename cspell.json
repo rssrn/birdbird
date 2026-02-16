@@ -71,6 +71,10 @@
     "johnstaveley",
     "platdrag",
     "libgphoto",
-    "cleanup"
+    "cleanup",
+    "defaultdict",
+    "expanduser",
+    "fromisoformat",
+    "isoformat"
   ]
 }
