@@ -16,6 +16,8 @@ dependencies = [
     "tqdm>=4.66.0",
     "boto3>=1.42.0",
     "birdnet-analyzer>=2.4.0",
+    # pillow: min version pinned to avoid CVE-2026-25990 (transitive dep via ultralytics et al.)
+    "pillow>=12.1.1",
 ]
 
 [project.scripts]
