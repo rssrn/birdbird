@@ -10,15 +10,15 @@ from pathlib import Path
 
 import typer
 
+from .best_clips import find_all_best_clips, save_best_clips
 from .config import get_location, get_species_config
 from .filter import filter_clips
-from .frames import extract_and_score_frames, save_top_frames, save_frame_metadata
+from .frames import extract_and_score_frames, save_frame_metadata, save_top_frames
 from .highlights import generate_highlights, get_video_duration
 from .paths import BirdbirdPaths
-from .publish import publish_to_r2, extract_date_range
+from .publish import extract_date_range, publish_to_r2
 from .songs import analyze_songs, save_song_detections
 from .species import identify_species, save_species_results
-from .best_clips import find_all_best_clips, save_best_clips
 
 app = typer.Typer(help="Bird feeder video analysis pipeline")
 
@@ -43,6 +43,7 @@ def write_local_metadata(paths: BirdbirdPaths, input_dir: Path) -> None:
     """
     # Extract date range (use same logic as publish)
     from .publish import extract_original_date
+
     original_date = extract_original_date(input_dir)
     start_date, end_date = extract_date_range(input_dir, original_date)
 
@@ -57,6 +58,7 @@ def write_local_metadata(paths: BirdbirdPaths, input_dir: Path) -> None:
     clip_count = 0
     if paths.detections_json.exists():
         from .paths import load_detections
+
         detections = load_detections(paths.detections_json)
         clip_count = len(detections)
 
@@ -76,7 +78,7 @@ def write_local_metadata(paths: BirdbirdPaths, input_dir: Path) -> None:
 
     # Write to assets
     paths.ensure_assets_dirs()
-    with open(paths.metadata_json, 'w') as f:
+    with open(paths.metadata_json, "w") as f:
         json.dump(metadata, f, indent=2)
 
 
@@ -111,9 +113,9 @@ def filter(
     typer.echo(f"  Total clips:    {stats['total']}")
     typer.echo(f"  With birds:     {stats['with_birds']}")
     typer.echo(f"  Filtered out:   {stats['filtered_out']}")
-    pct = 100 * stats['with_birds'] / stats['total'] if stats['total'] > 0 else 0
+    pct = 100 * stats["with_birds"] / stats["total"] if stats["total"] > 0 else 0
     typer.echo(f"  Detection rate: {pct:.1f}%")
-    paths = stats['paths']
+    paths = stats["paths"]
     typer.echo(f"  Clips:          {paths.clips_dir}")
     typer.echo(f"  Detections:     {paths.detections_json}")
 
@@ -121,12 +123,18 @@ def filter(
 @app.command()
 def highlights(
     input_dir: Path = typer.Argument(..., help="Directory containing original .avi clips"),
-    output: Path = typer.Option(None, "--output", "-o", help="Output MP4 path (default: birdbird/assets/highlights.mp4)"),
+    output: Path = typer.Option(
+        None, "--output", "-o", help="Output MP4 path (default: birdbird/assets/highlights.mp4)"
+    ),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
     buffer_before: float = typer.Option(1.0, "--buffer-before", help="Seconds before first bird detection"),
-    buffer_after: float = typer.Option(1.0, "--buffer-after", help="Seconds after last bird detection (bird-free time)"),
+    buffer_after: float = typer.Option(
+        1.0, "--buffer-after", help="Seconds after last bird detection (bird-free time)"
+    ),
     threads: int = typer.Option(2, "--threads", "-t", help="Max ffmpeg threads (default 2 for low-power systems)"),
-    highest_quality: bool = typer.Option(False, "--highest-quality", help="Use highest quality (1440x1080 @ 30fps, larger file)"),
+    highest_quality: bool = typer.Option(
+        False, "--highest-quality", help="Use highest quality (1440x1080 @ 30fps, larger file)"
+    ),
 ) -> None:
     """Generate a highlights reel from bird clips.
 
@@ -140,6 +148,7 @@ def highlights(
         raise typer.Exit(1)
 
     from .paths import BirdbirdPaths
+
     paths = BirdbirdPaths.from_input_dir(input_dir)
 
     # Check filtered clips exist
@@ -159,7 +168,9 @@ def highlights(
 
     quality_mode = "highest quality" if highest_quality else "web optimized"
     typer.echo(f"Generating highlights from {clip_count} clips (estimated {est_minutes:.1f} minutes)")
-    typer.echo(f"Settings: bird_conf={bird_confidence}, buffer_before={buffer_before}s, buffer_after={buffer_after}s, threads={threads}, quality={quality_mode}")
+    typer.echo(
+        f"Settings: bird_conf={bird_confidence}, buffer_before={buffer_before}s, buffer_after={buffer_after}s, threads={threads}, quality={quality_mode}"
+    )
 
     try:
         stats = generate_highlights(
@@ -189,7 +200,9 @@ def highlights(
 @app.command()
 def process(
     input_dir: Path = typer.Argument(..., help="Directory containing .avi clips"),
-    output: Path = typer.Option(None, "--output", "-o", help="Output MP4 path (default: input_dir/birdbird/assets/highlights.mp4)"),
+    output: Path = typer.Option(
+        None, "--output", "-o", help="Output MP4 path (default: input_dir/birdbird/assets/highlights.mp4)"
+    ),
     bird_confidence: float = typer.Option(0.2, "--bird-conf", "-b", help="Min confidence for bird detection"),
     song_confidence: float = typer.Option(0.5, "--song-conf", "-s", help="Min confidence for song detection (0.0-1.0)"),
     buffer_before: float = typer.Option(1.0, "--buffer-before", help="Seconds before first bird detection"),
@@ -200,9 +213,13 @@ def process(
     lon: float = typer.Option(None, "--lon", help="Longitude for species filtering (default: from config)"),
     limit: int | None = typer.Option(None, "--limit", "-l", help="Max clips to process (for testing)"),
     force: bool = typer.Option(False, "--force", "-f", help="Clear existing birdbird/ directory without prompting"),
-    highest_quality: bool = typer.Option(False, "--highest-quality", help="Use highest quality (1440x1080 @ 30fps, larger file)"),
+    highest_quality: bool = typer.Option(
+        False, "--highest-quality", help="Use highest quality (1440x1080 @ 30fps, larger file)"
+    ),
     no_song_clips: bool = typer.Option(False, "--no-song-clips", help="Skip extracting audio clips for each species"),
-    run_species: bool = typer.Option(None, "--species/--no-species", help="Run visual species identification (default: from config)"),
+    run_species: bool = typer.Option(
+        None, "--species/--no-species", help="Run visual species identification (default: from config)"
+    ),
 ) -> None:
     """Filter clips, generate highlights reel, analyze songs, and optionally identify species.
 
@@ -214,6 +231,7 @@ def process(
         raise typer.Exit(1)
 
     from .paths import BirdbirdPaths
+
     paths = BirdbirdPaths.from_input_dir(input_dir)
 
     # Apply config default for species if not specified on CLI
@@ -284,11 +302,11 @@ def process(
         limit=limit,
     )
 
-    pct = 100 * filter_stats['with_birds'] / filter_stats['total'] if filter_stats['total'] > 0 else 0
+    pct = 100 * filter_stats["with_birds"] / filter_stats["total"] if filter_stats["total"] > 0 else 0
     typer.echo(f"  Found {filter_stats['with_birds']}/{filter_stats['total']} clips with birds ({pct:.1f}%)")
     typer.echo("")
 
-    if filter_stats['with_birds'] == 0:
+    if filter_stats["with_birds"] == 0:
         typer.echo("No birds detected - skipping highlights and frames generation")
         raise typer.Exit(0)
 
@@ -312,7 +330,9 @@ def process(
         )
 
         typer.echo("")
-        typer.echo(f"  Duration:   {format_duration(highlights_stats.final_duration)} highlights from {format_duration(highlights_stats.bird_clips_duration)} filtered from {format_duration(original_duration)} original")
+        typer.echo(
+            f"  Duration:   {format_duration(highlights_stats.final_duration)} highlights from {format_duration(highlights_stats.bird_clips_duration)} filtered from {format_duration(original_duration)} original"
+        )
         typer.echo("")
 
     except (ValueError, RuntimeError) as e:
@@ -340,6 +360,7 @@ def process(
 
         try:
             import time
+
             songs_start = time.perf_counter()
             songs_results = analyze_songs(
                 input_dir=input_dir,
@@ -357,7 +378,9 @@ def process(
 
             songs_elapsed = time.perf_counter() - songs_start
             clips_msg = f", {songs_results['summary']['clips_extracted']} clips" if not no_song_clips else ""
-            typer.echo(f"  Detected {songs_results['summary']['total_detections']} songs ({songs_results['summary']['unique_species']} species{clips_msg}) in {format_duration(songs_elapsed)}")
+            typer.echo(
+                f"  Detected {songs_results['summary']['total_detections']} songs ({songs_results['summary']['unique_species']} species{clips_msg}) in {format_duration(songs_elapsed)}"
+            )
             typer.echo("")
 
         except Exception as e:
@@ -390,7 +413,9 @@ def process(
             # Save results
             save_species_results(species_results, paths.species_json)
 
-            typer.echo(f"  Identified {len(species_results.species_summary)} species in {species_results.processing_time_s:.1f}s")
+            typer.echo(
+                f"  Identified {len(species_results.species_summary)} species in {species_results.processing_time_s:.1f}s"
+            )
 
             # Find best clips for each species (for M2.1 seek functionality)
             typer.echo("  Finding best clips for each species...")
@@ -412,10 +437,10 @@ def process(
     write_local_metadata(paths, input_dir)
 
     typer.echo("Complete!")
-    typer.echo(f"  Working:")
+    typer.echo("  Working:")
     typer.echo(f"    Clips:        {paths.clips_dir}/")
     typer.echo(f"    Detections:   {paths.detections_json}")
-    typer.echo(f"  Assets:")
+    typer.echo("  Assets:")
     typer.echo(f"    Highlights:   {paths.highlights_mp4}")
     if paths.songs_json.exists():
         typer.echo(f"    Songs:        {paths.songs_json}")
@@ -446,8 +471,9 @@ def frames(
         typer.echo(f"Error: {input_dir} is not a directory", err=True)
         raise typer.Exit(1)
 
-    from .paths import BirdbirdPaths, load_detections
     from .frames import copy_top_frames_to_assets
+    from .paths import BirdbirdPaths, load_detections
+
     paths = BirdbirdPaths.from_input_dir(input_dir)
 
     # Check filtered clips exist
@@ -468,7 +494,9 @@ def frames(
         existing_frames = list(paths.frames_candidates_dir.glob("frame_*.jpg"))
         if existing_frames:
             if force:
-                typer.echo(f"Clearing existing frames from {paths.frames_candidates_dir} ({len(existing_frames)} frames)...")
+                typer.echo(
+                    f"Clearing existing frames from {paths.frames_candidates_dir} ({len(existing_frames)} frames)..."
+                )
                 for frame_file in existing_frames:
                     frame_file.unlink()
                 # Also remove metadata if it exists
@@ -514,18 +542,20 @@ def frames(
 
     # Track total wall clock time
     import time
+
     start_time = time.perf_counter()
 
     # Scoring weights (tunable parameters)
     weights = {
-        "bird_size": 0.25,    # Large birds are more visually impressive
-        "sharpness": 0.30,    # Sharp focus important for quality
-        "confidence": 0.25,   # Detection confidence
-        "position": 0.20,     # Binary penalty for edge-clipped birds
+        "bird_size": 0.25,  # Large birds are more visually impressive
+        "sharpness": 0.30,  # Sharp focus important for quality
+        "confidence": 0.25,  # Detection confidence
+        "position": 0.20,  # Binary penalty for edge-clipped birds
     }
 
     # Extract and score
     from .detector import BirdDetector
+
     detector = BirdDetector(
         bird_confidence=bird_confidence,
     )
@@ -545,7 +575,7 @@ def frames(
 
         # Save top N frames to working directory
         typer.echo("Saving top frames to working directory...")
-        saved_paths = save_top_frames(
+        save_top_frames(
             frames=scored_frames,
             clips_dir=paths.clips_dir,
             output_dir=paths.frames_candidates_dir,
@@ -562,7 +592,7 @@ def frames(
 
         # Copy top 3 frames to assets directory
         typer.echo("Copying top 3 frames to assets...")
-        asset_frames = copy_top_frames_to_assets(
+        copy_top_frames_to_assets(
             frame_scores_path=paths.frame_scores_json,
             candidates_dir=paths.frames_candidates_dir,
             assets_dir=paths.assets_dir,
@@ -596,8 +626,12 @@ def frames(
 @app.command()
 def publish(
     input_dir: Path = typer.Argument(..., help="Directory containing birdbird/assets/ (output from process)"),
-    config_file: Path = typer.Option("~/.birdbird/cloud-storage.json", "--config", "-c", help="Cloud storage config file (S3-compatible)"),
-    new_batch: bool = typer.Option(False, "--new-batch", "-n", help="Create new batch sequence (for additional footage same day)"),
+    config_file: Path = typer.Option(
+        "~/.birdbird/cloud-storage.json", "--config", "-c", help="Cloud storage config file (S3-compatible)"
+    ),
+    new_batch: bool = typer.Option(
+        False, "--new-batch", "-n", help="Create new batch sequence (for additional footage same day)"
+    ),
 ) -> None:
     """Publish highlights to cloud storage (Cloudflare R2, AWS S3, or S3-compatible).
 
@@ -638,7 +672,7 @@ def publish(
         raise typer.Exit(1)
 
     # Validate required config keys
-    required_keys = ['r2_access_key_id', 'r2_secret_access_key', 'r2_bucket_name', 'r2_account_id', 'r2_endpoint']
+    required_keys = ["r2_access_key_id", "r2_secret_access_key", "r2_bucket_name", "r2_account_id", "r2_endpoint"]
     missing_keys = [k for k in required_keys if k not in config]
     if missing_keys:
         typer.echo(f"Error: Missing required keys in config: {', '.join(missing_keys)}", err=True)
@@ -652,21 +686,21 @@ def publish(
         typer.echo("Success!")
         typer.echo(f"  Batch ID:    {result['batch_id']}")
 
-        if result['batch_replaced']:
-            typer.echo(f"  Re-used:     existing batch")
+        if result["batch_replaced"]:
+            typer.echo("  Re-used:     existing batch")
 
         typer.echo(f"  Uploaded:    {result['uploaded_files']} file(s)")
-        if result['skipped_files'] > 0:
+        if result["skipped_files"] > 0:
             typer.echo(f"  Skipped:     {result['skipped_files']} file(s) (unchanged)")
 
         typer.echo(f"  Clips:       {result['clip_count']}")
         typer.echo(f"  Duration:    {format_duration(result['highlights_duration'])}")
 
-        if result['deleted_batches']:
+        if result["deleted_batches"]:
             typer.echo(f"  Cleaned up:  {len(result['deleted_batches'])} old batch(es)")
 
         typer.echo("")
-        typer.echo(f"View at: https://birdbird.rossarn.workers.dev/")
+        typer.echo("View at: https://birdbird.rossarn.workers.dev/")
 
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
@@ -753,12 +787,13 @@ def songs(
     if lat is not None and lon is not None:
         # Check if location came from config (compare with config values)
         config_lat, config_lon = get_location()
-        from_config = (lat == config_lat and lon == config_lon)
+        from_config = lat == config_lat and lon == config_lon
         source = " (from config)" if from_config else ""
         typer.echo(f"Location filter: lat={lat}, lon={lon}{source}")
     typer.echo("")
 
     import time
+
     start_time = time.perf_counter()
 
     try:
@@ -788,15 +823,15 @@ def songs(
             typer.echo(f"  Audio clips:        {results['summary']['clips_extracted']}")
         typer.echo(f"  Processing time:    {format_duration(elapsed_seconds)}")
         typer.echo(f"  Output:             {output}")
-        if not no_song_clips and results['summary']['clips_extracted'] > 0:
+        if not no_song_clips and results["summary"]["clips_extracted"] > 0:
             typer.echo(f"  Clips:              {paths.song_clips_dir}/")
 
-        if results['summary']['species_list']:
+        if results["summary"]["species_list"]:
             typer.echo("")
             typer.echo("Species detected:")
-            for species in results['summary']['species_list'][:10]:  # Show top 10
+            for species in results["summary"]["species_list"][:10]:  # Show top 10
                 typer.echo(f"  - {species}")
-            if len(results['summary']['species_list']) > 10:
+            if len(results["summary"]["species_list"]) > 10:
                 typer.echo(f"  ... and {len(results['summary']['species_list']) - 10} more")
 
     except ValueError as e:
@@ -810,7 +845,9 @@ def songs(
 @app.command()
 def best_clips(
     input_dir: Path = typer.Argument(..., help="Directory containing species.json"),
-    output: Path = typer.Option(None, "--output", "-o", help="Output JSON path (default: input_dir/birdbird/assets/best_clips.json)"),
+    output: Path = typer.Option(
+        None, "--output", "-o", help="Output JSON path (default: input_dir/birdbird/assets/best_clips.json)"
+    ),
     window_duration: float = typer.Option(14.0, "--window", "-w", help="Window duration in seconds (default: 14)"),
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing best_clips.json without prompting"),
 ) -> None:
@@ -837,7 +874,7 @@ def best_clips(
         species_json_path = input_dir / "species.json"
 
     if species_json_path is None:
-        typer.echo(f"Error: species.json not found", err=True)
+        typer.echo("Error: species.json not found", err=True)
         typer.echo(f"  Checked: {paths.species_json}", err=True)
         typer.echo(f"  Checked: {input_dir / 'species.json'}", err=True)
         typer.echo("Run 'birdbird species' first to generate species data.", err=True)
@@ -888,7 +925,9 @@ def best_clips(
             typer.echo("")
             typer.echo("Best clips:")
             for species, clip in list(best_clips_data.items())[:10]:
-                typer.echo(f"  {species}: {clip.start_s:.1f}s-{clip.end_s:.1f}s (score: {clip.score:.2f}, {clip.detection_count} detections)")
+                typer.echo(
+                    f"  {species}: {clip.start_s:.1f}s-{clip.end_s:.1f}s (score: {clip.score:.2f}, {clip.detection_count} detections)"
+                )
             if len(best_clips_data) > 10:
                 typer.echo(f"  ... and {len(best_clips_data) - 10} more species")
 
@@ -902,10 +941,16 @@ def best_clips(
 
 @app.command()
 def species(
-    input_dir: Path = typer.Argument(..., help="Directory containing input clips (looks for birdbird/assets/highlights.mp4)"),
+    input_dir: Path = typer.Argument(
+        ..., help="Directory containing input clips (looks for birdbird/assets/highlights.mp4)"
+    ),
     output: Path = typer.Option(None, "--output", "-o", help="Output JSON path (default: input_dir/species.json)"),
-    samples_per_minute: float = typer.Option(None, "--samples", "-s", help="Frames to sample per minute (default: from config or 6)"),
-    min_confidence: float = typer.Option(None, "--min-conf", "-c", help="Min confidence threshold (default: from config or 0.5)"),
+    samples_per_minute: float = typer.Option(
+        None, "--samples", "-s", help="Frames to sample per minute (default: from config or 6)"
+    ),
+    min_confidence: float = typer.Option(
+        None, "--min-conf", "-c", help="Min confidence threshold (default: from config or 0.5)"
+    ),
     mode: str = typer.Option(None, "--mode", "-m", help="Processing mode: remote (default from config)"),
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing species.json without prompting"),
 ) -> None:
@@ -974,7 +1019,9 @@ def species(
         config.processing_mode = "remote"
 
     typer.echo(f"Identifying species from {highlights_path}")
-    typer.echo(f"Settings: samples={config.samples_per_minute}/min, min_conf={config.min_confidence}, mode={config.processing_mode}")
+    typer.echo(
+        f"Settings: samples={config.samples_per_minute}/min, min_conf={config.min_confidence}, mode={config.processing_mode}"
+    )
     typer.echo("")
 
     def progress_callback(msg: str) -> None:
@@ -1018,7 +1065,7 @@ def species(
             typer.echo("")
             typer.echo("Species breakdown:")
             for species_name, data in list(results.species_summary.items())[:10]:
-                typer.echo(f"  {species_name}: {data['count']} ({data['avg_confidence']*100:.0f}% avg)")
+                typer.echo(f"  {species_name}: {data['count']} ({data['avg_confidence'] * 100:.0f}% avg)")
             if len(results.species_summary) > 10:
                 typer.echo(f"  ... and {len(results.species_summary) - 10} more species")
 

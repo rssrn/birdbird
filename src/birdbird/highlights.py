@@ -14,7 +14,6 @@ from tqdm import tqdm
 from .detector import BirdDetector
 from .paths import BirdbirdPaths, load_detections
 
-
 # Cache for hardware encoder availability
 _hardware_encoder_cache = None
 
@@ -32,31 +31,28 @@ def detect_hardware_encoder() -> str | None:
         return _hardware_encoder_cache
 
     # Priority order: Intel QSV > VAAPI > V4L2
-    preferred_encoders = ['h264_qsv', 'h264_vaapi', 'h264_v4l2m2m']
+    preferred_encoders = ["h264_qsv", "h264_vaapi", "h264_v4l2m2m"]
 
     try:
-        result = subprocess.run(
-            ['ffmpeg', '-hide_banner', '-encoders'],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
+        result = subprocess.run(["ffmpeg", "-hide_banner", "-encoders"], capture_output=True, text=True, timeout=5)
 
         for encoder in preferred_encoders:
             if encoder in result.stdout:
                 # Actually test if the encoder works
                 test_cmd = [
-                    'ffmpeg', '-hide_banner',
-                    '-f', 'lavfi', '-i', 'testsrc=duration=0.1:size=640x480:rate=30',
-                    '-c:v', encoder,
-                    '-f', 'null', '-'
+                    "ffmpeg",
+                    "-hide_banner",
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    "testsrc=duration=0.1:size=640x480:rate=30",
+                    "-c:v",
+                    encoder,
+                    "-f",
+                    "null",
+                    "-",
                 ]
-                test_result = subprocess.run(
-                    test_cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=5
-                )
+                test_result = subprocess.run(test_cmd, capture_output=True, text=True, timeout=5)
                 if test_result.returncode == 0:
                     _hardware_encoder_cache = encoder
                     return encoder
@@ -71,6 +67,7 @@ def detect_hardware_encoder() -> str | None:
 @dataclass
 class Segment:
     """A segment of video containing bird activity."""
+
     clip_path: Path
     start_time: float
     end_time: float
@@ -83,6 +80,7 @@ class Segment:
 @dataclass
 class HighlightsStats:
     """Statistics about the highlights reel generation."""
+
     original_duration: float  # Total duration of all input clips
     bird_clips_duration: float  # Duration of clips that had birds
     final_duration: float  # Duration of the highlights reel
@@ -202,8 +200,9 @@ def find_bird_segments(
         return []
 
 
-def _binary_search_exit(cap: cv2.VideoCapture, detector: BirdDetector,
-                        low: float, high: float, fps: float, precision: float = 1.0) -> float:
+def _binary_search_exit(
+    cap: cv2.VideoCapture, detector: BirdDetector, low: float, high: float, fps: float, precision: float = 1.0
+) -> float:
     """Binary search to find when bird exits (last time with bird)."""
     last_seen = low
     while high - low > precision:
@@ -216,8 +215,9 @@ def _binary_search_exit(cap: cv2.VideoCapture, detector: BirdDetector,
     return last_seen
 
 
-def _binary_search_entry(cap: cv2.VideoCapture, detector: BirdDetector,
-                         low: float, high: float, fps: float, precision: float = 1.0) -> float:
+def _binary_search_entry(
+    cap: cv2.VideoCapture, detector: BirdDetector, low: float, high: float, fps: float, precision: float = 1.0
+) -> float:
     """Binary search to find when bird enters (first time with bird)."""
     first_seen = high
     while high - low > precision:
@@ -255,10 +255,10 @@ def extract_segment(
     if hw_encoder:
         encoder = hw_encoder
         # Hardware encoders use different quality scales
-        if hw_encoder == 'h264_qsv':
+        if hw_encoder == "h264_qsv":
             # QSV uses -global_quality 1-51 (lower is better)
             quality_opts = ["-global_quality", "23" if optimize_web else "18"]
-        elif hw_encoder in ['h264_vaapi', 'h264_v4l2m2m']:
+        elif hw_encoder in ["h264_vaapi", "h264_v4l2m2m"]:
             # VAAPI/V4L2 use -qp scale
             quality_opts = ["-qp", "23" if optimize_web else "18"]
         else:
@@ -266,17 +266,24 @@ def extract_segment(
     else:
         encoder = "libx264"
         quality_opts = [
-            "-preset", "fast",
-            "-crf", "23" if optimize_web else "18",
+            "-preset",
+            "fast",
+            "-crf",
+            "23" if optimize_web else "18",
         ]
 
     # Build base command
     cmd = [
-        "ffmpeg", "-y",
-        "-threads", str(threads),
-        "-ss", str(segment.start_time),
-        "-i", str(segment.clip_path),
-        "-t", str(segment.duration),
+        "ffmpeg",
+        "-y",
+        "-threads",
+        str(threads),
+        "-ss",
+        str(segment.start_time),
+        "-i",
+        str(segment.clip_path),
+        "-t",
+        str(segment.duration),
     ]
 
     # Add video filter for web optimization (preserve aspect ratio, just reduce framerate)
@@ -284,13 +291,18 @@ def extract_segment(
         cmd.extend(["-vf", "fps=24"])
 
     # Add encoding options
-    cmd.extend([
-        "-c:v", encoder,
-        *quality_opts,
-        "-c:a", "aac",
-        "-loglevel", "error",
-        str(output_path),
-    ])
+    cmd.extend(
+        [
+            "-c:v",
+            encoder,
+            *quality_opts,
+            "-c:a",
+            "aac",
+            "-loglevel",
+            "error",
+            str(output_path),
+        ]
+    )
 
     result = subprocess.run(cmd, capture_output=True, text=True)
 
@@ -300,24 +312,36 @@ def extract_segment(
             print(f"\nHardware encoding failed for {segment.clip_path.name}: {result.stderr[:200]}")
         # Try again with libx264
         cmd_fallback = [
-            "ffmpeg", "-y",
-            "-threads", str(threads),
-            "-ss", str(segment.start_time),
-            "-i", str(segment.clip_path),
-            "-t", str(segment.duration),
+            "ffmpeg",
+            "-y",
+            "-threads",
+            str(threads),
+            "-ss",
+            str(segment.start_time),
+            "-i",
+            str(segment.clip_path),
+            "-t",
+            str(segment.duration),
         ]
 
         if optimize_web:
             cmd_fallback.extend(["-vf", "fps=24"])
 
-        cmd_fallback.extend([
-            "-c:v", "libx264",
-            "-preset", "fast",
-            "-crf", "23" if optimize_web else "18",
-            "-c:a", "aac",
-            "-loglevel", "error",
-            str(output_path),
-        ])
+        cmd_fallback.extend(
+            [
+                "-c:v",
+                "libx264",
+                "-preset",
+                "fast",
+                "-crf",
+                "23" if optimize_web else "18",
+                "-c:a",
+                "aac",
+                "-loglevel",
+                "error",
+                str(output_path),
+            ]
+        )
 
         result = subprocess.run(cmd_fallback, capture_output=True, text=True)
 
@@ -351,28 +375,38 @@ def concatenate_segments(
     if len(segment_files) == 1:
         # Single segment - just copy
         cmd = [
-            "ffmpeg", "-y",
-            "-i", str(segment_files[0]),
-            "-c", "copy",
-            "-loglevel", "error",
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(segment_files[0]),
+            "-c",
+            "copy",
+            "-loglevel",
+            "error",
             str(output_path),
         ]
         result = subprocess.run(cmd, capture_output=True)
         return result.returncode == 0
 
     # Multiple segments - concat using demuxer (very fast, no re-encoding)
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
         for seg_file in segment_files:
             f.write(f"file '{seg_file}'\n")
         concat_list = f.name
 
     cmd = [
-        "ffmpeg", "-y",
-        "-f", "concat",
-        "-safe", "0",
-        "-i", concat_list,
-        "-c", "copy",
-        "-loglevel", "error",
+        "ffmpeg",
+        "-y",
+        "-f",
+        "concat",
+        "-safe",
+        "0",
+        "-i",
+        concat_list,
+        "-c",
+        "copy",
+        "-loglevel",
+        "error",
         str(output_path),
     ]
     result = subprocess.run(cmd, capture_output=True)
@@ -424,18 +458,17 @@ def generate_highlights(
     if hw_encoder:
         print(f"Using hardware encoder: {hw_encoder}")
     else:
-        print(f"Using software encoder: libx264")
+        print("Using software encoder: libx264")
 
     print(f"FFmpeg thread limit: {threads}")
 
     # Try to load cached detection data from filter step
     try:
         cached_detections = load_detections(paths.detections_json)
-        using_cache = True
+
         print(f"Using cached detections for {len(cached_detections)} clips")
     except FileNotFoundError:
         cached_detections = None
-        using_cache = False
 
     detector = BirdDetector(
         bird_confidence=bird_confidence,
@@ -455,9 +488,7 @@ def generate_highlights(
         if cached_detections and clip.name in cached_detections:
             known_first_bird = cached_detections[clip.name].get("first_bird")
 
-        segments = find_bird_segments(
-            clip, detector, buffer_before, buffer_after, known_first_bird
-        )
+        segments = find_bird_segments(clip, detector, buffer_before, buffer_after, known_first_bird)
         if segments:
             bird_clips_duration += get_video_duration(clip)
             all_segments.extend(segments)

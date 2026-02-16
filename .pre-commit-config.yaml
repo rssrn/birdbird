@@ -26,6 +26,17 @@ repos:
         language: system
         files: \.(html|md)$
         types: [file]
+      # Python style (fast, file-scoped)
+      - id: ruff
+        name: Lint (ruff)
+        entry: .venv/bin/ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: Format (ruff)
+        entry: .venv/bin/ruff format
+        language: system
+        types: [python]
       # Python analysis (slower, project-scoped)
       - id: bandit
         name: Security lint (bandit)

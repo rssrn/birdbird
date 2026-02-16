@@ -6,7 +6,7 @@
 import json
 import shutil
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
@@ -14,7 +14,7 @@ import numpy as np
 from tqdm import tqdm
 
 from .detector import BirdDetector
-from .paths import BirdbirdPaths, load_detections, get_asset_frame_paths
+from .paths import BirdbirdPaths, get_asset_frame_paths, load_detections
 
 
 @dataclass
@@ -23,13 +23,14 @@ class FrameScore:
 
     @author Claude Sonnet 4.5 Anthropic
     """
+
     clip_name: str
     timestamp: float
-    confidence: float      # From detection
-    sharpness: float       # Variance of Laplacian
-    bird_size: float       # Bbox area as % of frame
-    position: float        # Center-weighted score
-    combined: float        # Weighted sum
+    confidence: float  # From detection
+    sharpness: float  # Variance of Laplacian
+    bird_size: float  # Bbox area as % of frame
+    position: float  # Center-weighted score
+    combined: float  # Weighted sum
 
 
 def calculate_sharpness(frame: np.ndarray) -> float:
@@ -73,7 +74,7 @@ def calculate_bird_size(detector: BirdDetector, frame: np.ndarray) -> float:
             conf = float(box.conf[0])
 
             # Check if it's a bird detection above threshold
-            is_bird = (class_id == detector.BIRD_CLASS_ID and conf >= detector.bird_confidence)
+            is_bird = class_id == detector.BIRD_CLASS_ID and conf >= detector.bird_confidence
 
             if is_bird:
                 # Get bbox coordinates (xyxy format)
@@ -117,7 +118,7 @@ def calculate_position(detector: BirdDetector, frame: np.ndarray) -> float:
             conf = float(box.conf[0])
 
             # Check if it's a bird detection above threshold
-            is_bird = (class_id == detector.BIRD_CLASS_ID and conf >= detector.bird_confidence)
+            is_bird = class_id == detector.BIRD_CLASS_ID and conf >= detector.bird_confidence
 
             if is_bird:
                 # Get bbox coordinates
@@ -146,7 +147,7 @@ def normalize_scores(scores: dict[str, list[float]]) -> dict[str, list[float]]:
     """
     normalized = {}
     for key, values in scores.items():
-        if not values or key == 'confidence':
+        if not values or key == "confidence":
             # Confidence is already 0-1, skip normalization
             normalized[key] = values
             continue
@@ -200,18 +201,18 @@ def extract_and_score_frames(
 
     # Collect raw scores before normalization
     raw_scores: dict[str, list[float]] = {
-        'confidence': [],
-        'sharpness': [],
-        'bird_size': [],
-        'position': [],
+        "confidence": [],
+        "sharpness": [],
+        "bird_size": [],
+        "position": [],
     }
 
     # Timing accumulators
     timing_totals = {
-        'confidence': 0.0,
-        'sharpness': 0.0,
-        'bird_size': 0.0,
-        'position': 0.0,
+        "confidence": 0.0,
+        "sharpness": 0.0,
+        "bird_size": 0.0,
+        "position": 0.0,
     }
 
     frame_data = []  # Store (clip_name, timestamp, raw_scores_dict)
@@ -219,8 +220,8 @@ def extract_and_score_frames(
     # Extract and score frames
     for clip_name in tqdm(clip_names, desc="Scoring frames"):
         detection_info = detections[clip_name]
-        timestamp = detection_info['first_bird']
-        confidence = detection_info['confidence']
+        timestamp = detection_info["first_bird"]
+        confidence = detection_info["confidence"]
 
         clip_path = paths.clips_dir / clip_name
         if not clip_path.exists():
@@ -256,25 +257,27 @@ def extract_and_score_frames(
         t4 = time.perf_counter()
 
         # Accumulate timing
-        timing_totals['confidence'] += (t1 - t0)
-        timing_totals['sharpness'] += (t2 - t1)
-        timing_totals['bird_size'] += (t3 - t2)
-        timing_totals['position'] += (t4 - t3)
+        timing_totals["confidence"] += t1 - t0
+        timing_totals["sharpness"] += t2 - t1
+        timing_totals["bird_size"] += t3 - t2
+        timing_totals["position"] += t4 - t3
 
         # Store raw scores
-        raw_scores['confidence'].append(conf_score)
-        raw_scores['sharpness'].append(sharpness)
-        raw_scores['bird_size'].append(bird_size)
-        raw_scores['position'].append(position)
+        raw_scores["confidence"].append(conf_score)
+        raw_scores["sharpness"].append(sharpness)
+        raw_scores["bird_size"].append(bird_size)
+        raw_scores["position"].append(position)
 
-        frame_data.append({
-            'clip_name': clip_name,
-            'timestamp': timestamp,
-            'confidence': conf_score,
-            'sharpness': sharpness,
-            'bird_size': bird_size,
-            'position': position,
-        })
+        frame_data.append(
+            {
+                "clip_name": clip_name,
+                "timestamp": timestamp,
+                "confidence": conf_score,
+                "sharpness": sharpness,
+                "bird_size": bird_size,
+                "position": position,
+            }
+        )
 
     if not frame_data:
         return [], {}
@@ -286,21 +289,23 @@ def extract_and_score_frames(
     scored_frames = []
     for i, data in enumerate(frame_data):
         combined = (
-            weights['confidence'] * normalized['confidence'][i] +
-            weights['sharpness'] * normalized['sharpness'][i] +
-            weights['bird_size'] * normalized['bird_size'][i] +
-            weights['position'] * normalized['position'][i]
+            weights["confidence"] * normalized["confidence"][i]
+            + weights["sharpness"] * normalized["sharpness"][i]
+            + weights["bird_size"] * normalized["bird_size"][i]
+            + weights["position"] * normalized["position"][i]
         )
 
-        scored_frames.append(FrameScore(
-            clip_name=data['clip_name'],
-            timestamp=data['timestamp'],
-            confidence=data['confidence'],
-            sharpness=data['sharpness'],
-            bird_size=data['bird_size'],
-            position=data['position'],
-            combined=combined,
-        ))
+        scored_frames.append(
+            FrameScore(
+                clip_name=data["clip_name"],
+                timestamp=data["timestamp"],
+                confidence=data["confidence"],
+                sharpness=data["sharpness"],
+                bird_size=data["bird_size"],
+                position=data["position"],
+                combined=combined,
+            )
+        )
 
     # Sort by combined score (descending)
     scored_frames.sort(key=lambda x: x.combined, reverse=True)
@@ -308,12 +313,12 @@ def extract_and_score_frames(
     # Calculate timing stats
     num_frames = len(frame_data)
     timing_stats = {
-        'total_frames_scored': num_frames,
-        'confidence_ms_per_frame': (timing_totals['confidence'] / num_frames) * 1000,
-        'sharpness_ms_per_frame': (timing_totals['sharpness'] / num_frames) * 1000,
-        'bird_size_ms_per_frame': (timing_totals['bird_size'] / num_frames) * 1000,
-        'position_ms_per_frame': (timing_totals['position'] / num_frames) * 1000,
-        'total_ms_per_frame': (sum(timing_totals.values()) / num_frames) * 1000,
+        "total_frames_scored": num_frames,
+        "confidence_ms_per_frame": (timing_totals["confidence"] / num_frames) * 1000,
+        "sharpness_ms_per_frame": (timing_totals["sharpness"] / num_frames) * 1000,
+        "bird_size_ms_per_frame": (timing_totals["bird_size"] / num_frames) * 1000,
+        "position_ms_per_frame": (timing_totals["position"] / num_frames) * 1000,
+        "total_ms_per_frame": (sum(timing_totals.values()) / num_frames) * 1000,
     }
 
     return scored_frames, timing_stats
@@ -361,7 +366,7 @@ def save_top_frames(
             continue
 
         # Generate filename
-        clip_base = frame_score.clip_name.replace('.avi', '')
+        clip_base = frame_score.clip_name.replace(".avi", "")
         filename = f"frame_{rank:03d}_{clip_base}_{frame_score.timestamp:.1f}s_score_{frame_score.combined:.2f}.jpg"
         output_path = output_dir / filename
 
@@ -384,27 +389,29 @@ def save_frame_metadata(
     """
     frames_data = []
     for rank, frame in enumerate(frames, start=1):
-        frames_data.append({
-            'rank': rank,
-            'filename': f"frame_{rank:03d}_{frame.clip_name.replace('.avi', '')}_{frame.timestamp:.1f}s_score_{frame.combined:.2f}.jpg",
-            'clip': frame.clip_name,
-            'timestamp': float(frame.timestamp),
-            'scores': {
-                'confidence': round(float(frame.confidence), 3),
-                'sharpness': round(float(frame.sharpness), 1),
-                'bird_size': round(float(frame.bird_size), 3),
-                'position': round(float(frame.position), 3),
-                'combined': round(float(frame.combined), 3),
+        frames_data.append(
+            {
+                "rank": rank,
+                "filename": f"frame_{rank:03d}_{frame.clip_name.replace('.avi', '')}_{frame.timestamp:.1f}s_score_{frame.combined:.2f}.jpg",
+                "clip": frame.clip_name,
+                "timestamp": float(frame.timestamp),
+                "scores": {
+                    "confidence": round(float(frame.confidence), 3),
+                    "sharpness": round(float(frame.sharpness), 1),
+                    "bird_size": round(float(frame.bird_size), 3),
+                    "position": round(float(frame.position), 3),
+                    "combined": round(float(frame.combined), 3),
+                },
             }
-        })
+        )
 
     metadata = {
-        'frames': frames_data,
-        'timing_stats': timing_stats,
-        'config': config,
+        "frames": frames_data,
+        "timing_stats": timing_stats,
+        "config": config,
     }
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
 

@@ -6,7 +6,6 @@ Extracts audio from AVI files and analyzes for bird vocalizations.
 """
 
 import csv
-import io
 import json
 import os
 import subprocess
@@ -157,15 +156,17 @@ def extract_audio_segment(
     if normalize:
         cmd.extend(["-af", "dynaudnorm=f=50:g=3:p=0.95:m=20"])
 
-    cmd.extend([
-        "-acodec",
-        "pcm_s16le",  # 16-bit PCM
-        "-ar",
-        str(sample_rate),
-        "-ac",
-        "1",  # Mono
-        str(output_path),
-    ])
+    cmd.extend(
+        [
+            "-acodec",
+            "pcm_s16le",  # 16-bit PCM
+            "-ar",
+            str(sample_rate),
+            "-ac",
+            "1",  # Mono
+            str(output_path),
+        ]
+    )
 
     result = subprocess.run(
         cmd,
@@ -334,15 +335,11 @@ def parse_birdnet_csv(
 
                 if timestamps_reliable:
                     # Calculate timestamp: file timestamp + detection start time
-                    base_timestamp = parse_timestamp_from_filename(
-                        source_filename, dir_date
-                    )
+                    base_timestamp = parse_timestamp_from_filename(source_filename, dir_date)
                     if base_timestamp:
                         # Add detection start time to base timestamp
                         base_dt = datetime.fromisoformat(base_timestamp)
-                        detection_dt = base_dt.replace(
-                            second=base_dt.second + int(start_s)
-                        )
+                        detection_dt = base_dt.replace(second=base_dt.second + int(start_s))
                         timestamp = detection_dt.isoformat()
                     else:
                         timestamp = ""
@@ -428,16 +425,18 @@ def extract_species_clips(
         )
 
         if success:
-            extracted_clips.append({
-                "filename": output_filename,
-                "common_name": detection.common_name,
-                "scientific_name": detection.scientific_name,
-                "confidence": round(detection.confidence, 4),
-                "source_file": detection.filename,
-                "start_s": detection.start_s,
-                "end_s": detection.end_s,
-                "duration_s": round(detection.end_s - detection.start_s, 2),
-            })
+            extracted_clips.append(
+                {
+                    "filename": output_filename,
+                    "common_name": detection.common_name,
+                    "scientific_name": detection.scientific_name,
+                    "confidence": round(detection.confidence, 4),
+                    "source_file": detection.filename,
+                    "start_s": detection.start_s,
+                    "end_s": detection.end_s,
+                    "duration_s": round(detection.end_s - detection.start_s, 2),
+                }
+            )
 
     return extracted_clips
 
@@ -545,9 +544,7 @@ def analyze_songs(
             csv_filename = f"{wav_path.stem}.BirdNET.results.csv"
             csv_path = results_dir / csv_filename
 
-            detections = parse_birdnet_csv(
-                csv_path, avi_name, dir_date, timestamps_reliable
-            )
+            detections = parse_birdnet_csv(csv_path, avi_name, dir_date, timestamps_reliable)
             all_detections.extend(detections)
 
     # Sort by confidence (highest first)

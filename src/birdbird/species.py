@@ -8,9 +8,9 @@ import subprocess
 import tempfile
 import time
 from dataclasses import dataclass
-from typing import Any
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from tqdm import tqdm
 
@@ -54,9 +54,12 @@ def get_video_duration(video_path: Path) -> float:
     """
     cmd = [
         "ffprobe",
-        "-v", "quiet",
-        "-show_entries", "format=duration",
-        "-of", "default=noprint_wrappers=1:nokey=1",
+        "-v",
+        "quiet",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
         str(video_path),
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -95,10 +98,14 @@ def sample_frames_from_video(
         cmd = [
             "ffmpeg",
             "-y",
-            "-ss", str(ts),
-            "-i", str(video_path),
-            "-vframes", "1",
-            "-q:v", "2",  # High quality JPEG
+            "-ss",
+            str(ts),
+            "-i",
+            str(video_path),
+            "-vframes",
+            "1",
+            "-q:v",
+            "2",  # High quality JPEG
             str(frame_path),
         ]
         subprocess.run(cmd, capture_output=True, check=True)
@@ -196,12 +203,14 @@ class LocalProcessor:
                     for p in sorted_preds[1:4]  # Top 3 runners-up
                 ]
 
-                detections.append(Detection(
-                    timestamp_s=timestamp,
-                    species=top["classification"],
-                    confidence=round(top["score"], 4),
-                    runners_up=runners_up,
-                ))
+                detections.append(
+                    Detection(
+                        timestamp_s=timestamp,
+                        species=top["classification"],
+                        confidence=round(top["score"], 4),
+                        runners_up=runners_up,
+                    )
+                )
 
         return detections
 
@@ -268,12 +277,14 @@ class RemoteProcessor:
                 if str(i) in results_json:
                     result = results_json[str(i)]
                     if result["confidence"] >= self.min_confidence:
-                        detections.append(Detection(
-                            timestamp_s=timestamp,
-                            species=result["species"],
-                            confidence=result["confidence"],
-                            runners_up=result.get("runners_up", []),
-                        ))
+                        detections.append(
+                            Detection(
+                                timestamp_s=timestamp,
+                                species=result["species"],
+                                confidence=result["confidence"],
+                                runners_up=result.get("runners_up", []),
+                            )
+                        )
 
             return detections
 
@@ -295,6 +306,7 @@ class RemoteProcessor:
             # For WSL, create a temp directory in Windows user's temp folder
             # This is accessible via SCP (Windows path) and WSL (/mnt/c/...)
             import uuid
+
             dir_name = f"birdbird_{uuid.uuid4().hex[:8]}"
 
             # Get Windows temp path and create directory
@@ -559,9 +571,9 @@ def identify_species(
                 '        "host": "user@hostname",\n'
                 '        "shell": "wsl",\n'
                 '        "python_env": "~/bioclip_env"\n'
-                '      }\n'
-                '    }\n'
-                '  }'
+                "      }\n"
+                "    }\n"
+                "  }"
             )
 
         if progress_callback:

@@ -8,9 +8,9 @@ and assets directories (final outputs mirroring R2 structure).
 """
 
 import json
-from typing import Any
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -40,6 +40,7 @@ class BirdbirdPaths:
                 └── song_clips/
                     └── *.wav
     """
+
     input_dir: Path
 
     # Root birdbird directory
@@ -64,7 +65,7 @@ class BirdbirdPaths:
     song_clips_dir: Path
 
     @classmethod
-    def from_input_dir(cls, input_dir: Path) -> 'BirdbirdPaths':
+    def from_input_dir(cls, input_dir: Path) -> "BirdbirdPaths":
         """Initialize all paths from input directory.
 
         Args:
@@ -152,8 +153,7 @@ def load_detections(detections_path: Path) -> dict:
     """
     if not detections_path.exists():
         raise FileNotFoundError(
-            f"Detections file not found: {detections_path}\n"
-            f"Run 'birdbird filter' first to generate detections."
+            f"Detections file not found: {detections_path}\nRun 'birdbird filter' first to generate detections."
         )
 
     with open(detections_path) as f:

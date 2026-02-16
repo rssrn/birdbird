@@ -23,11 +23,11 @@ def create_r2_client(config: dict):
     @author Claude Sonnet 4.5 Anthropic
     """
     return boto3.client(
-        's3',
-        endpoint_url=config['r2_endpoint'],
-        aws_access_key_id=config['r2_access_key_id'],
-        aws_secret_access_key=config['r2_secret_access_key'],
-        region_name='auto',  # R2 uses 'auto' for region
+        "s3",
+        endpoint_url=config["r2_endpoint"],
+        aws_access_key_id=config["r2_access_key_id"],
+        aws_secret_access_key=config["r2_secret_access_key"],
+        region_name="auto",  # R2 uses 'auto' for region
     )
 
 
@@ -37,9 +37,9 @@ def calculate_md5(file_path: Path) -> str:
     @author Claude Sonnet 4.5 Anthropic
     """
     md5_hash = hashlib.md5(usedforsecurity=False)
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         # Read in 8KB chunks for efficiency
-        for chunk in iter(lambda: f.read(8192), b''):
+        for chunk in iter(lambda: f.read(8192), b""):
             md5_hash.update(chunk)
     return md5_hash.hexdigest()
 
@@ -56,11 +56,11 @@ def should_upload_file(s3_client, bucket_name: str, key: str, local_path: Path) 
     try:
         # Get existing object metadata
         response = s3_client.head_object(Bucket=bucket_name, Key=key)
-        remote_etag: str = response['ETag'].strip('"')  # Remove quotes from ETag
-        remote_size: int = response['ContentLength']
+        remote_etag: str = response["ETag"].strip('"')  # Remove quotes from ETag
+        remote_size: int = response["ContentLength"]
 
         # Check if this is a multipart upload (ETag contains hyphen)
-        if '-' in remote_etag:
+        if "-" in remote_etag:
             # For multipart uploads, ETag is not simple MD5
             # Use file size as heuristic (not perfect but fast and good enough)
             local_size = local_path.stat().st_size
@@ -71,7 +71,7 @@ def should_upload_file(s3_client, bucket_name: str, key: str, local_path: Path) 
             return local_md5 != remote_etag  # Upload if different
 
     except ClientError as e:
-        if e.response.get('Error', {}).get('Code') == '404':
+        if e.response.get("Error", {}).get("Code") == "404":
             return True  # File doesn't exist, upload
         raise
 
@@ -85,18 +85,14 @@ def list_batches(s3_client, bucket_name: str) -> list[str]:
     """
     try:
         # List all objects with 'batches/' prefix
-        response = s3_client.list_objects_v2(
-            Bucket=bucket_name,
-            Prefix='batches/',
-            Delimiter='/'
-        )
+        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix="batches/", Delimiter="/")
 
         # Extract batch IDs from common prefixes (folder names)
         batch_ids = []
-        if 'CommonPrefixes' in response:
-            for prefix in response['CommonPrefixes']:
+        if "CommonPrefixes" in response:
+            for prefix in response["CommonPrefixes"]:
                 # prefix['Prefix'] looks like 'batches/20220114_01/'
-                path_parts = prefix['Prefix'].rstrip('/').split('/')
+                path_parts = prefix["Prefix"].rstrip("/").split("/")
                 if len(path_parts) == 2:
                     batch_ids.append(path_parts[1])
 
@@ -106,7 +102,7 @@ def list_batches(s3_client, bucket_name: str) -> list[str]:
 
     except ClientError as e:
         # If bucket is empty or prefix doesn't exist, return empty list
-        if e.response.get('Error', {}).get('Code') == 'NoSuchKey':
+        if e.response.get("Error", {}).get("Code") == "NoSuchKey":
             return []
         raise
 
@@ -131,10 +127,10 @@ def generate_batch_id(s3_client, bucket_name: str, original_date: str, create_ne
     # Convert original_date from "YYYY-MM-DD" or "unknown" to "YYYYMMDD"
     if original_date == "unknown":
         # Fallback to today's date if we couldn't parse the folder name
-        date_prefix = datetime.now(timezone.utc).strftime('%Y%m%d')
+        date_prefix = datetime.now(timezone.utc).strftime("%Y%m%d")
     else:
         # Remove hyphens: "2022-01-14" -> "20220114"
-        date_prefix = original_date.replace('-', '')
+        date_prefix = original_date.replace("-", "")
 
     # List existing batches with same date prefix
     all_batches = list_batches(s3_client, bucket_name)
@@ -148,7 +144,7 @@ def generate_batch_id(s3_client, bucket_name: str, original_date: str, create_ne
     max_seq = 0
     for batch_id in same_date_batches:
         try:
-            seq = int(batch_id.split('_')[1])
+            seq = int(batch_id.split("_")[1])
             max_seq = max(max_seq, seq)
         except (IndexError, ValueError):
             continue
@@ -168,11 +164,14 @@ def get_highlights_duration(video_path: Path) -> float:
     @author Claude Sonnet 4.5 Anthropic
     """
     cmd = [
-        'ffprobe',
-        '-v', 'error',
-        '-show_entries', 'format=duration',
-        '-of', 'default=noprint_wrappers=1:nokey=1',
-        str(video_path)
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        str(video_path),
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -396,31 +395,23 @@ def upload_batch(
     file_size = paths.highlights_mp4.stat().st_size
 
     if batch_exists and not should_upload_file(s3_client, bucket_name, highlights_key, paths.highlights_mp4):
-        typer.echo(f"  Skipping highlights.mp4 (unchanged, {file_size / (1024*1024):.1f} MB)")
-        skipped_files.append('highlights.mp4')
+        typer.echo(f"  Skipping highlights.mp4 (unchanged, {file_size / (1024 * 1024):.1f} MB)")
+        skipped_files.append("highlights.mp4")
     else:
-        typer.echo(f"  Uploading highlights.mp4 ({file_size / (1024*1024):.1f} MB)...")
+        typer.echo(f"  Uploading highlights.mp4 ({file_size / (1024 * 1024):.1f} MB)...")
 
-        with open(paths.highlights_mp4, 'rb') as f:
+        with open(paths.highlights_mp4, "rb") as f:
             with tqdm(
-                total=file_size,
-                unit='B',
-                unit_scale=True,
-                unit_divisor=1024,
-                desc="    Progress",
-                leave=False
+                total=file_size, unit="B", unit_scale=True, unit_divisor=1024, desc="    Progress", leave=False
             ) as pbar:
+
                 def upload_callback(bytes_amount):
                     pbar.update(bytes_amount)
 
                 s3_client.upload_fileobj(
-                    f,
-                    bucket_name,
-                    highlights_key,
-                    ExtraArgs={'ContentType': 'video/mp4'},
-                    Callback=upload_callback
+                    f, bucket_name, highlights_key, ExtraArgs={"ContentType": "video/mp4"}, Callback=upload_callback
                 )
-        uploaded_files.append('highlights.mp4')
+        uploaded_files.append("highlights.mp4")
 
     # Upload songs.json if available
     songs_summary = None
@@ -432,23 +423,20 @@ def upload_batch(
 
         if batch_exists and not should_upload_file(s3_client, bucket_name, songs_key, songs_path):
             typer.echo("  Skipping songs.json (unchanged)")
-            skipped_files.append('songs.json')
+            skipped_files.append("songs.json")
         else:
             typer.echo("  Uploading songs.json...")
             # Upload full songs.json
             s3_client.put_object(
-                Bucket=bucket_name,
-                Key=songs_key,
-                Body=json.dumps(songs_data, indent=2),
-                ContentType='application/json'
+                Bucket=bucket_name, Key=songs_key, Body=json.dumps(songs_data, indent=2), ContentType="application/json"
             )
-            uploaded_files.append('songs.json')
+            uploaded_files.append("songs.json")
 
         # Create summary for metadata
         songs_summary = {
-            'total_detections': songs_data['summary']['total_detections'],
-            'unique_species': songs_data['summary']['unique_species'],
-            'timestamps_reliable': songs_data.get('timestamps_reliable', True),
+            "total_detections": songs_data["summary"]["total_detections"],
+            "unique_species": songs_data["summary"]["unique_species"],
+            "timestamps_reliable": songs_data.get("timestamps_reliable", True),
         }
 
     # Upload song clips if available
@@ -463,8 +451,8 @@ def upload_batch(
             if songs_path and songs_path.exists():
                 with open(songs_path) as clips_meta_f:
                     songs_json = json.load(clips_meta_f)
-                    for clip in songs_json.get('clips', []):
-                        clips_data[clip['filename']] = clip
+                    for clip in songs_json.get("clips", []):
+                        clips_data[clip["filename"]] = clip
 
             for clip_file in clip_files:
                 clip_key = f"batches/{batch_id}/song_clips/{clip_file.name}"
@@ -474,42 +462,39 @@ def upload_batch(
                     skipped_files.append(f"song_clips/{clip_file.name}")
                 else:
                     typer.echo(f"    Uploading {clip_file.name}")
-                    with open(clip_file, 'rb') as clip_f:
-                        s3_client.put_object(
-                            Bucket=bucket_name,
-                            Key=clip_key,
-                            Body=clip_f,
-                            ContentType='audio/wav'
-                        )
+                    with open(clip_file, "rb") as clip_f:
+                        s3_client.put_object(Bucket=bucket_name, Key=clip_key, Body=clip_f, ContentType="audio/wav")
                     uploaded_files.append(f"song_clips/{clip_file.name}")
 
                 # Add metadata from songs.json if available
                 clip_info = clips_data.get(clip_file.name, {})
-                song_clips_metadata.append({
-                    'filename': clip_file.name,
-                    'common_name': clip_info.get('common_name', clip_file.stem.replace('_', ' ').title()),
-                    'scientific_name': clip_info.get('scientific_name', ''),
-                    'confidence': clip_info.get('confidence', 0),
-                })
+                song_clips_metadata.append(
+                    {
+                        "filename": clip_file.name,
+                        "common_name": clip_info.get("common_name", clip_file.stem.replace("_", " ").title()),
+                        "scientific_name": clip_info.get("scientific_name", ""),
+                        "confidence": clip_info.get("confidence", 0),
+                    }
+                )
 
     # Create metadata.json
     metadata = {
-        'batch_id': batch_id,
-        'uploaded': uploaded_at,
-        'original_date': original_date,
-        'start_date': start_date,
-        'end_date': end_date,
-        'clip_count': clip_count,
-        'highlights_duration': round(highlights_duration, 2),
+        "batch_id": batch_id,
+        "uploaded": uploaded_at,
+        "original_date": original_date,
+        "start_date": start_date,
+        "end_date": end_date,
+        "clip_count": clip_count,
+        "highlights_duration": round(highlights_duration, 2),
     }
 
     # Add songs summary if available
     if songs_summary:
-        metadata['songs'] = songs_summary
+        metadata["songs"] = songs_summary
 
     # Add song clips if available
     if song_clips_metadata:
-        metadata['song_clips'] = song_clips_metadata
+        metadata["song_clips"] = song_clips_metadata
 
     # Upload species.json if available
     species_summary = None
@@ -521,27 +506,27 @@ def upload_batch(
 
         if batch_exists and not should_upload_file(s3_client, bucket_name, species_key, species_path):
             typer.echo("  Skipping species.json (unchanged)")
-            skipped_files.append('species.json')
+            skipped_files.append("species.json")
         else:
             typer.echo("  Uploading species.json...")
             s3_client.put_object(
                 Bucket=bucket_name,
                 Key=species_key,
                 Body=json.dumps(species_data, indent=2),
-                ContentType='application/json'
+                ContentType="application/json",
             )
-            uploaded_files.append('species.json')
+            uploaded_files.append("species.json")
 
         # Create summary for metadata
         species_summary = {
-            'total_frames': species_data['total_frames'],
-            'unique_species': len(species_data['species_summary']),
-            'species_list': list(species_data['species_summary'].keys()),
+            "total_frames": species_data["total_frames"],
+            "unique_species": len(species_data["species_summary"]),
+            "species_list": list(species_data["species_summary"].keys()),
         }
 
     # Add species summary if available
     if species_summary:
-        metadata['species'] = species_summary
+        metadata["species"] = species_summary
 
     # Upload best_clips.json if available
     best_clips_summary = None
@@ -553,27 +538,27 @@ def upload_batch(
 
         if batch_exists and not should_upload_file(s3_client, bucket_name, best_clips_key, best_clips_path):
             typer.echo("  Skipping best_clips.json (unchanged)")
-            skipped_files.append('best_clips.json')
+            skipped_files.append("best_clips.json")
         else:
             typer.echo("  Uploading best_clips.json...")
             s3_client.put_object(
                 Bucket=bucket_name,
                 Key=best_clips_key,
                 Body=json.dumps(best_clips_data, indent=2),
-                ContentType='application/json'
+                ContentType="application/json",
             )
-            uploaded_files.append('best_clips.json')
+            uploaded_files.append("best_clips.json")
 
         # Create summary for metadata
         best_clips_summary = {
-            'window_duration_s': best_clips_data['window_duration_s'],
-            'species_count': best_clips_data['species_count'],
-            'species_list': list(best_clips_data['clips'].keys()),
+            "window_duration_s": best_clips_data["window_duration_s"],
+            "species_count": best_clips_data["species_count"],
+            "species_list": list(best_clips_data["clips"].keys()),
         }
 
     # Add best_clips summary if available
     if best_clips_summary:
-        metadata['best_clips'] = best_clips_summary
+        metadata["best_clips"] = best_clips_summary
 
     # Always upload metadata.json (it's tiny and includes current timestamp)
     typer.echo("  Uploading metadata.json...")
@@ -581,14 +566,14 @@ def upload_batch(
         Bucket=bucket_name,
         Key=f"batches/{batch_id}/metadata.json",
         Body=json.dumps(metadata, indent=2),
-        ContentType='application/json'
+        ContentType="application/json",
     )
-    uploaded_files.append('metadata.json')
+    uploaded_files.append("metadata.json")
 
     # Add upload stats to metadata for reporting
-    metadata['_upload_stats'] = {
-        'uploaded': uploaded_files,
-        'skipped': skipped_files,
+    metadata["_upload_stats"] = {
+        "uploaded": uploaded_files,
+        "skipped": skipped_files,
     }
 
     return metadata
@@ -603,14 +588,11 @@ def update_latest_json(s3_client, bucket_name: str, batch_metadata: dict) -> Non
     """
     # Try to fetch existing latest.json
     try:
-        response = s3_client.get_object(
-            Bucket=bucket_name,
-            Key='latest.json'
-        )
-        latest_data = json.loads(response['Body'].read())
-        batches = latest_data.get('batches', [])
+        response = s3_client.get_object(Bucket=bucket_name, Key="latest.json")
+        latest_data = json.loads(response["Body"].read())
+        batches = latest_data.get("batches", [])
     except ClientError as e:
-        if e.response.get('Error', {}).get('Code') == 'NoSuchKey':
+        if e.response.get("Error", {}).get("Code") == "NoSuchKey":
             # File doesn't exist yet, start fresh
             batches = []
         else:
@@ -618,33 +600,27 @@ def update_latest_json(s3_client, bucket_name: str, batch_metadata: dict) -> Non
 
     # Create batch summary for latest.json
     batch_summary = {
-        'id': batch_metadata['batch_id'],
-        'uploaded': batch_metadata['uploaded'],
-        'original_date': batch_metadata['original_date'],
-        'start_date': batch_metadata['start_date'],
-        'end_date': batch_metadata['end_date'],
-        'clip_count': batch_metadata['clip_count'],
-        'highlights_duration': batch_metadata['highlights_duration']
+        "id": batch_metadata["batch_id"],
+        "uploaded": batch_metadata["uploaded"],
+        "original_date": batch_metadata["original_date"],
+        "start_date": batch_metadata["start_date"],
+        "end_date": batch_metadata["end_date"],
+        "clip_count": batch_metadata["clip_count"],
+        "highlights_duration": batch_metadata["highlights_duration"],
     }
 
     # Remove all existing entries with this batch_id (handles duplicates from old bug)
-    batches = [b for b in batches if b['id'] != batch_metadata['batch_id']]
+    batches = [b for b in batches if b["id"] != batch_metadata["batch_id"]]
 
     # Prepend batch (newest first)
     batches.insert(0, batch_summary)
 
     # Update latest.json
-    latest_data = {
-        'latest': batch_metadata['batch_id'],
-        'batches': batches
-    }
+    latest_data = {"latest": batch_metadata["batch_id"], "batches": batches}
 
     typer.echo("  Updating latest.json...")
     s3_client.put_object(
-        Bucket=bucket_name,
-        Key='latest.json',
-        Body=json.dumps(latest_data, indent=2),
-        ContentType='application/json'
+        Bucket=bucket_name, Key="latest.json", Body=json.dumps(latest_data, indent=2), ContentType="application/json"
     )
 
 
@@ -681,45 +657,33 @@ def cleanup_old_batches(s3_client, bucket_name: str, keep_latest: int = 5) -> li
         typer.echo(f"  Deleting batch {batch_id}...")
 
         # List all objects in this batch
-        response = s3_client.list_objects_v2(
-            Bucket=bucket_name,
-            Prefix=f"batches/{batch_id}/"
-        )
+        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=f"batches/{batch_id}/")
 
         # Delete all objects
-        if 'Contents' in response:
-            for obj in response['Contents']:
-                s3_client.delete_object(
-                    Bucket=bucket_name,
-                    Key=obj['Key']
-                )
+        if "Contents" in response:
+            for obj in response["Contents"]:
+                s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
 
         deleted.append(batch_id)
 
     # Update latest.json to remove deleted batches
     try:
-        response = s3_client.get_object(
-            Bucket=bucket_name,
-            Key='latest.json'
-        )
-        latest_data = json.loads(response['Body'].read())
+        response = s3_client.get_object(Bucket=bucket_name, Key="latest.json")
+        latest_data = json.loads(response["Body"].read())
 
         # Filter out deleted batches
-        latest_data['batches'] = [
-            b for b in latest_data['batches']
-            if b['id'] not in deleted
-        ]
+        latest_data["batches"] = [b for b in latest_data["batches"] if b["id"] not in deleted]
 
         # Update latest pointer if it was deleted
-        if latest_data['latest'] in deleted and latest_data['batches']:
-            latest_data['latest'] = latest_data['batches'][0]['id']
+        if latest_data["latest"] in deleted and latest_data["batches"]:
+            latest_data["latest"] = latest_data["batches"][0]["id"]
 
         # Write back
         s3_client.put_object(
             Bucket=bucket_name,
-            Key='latest.json',
+            Key="latest.json",
             Body=json.dumps(latest_data, indent=2),
-            ContentType='application/json'
+            ContentType="application/json",
         )
     except ClientError:
         pass  # latest.json might not exist yet
@@ -772,7 +736,7 @@ def publish_to_r2(
 
     # Check for songs.json (optional)
     if paths.songs_json.exists():
-        typer.echo(f"Found songs.json - will include in upload")
+        typer.echo("Found songs.json - will include in upload")
         songs_path = paths.songs_json
     else:
         typer.echo(f"No songs.json found - skipping (run 'birdbird songs {input_dir}' to add)")
@@ -785,15 +749,15 @@ def publish_to_r2(
             typer.echo(f"Found {len(clip_files)} song clips - will include in upload")
             song_clips_dir = paths.song_clips_dir
         else:
-            typer.echo(f"song_clips/ directory empty - skipping")
+            typer.echo("song_clips/ directory empty - skipping")
             song_clips_dir = None
     else:
-        typer.echo(f"No song_clips/ found - skipping")
+        typer.echo("No song_clips/ found - skipping")
         song_clips_dir = None
 
     # Check for species.json (optional)
     if paths.species_json.exists():
-        typer.echo(f"Found species.json - will include in upload")
+        typer.echo("Found species.json - will include in upload")
         species_path = paths.species_json
     else:
         typer.echo(f"No species.json found - skipping (run 'birdbird species {input_dir}' to add)")
@@ -801,7 +765,7 @@ def publish_to_r2(
 
     # Check for best_clips.json (optional)
     if paths.best_clips_json.exists():
-        typer.echo(f"Found best_clips.json - will include in upload")
+        typer.echo("Found best_clips.json - will include in upload")
         best_clips_path = paths.best_clips_json
     else:
         typer.echo(f"No best_clips.json found - skipping (run 'birdbird frames {input_dir}' to add)")
@@ -814,7 +778,7 @@ def publish_to_r2(
     # Create R2 client
     typer.echo("Connecting to R2...")
     s3_client = create_r2_client(config)
-    bucket_name = config['r2_bucket_name']
+    bucket_name = config["r2_bucket_name"]
 
     # Generate batch ID
     batch_id, batch_exists = generate_batch_id(s3_client, bucket_name, original_date, create_new=create_new_batch)
@@ -869,17 +833,17 @@ def publish_to_r2(
     deleted = cleanup_old_batches(s3_client, bucket_name, keep_latest=5)
 
     # Extract upload stats from metadata
-    upload_stats = batch_metadata.pop('_upload_stats', {'uploaded': [], 'skipped': []})
+    upload_stats = batch_metadata.pop("_upload_stats", {"uploaded": [], "skipped": []})
 
     # Return summary
     return {
-        'batch_id': batch_id,
-        'uploaded_files': len(upload_stats['uploaded']),
-        'skipped_files': len(upload_stats['skipped']),
-        'uploaded_list': upload_stats['uploaded'],
-        'skipped_list': upload_stats['skipped'],
-        'clip_count': clip_count,
-        'highlights_duration': batch_metadata['highlights_duration'],
-        'deleted_batches': deleted,
-        'batch_replaced': batch_exists and not create_new_batch,
+        "batch_id": batch_id,
+        "uploaded_files": len(upload_stats["uploaded"]),
+        "skipped_files": len(upload_stats["skipped"]),
+        "uploaded_list": upload_stats["uploaded"],
+        "skipped_list": upload_stats["skipped"],
+        "clip_count": clip_count,
+        "highlights_duration": batch_metadata["highlights_duration"],
+        "deleted_batches": deleted,
+        "batch_replaced": batch_exists and not create_new_batch,
     }
