@@ -597,13 +597,11 @@ To contribute:
 - ✅ Highlight reel generation
 - ✅ Visual species identification (BioCLIP)
 - ✅ Audio species detection (BirdNET)
-- ✅ Web viewer with R2 publishing
+- ✅ Web viewer with S3-compatible publishing
 - ✅ Accessibility testing (pa11y)
 
-**Roadmap:**
-- 🔄 Highlight images (species-specific frame extraction)
+**Future (ideas):**
 - 🔄 Best action sequence (algorithm to find most interesting 30-second segments)
-- 🔄 Email reports with statistics
 - 🔄 Database backend for historical trends
 
 ---
