@@ -13,6 +13,7 @@ import pytest
 # Must run at module level so the stub is in place when pytest collects test files.
 # setdefault leaves the real package in place when running locally with full deps installed.
 sys.modules.setdefault("ultralytics", MagicMock())
+sys.modules.setdefault("birdnet_analyzer", MagicMock())
 
 
 @pytest.fixture
