@@ -1,0 +1,28 @@
+name: Tests
+
+# Triggers: run on every push to any branch
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest  # GitHub-hosted Linux VM
+
+    steps:
+      # 1. Check out the code
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # 2. Install Python and cache downloaded packages for faster subsequent runs
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      # 3. Install the package with its [test] extras (pytest, mypy, etc.)
+      - name: Install dependencies
+        run: pip install -e ".[test]"
+
+      # 4. Run only the fast tests (exclude @pytest.mark.slow)
+      - name: Run tests
+        run: pytest -m "not slow"
