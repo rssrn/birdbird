@@ -3,10 +3,16 @@
 @author Claude Sonnet 4.5 Anthropic
 """
 
+import sys
 from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
+
+# Stub heavy ML packages that aren't installed in CI (they're mocked in individual tests).
+# Must run at module level so the stub is in place when pytest collects test files.
+# setdefault leaves the real package in place when running locally with full deps installed.
+sys.modules.setdefault("ultralytics", MagicMock())
 
 
 @pytest.fixture
