@@ -82,8 +82,8 @@
     if (footer && config.siteName) {
       // Replace "Powered by birdbird" with custom site name if different
       footer.innerHTML = footer.innerHTML.replace(
-        'Powered by birdbird',
-        `Powered by birdbird`
+        'Powered by <a href="https://github.com/rssrn/birdbird" target="_blank">birdbird</a>',
+        `Powered by <a href="https://github.com/rssrn/birdbird" target="_blank">birdbird</a>`
       );
     }
   }
