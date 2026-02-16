@@ -34,6 +34,24 @@ From a batch of 498 motion-triggered clips (4 hours of footage), birdbird automa
 
 [See a live example →](https://birdbird.rossarn.workers.dev/)
 
+### Screenshots
+
+**Highlights viewer** — browse the highlight reel with per-species filtering
+
+<img src="docs/screenshots/viewer-highlights.png" width="700" alt="Highlights viewer showing video player with species filter sidebar">
+
+**Species detections** — visual species identified with sighting counts and confidence ranges
+
+<img src="docs/screenshots/viewer-video-stats.png" width="700" alt="Video stats tab showing species detection chart">
+
+**Bird song detections** — vocalisation detections with inline audio playback
+
+<img src="docs/screenshots/viewer-audio-stats.png" width="700" alt="Audio stats tab showing bird vocalisations with playback controls">
+
+**How it works** — interactive explanation of the processing pipeline
+
+<img src="docs/screenshots/viewer-how-it-works.png" width="700" alt="How it works page showing the processing pipeline stages">
+
 ## Quick Start
 
 > **First time?** See [Installation](#installation) below for system requirements.
