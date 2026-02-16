@@ -11,7 +11,7 @@
 ## What is this?
 
 If you have a bird feeder camera that captures motion-triggered clips, you probably have:
-- Hundreds of 10-second videos to review
+- Hundreds of short videos to review
 - Many false positives (wind, shadows, leaves)
 - No easy way to identify which birds visited
 - No quick way to find the "good" footage
@@ -26,10 +26,9 @@ If you have a bird feeder camera that captures motion-triggered clips, you proba
 ### Example Output
 
 From a batch of 498 motion-triggered clips (4 hours of footage), birdbird automatically produces:
-- A filtered set of 149 clips with actual birds (29.9% detection rate)
-- A 23-minute highlight reel showing only active segments
+- A 10-minute highlight reel showing only active segments
 - Species identifications with confidence scores and timestamps
-- Bird song detections with audio clips
+- Bird song detections with sample audio clips
 - An interactive web viewer to explore the results
 
 [See a live example →](https://birdbird.rossarn.workers.dev/)
