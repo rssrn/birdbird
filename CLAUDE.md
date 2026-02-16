@@ -51,6 +51,7 @@ birdbird filter /path/to/clips
 birdbird highlights /path/to/clips
 
 # Run filter + highlights + songs in one step (clears existing working directory with --force)
+# Add --species to also run visual species identification + best_clips
 birdbird process /path/to/clips --force
 
 # Test with limited clips
@@ -62,6 +63,12 @@ birdbird publish /path/to/clips
 # Detect bird songs using BirdNET (standalone step)
 birdbird songs /path/to/clips
 birdbird songs /path/to/clips --min-conf 0.3 --limit 10
+
+# Run visual species identification (standalone step, requires remote GPU by default)
+birdbird species /path/to/clips
+
+# Find best sighting moments per species (standalone; also runs automatically after species in process)
+birdbird best_clips /path/to/clips
 
 # Preview viewer changes locally (before deploying)
 npx serve -l 3000 src/birdbird/templates
