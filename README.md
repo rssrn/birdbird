@@ -3,7 +3,9 @@
 > Automated bird feeder video analysis - turn hundreds of motion-triggered clips into highlight reels with species identification
 
 ![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Live demo](https://img.shields.io/badge/live%20demo-birdbird.rossarn.workers.dev-brightgreen)](https://birdbird.rossarn.workers.dev/)
 
 ## What is this?
 
