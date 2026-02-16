@@ -7,15 +7,16 @@ This script updates metadata.json files in R2 without re-uploading videos/frames
 import json
 import sys
 from pathlib import Path
+
 import typer
 
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from birdbird.publish import (
     create_r2_client,
-    list_batches,
     extract_date_range,
     extract_original_date,
+    list_batches,
 )
 
 
@@ -32,7 +33,7 @@ def load_config() -> dict:
 def find_local_batch_dir(batch_id: str, birds_dir: Path) -> Path | None:
     """Find local directory for a batch ID (e.g., 20260116_01 -> /BIRDS/20260116)."""
     # Extract date from batch ID (e.g., 20260116_01 -> 20260116)
-    date_part = batch_id.split('_')[0]
+    date_part = batch_id.split("_")[0]
 
     # Look for matching directory
     batch_dir = birds_dir / date_part
@@ -56,24 +57,21 @@ def update_batch_metadata(
 
     # Download existing metadata
     try:
-        response = s3_client.get_object(
-            Bucket=bucket_name,
-            Key=f"batches/{batch_id}/metadata.json"
-        )
-        metadata = json.loads(response['Body'].read())
+        response = s3_client.get_object(Bucket=bucket_name, Key=f"batches/{batch_id}/metadata.json")
+        metadata = json.loads(response["Body"].read())
     except Exception as e:
         typer.echo(f"  ⚠ Could not download metadata: {e}", err=True)
         return False
 
     # Check if already has start_date/end_date
-    if 'start_date' in metadata and 'end_date' in metadata:
-        typer.echo(f"  ✓ Already has date range fields, skipping")
+    if "start_date" in metadata and "end_date" in metadata:
+        typer.echo("  ✓ Already has date range fields, skipping")
         return False
 
     # Find local batch directory
     local_batch_dir = find_local_batch_dir(batch_id, birds_dir)
     if not local_batch_dir:
-        typer.echo(f"  ⚠ Local directory not found, skipping", err=True)
+        typer.echo("  ⚠ Local directory not found, skipping", err=True)
         return False
 
     has_birds_dir = local_batch_dir / "has_birds"
@@ -82,7 +80,7 @@ def update_batch_metadata(
         return False
 
     # Extract original date and date range
-    original_date = metadata.get('original_date')
+    original_date = metadata.get("original_date")
     if not original_date:
         # Fallback: extract from directory name
         original_date = extract_original_date(local_batch_dir)
@@ -90,8 +88,8 @@ def update_batch_metadata(
     start_date, end_date = extract_date_range(has_birds_dir, original_date)
 
     # Add new fields to metadata
-    metadata['start_date'] = start_date
-    metadata['end_date'] = end_date
+    metadata["start_date"] = start_date
+    metadata["end_date"] = end_date
 
     # Upload updated metadata
     try:
@@ -99,7 +97,7 @@ def update_batch_metadata(
             Bucket=bucket_name,
             Key=f"batches/{batch_id}/metadata.json",
             Body=json.dumps(metadata, indent=2),
-            ContentType='application/json'
+            ContentType="application/json",
         )
         typer.echo(f"  ✓ Updated: {start_date} to {end_date}")
         return True
@@ -114,28 +112,22 @@ def update_latest_json(s3_client, bucket_name: str, updated_batches: set[str]):
 
     try:
         # Download latest.json
-        response = s3_client.get_object(
-            Bucket=bucket_name,
-            Key='latest.json'
-        )
-        latest_data = json.loads(response['Body'].read())
+        response = s3_client.get_object(Bucket=bucket_name, Key="latest.json")
+        latest_data = json.loads(response["Body"].read())
 
         # Update batches that were modified
-        for batch_summary in latest_data.get('batches', []):
-            batch_id = batch_summary['id']
+        for batch_summary in latest_data.get("batches", []):
+            batch_id = batch_summary["id"]
 
             if batch_id in updated_batches:
                 # Fetch updated metadata
                 try:
-                    meta_response = s3_client.get_object(
-                        Bucket=bucket_name,
-                        Key=f"batches/{batch_id}/metadata.json"
-                    )
-                    metadata = json.loads(meta_response['Body'].read())
+                    meta_response = s3_client.get_object(Bucket=bucket_name, Key=f"batches/{batch_id}/metadata.json")
+                    metadata = json.loads(meta_response["Body"].read())
 
                     # Add start_date/end_date to batch summary
-                    batch_summary['start_date'] = metadata.get('start_date')
-                    batch_summary['end_date'] = metadata.get('end_date')
+                    batch_summary["start_date"] = metadata.get("start_date")
+                    batch_summary["end_date"] = metadata.get("end_date")
 
                 except Exception as e:
                     typer.echo(f"  ⚠ Could not update {batch_id} in latest.json: {e}")
@@ -143,9 +135,9 @@ def update_latest_json(s3_client, bucket_name: str, updated_batches: set[str]):
         # Upload updated latest.json
         s3_client.put_object(
             Bucket=bucket_name,
-            Key='latest.json',
+            Key="latest.json",
             Body=json.dumps(latest_data, indent=2),
-            ContentType='application/json'
+            ContentType="application/json",
         )
         typer.echo("  ✓ latest.json updated")
 
@@ -155,8 +147,7 @@ def update_latest_json(s3_client, bucket_name: str, updated_batches: set[str]):
 
 def main(
     birds_dir: Path = typer.Argument(
-        Path("/home/ross/BIRDS"),
-        help="Path to BIRDS directory containing batch subdirectories"
+        Path("/home/ross/BIRDS"), help="Path to BIRDS directory containing batch subdirectories"
     ),
 ):
     """Update all batch metadata files in R2 with start_date/end_date fields."""
@@ -166,7 +157,7 @@ def main(
     # Create R2 client
     typer.echo("Connecting to R2...")
     s3_client = create_r2_client(config)
-    bucket_name = config['r2_bucket_name']
+    bucket_name = config["r2_bucket_name"]
 
     # List all batches
     batches = list_batches(s3_client, bucket_name)
