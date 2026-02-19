@@ -26,3 +26,6 @@ src/birdbird/templates/config.local.js
 # Node.js (for ESLint HTML linting)
 node_modules/
 package-lock.json
+
+### MCP ###
+.mcp.json
