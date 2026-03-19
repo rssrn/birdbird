@@ -11,10 +11,10 @@ import pytest
 
 from birdbird.songs import (
     SongDetection,
+    analyze_songs,
     extract_audio,
     extract_audio_segment,
     extract_species_clips,
-    analyze_songs,
     save_song_detections,
 )
 
@@ -57,8 +57,11 @@ class TestExtractAudioSegment:
             mock_run.return_value = MagicMock(returncode=0)
 
             extract_audio_segment(
-                Path("input.avi"), Path("out.wav"),
-                start_s=5.0, end_s=8.0, normalize=True,
+                Path("input.avi"),
+                Path("out.wav"),
+                start_s=5.0,
+                end_s=8.0,
+                normalize=True,
             )
 
         cmd = mock_run.call_args[0][0]
@@ -72,8 +75,11 @@ class TestExtractAudioSegment:
             mock_run.return_value = MagicMock(returncode=0)
 
             extract_audio_segment(
-                Path("input.avi"), Path("out.wav"),
-                start_s=5.0, end_s=8.0, normalize=False,
+                Path("input.avi"),
+                Path("out.wav"),
+                start_s=5.0,
+                end_s=8.0,
+                normalize=False,
             )
 
         cmd = mock_run.call_args[0][0]

@@ -4,17 +4,17 @@
 """
 
 import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from birdbird.species import LocalProcessor, Detection
+from birdbird.species import LocalProcessor
 
 
 @pytest.fixture
 def mock_bioclip_predictions():
     """Factory for creating mock BioCLIP prediction results."""
+
     def _make_predictions(species_scores):
         """
         Args:
@@ -23,10 +23,8 @@ def mock_bioclip_predictions():
         Returns:
             List of dicts with 'classification' and 'score' keys
         """
-        return [
-            {"classification": species, "score": score}
-            for species, score in species_scores
-        ]
+        return [{"classification": species, "score": score} for species, score in species_scores]
+
     return _make_predictions
 
 
@@ -109,11 +107,13 @@ class TestLocalProcessor:
         frames = [(frame_path, 5.0)]
 
         # BioCLIP returns predictions sorted by score
-        predictions = mock_bioclip_predictions([
-            ("Blue Tit", 0.85),
-            ("Robin", 0.12),
-            ("Blackbird", 0.03),
-        ])
+        predictions = mock_bioclip_predictions(
+            [
+                ("Blue Tit", 0.85),
+                ("Robin", 0.12),
+                ("Blackbird", 0.03),
+            ]
+        )
         mock_classifier.predict.return_value = predictions
 
         with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
@@ -137,10 +137,12 @@ class TestLocalProcessor:
         frames = [(frame_path, 3.0)]
 
         # All predictions below 0.5 threshold
-        predictions = mock_bioclip_predictions([
-            ("Robin", 0.45),
-            ("Blue Tit", 0.35),
-        ])
+        predictions = mock_bioclip_predictions(
+            [
+                ("Robin", 0.45),
+                ("Blue Tit", 0.35),
+            ]
+        )
         mock_classifier.predict.return_value = predictions
 
         with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
@@ -197,13 +199,15 @@ class TestLocalProcessor:
         frame_path.touch()
         frames = [(frame_path, 1.0)]
 
-        predictions = mock_bioclip_predictions([
-            ("Blue Tit", 0.85),
-            ("Robin", 0.10),
-            ("Blackbird", 0.03),
-            ("Great Tit", 0.01),
-            ("House Sparrow", 0.01),
-        ])
+        predictions = mock_bioclip_predictions(
+            [
+                ("Blue Tit", 0.85),
+                ("Robin", 0.10),
+                ("Blackbird", 0.03),
+                ("Great Tit", 0.01),
+                ("House Sparrow", 0.01),
+            ]
+        )
         mock_classifier.predict.return_value = predictions
 
         with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
@@ -226,9 +230,11 @@ class TestLocalProcessor:
         frame_path.touch()
         frames = [(frame_path, 1.0)]
 
-        predictions = mock_bioclip_predictions([
-            ("Blue Tit", 0.876543210),
-        ])
+        predictions = mock_bioclip_predictions(
+            [
+                ("Blue Tit", 0.876543210),
+            ]
+        )
         mock_classifier.predict.return_value = predictions
 
         with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):

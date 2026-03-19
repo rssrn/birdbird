@@ -4,10 +4,7 @@
 """
 
 from datetime import datetime
-from pathlib import Path
 from unittest.mock import MagicMock
-
-import pytest
 
 from birdbird.publish import (
     extract_date_range,
@@ -200,8 +197,8 @@ class TestGenerateBatchId:
         """Test with no existing batches for this date."""
         mock_client = MagicMock()
         # Mock list_batches to return empty list
-        from birdbird.publish import list_batches
         import birdbird.publish
+
         original_list_batches = birdbird.publish.list_batches
 
         def mock_list_batches(client, bucket):
@@ -210,9 +207,7 @@ class TestGenerateBatchId:
         birdbird.publish.list_batches = mock_list_batches
 
         try:
-            batch_id, exists = generate_batch_id(
-                mock_client, "test-bucket", "2026-01-14", create_new=False
-            )
+            batch_id, exists = generate_batch_id(mock_client, "test-bucket", "2026-01-14", create_new=False)
 
             assert batch_id == "20260114_01"
             assert exists is False
@@ -223,8 +218,8 @@ class TestGenerateBatchId:
         """Test reusing existing batch (default behavior)."""
         mock_client = MagicMock()
 
-        from birdbird.publish import list_batches
         import birdbird.publish
+
         original_list_batches = birdbird.publish.list_batches
 
         def mock_list_batches(client, bucket):
@@ -233,9 +228,7 @@ class TestGenerateBatchId:
         birdbird.publish.list_batches = mock_list_batches
 
         try:
-            batch_id, exists = generate_batch_id(
-                mock_client, "test-bucket", "2026-01-14", create_new=False
-            )
+            batch_id, exists = generate_batch_id(mock_client, "test-bucket", "2026-01-14", create_new=False)
 
             # Should reuse max sequence (02)
             assert batch_id == "20260114_02"
@@ -247,8 +240,8 @@ class TestGenerateBatchId:
         """Test creating new batch sequence."""
         mock_client = MagicMock()
 
-        from birdbird.publish import list_batches
         import birdbird.publish
+
         original_list_batches = birdbird.publish.list_batches
 
         def mock_list_batches(client, bucket):
@@ -257,9 +250,7 @@ class TestGenerateBatchId:
         birdbird.publish.list_batches = mock_list_batches
 
         try:
-            batch_id, exists = generate_batch_id(
-                mock_client, "test-bucket", "2026-01-14", create_new=True
-            )
+            batch_id, exists = generate_batch_id(mock_client, "test-bucket", "2026-01-14", create_new=True)
 
             # Should create new sequence (03)
             assert batch_id == "20260114_03"
@@ -271,8 +262,8 @@ class TestGenerateBatchId:
         """Test with unknown date falls back to today's date."""
         mock_client = MagicMock()
 
-        from birdbird.publish import list_batches
         import birdbird.publish
+
         original_list_batches = birdbird.publish.list_batches
 
         def mock_list_batches(client, bucket):
@@ -281,9 +272,7 @@ class TestGenerateBatchId:
         birdbird.publish.list_batches = mock_list_batches
 
         try:
-            batch_id, exists = generate_batch_id(
-                mock_client, "test-bucket", "unknown", create_new=False
-            )
+            batch_id, exists = generate_batch_id(mock_client, "test-bucket", "unknown", create_new=False)
 
             # Should use today's date in YYYYMMDD format
             today = datetime.now().strftime("%Y%m%d")
@@ -296,8 +285,8 @@ class TestGenerateBatchId:
         """Test date format conversion from YYYY-MM-DD to YYYYMMDD."""
         mock_client = MagicMock()
 
-        from birdbird.publish import list_batches
         import birdbird.publish
+
         original_list_batches = birdbird.publish.list_batches
 
         def mock_list_batches(client, bucket):
@@ -306,9 +295,7 @@ class TestGenerateBatchId:
         birdbird.publish.list_batches = mock_list_batches
 
         try:
-            batch_id, exists = generate_batch_id(
-                mock_client, "test-bucket", "2026-01-14", create_new=False
-            )
+            batch_id, exists = generate_batch_id(mock_client, "test-bucket", "2026-01-14", create_new=False)
 
             # Hyphens should be removed
             assert batch_id.startswith("20260114")

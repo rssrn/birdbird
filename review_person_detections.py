@@ -64,10 +64,7 @@ def main():
         detections = json.load(f)
 
     # Filter for person detections
-    person_clips = {
-        clip: info for clip, info in detections.items()
-        if info.get('detection_type') == 'person'
-    }
+    person_clips = {clip: info for clip, info in detections.items() if info.get("detection_type") == "person"}
 
     print(f"Found {len(person_clips)} clips with person detection")
 
@@ -96,7 +93,7 @@ def main():
             continue
 
         fps = cap.get(cv2.CAP_PROP_FPS)
-        timestamp = detection_info['first_bird']  # Actually first_detection
+        timestamp = detection_info["first_bird"]  # Actually first_detection
         target_frame_num = int(timestamp * fps)
 
         # Read sequentially to exact frame (same as detector does)
@@ -124,7 +121,7 @@ def main():
         person_str = f"{int(person_conf * 1000):03d}" if person_conf else "none"
 
         # Generate filename: clipname_bird050_person367.jpg
-        clip_base = clip_name.replace('.avi', '')
+        clip_base = clip_name.replace(".avi", "")
         filename = f"{clip_base}_bird{bird_str}_person{person_str}.jpg"
         output_path = output_dir / filename
 

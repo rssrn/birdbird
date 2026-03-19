@@ -4,7 +4,6 @@
 """
 
 import json
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -269,10 +268,14 @@ class TestExtractAndScoreFrames:
             mock_cv2.Laplacian.return_value = laplacian
 
             from birdbird.paths import BirdbirdPaths
+
             paths = BirdbirdPaths.from_input_dir(input_dir)
 
             scored, timing = extract_and_score_frames(
-                input_dir, detector, weights, paths=paths,
+                input_dir,
+                detector,
+                weights,
+                paths=paths,
             )
 
         assert len(scored) == 2
@@ -297,10 +300,14 @@ class TestExtractAndScoreFrames:
         weights = {"confidence": 0.25, "sharpness": 0.25, "bird_size": 0.25, "position": 0.25}
 
         from birdbird.paths import BirdbirdPaths
+
         paths = BirdbirdPaths.from_input_dir(input_dir)
 
         scored, timing = extract_and_score_frames(
-            input_dir, detector, weights, paths=paths,
+            input_dir,
+            detector,
+            weights,
+            paths=paths,
         )
 
         assert scored == []

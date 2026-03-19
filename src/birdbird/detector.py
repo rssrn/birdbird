@@ -14,6 +14,7 @@ from ultralytics import YOLO
 @dataclass
 class Detection:
     """Details of a bird detection."""
+
     timestamp: float
     confidence: float
 

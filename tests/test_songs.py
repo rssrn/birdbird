@@ -4,9 +4,6 @@
 """
 
 from datetime import datetime
-from pathlib import Path
-
-import pytest
 
 from birdbird.songs import (
     SongDetection,

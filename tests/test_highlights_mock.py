@@ -4,21 +4,19 @@
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
 
 from birdbird.highlights import (
     Segment,
-    _hardware_encoder_cache,
+    _binary_search_entry,
+    _binary_search_exit,
     concatenate_segments,
     detect_hardware_encoder,
     extract_segment,
     find_bird_segments,
     get_video_duration,
-    _binary_search_entry,
-    _binary_search_exit,
 )
 
 
@@ -26,6 +24,7 @@ from birdbird.highlights import (
 def reset_hw_encoder_cache():
     """Reset hardware encoder cache before each test."""
     import birdbird.highlights
+
     birdbird.highlights._hardware_encoder_cache = None
     yield
     birdbird.highlights._hardware_encoder_cache = None
@@ -143,8 +142,10 @@ class TestFindBirdSegments:
             # Bird still visible at end_time check
             with patch("birdbird.highlights._detect_at_time", return_value=True):
                 segments = find_bird_segments(
-                    Path("test.avi"), detector,
-                    buffer_before=1.0, buffer_after=1.0,
+                    Path("test.avi"),
+                    detector,
+                    buffer_before=1.0,
+                    buffer_after=1.0,
                     known_first_bird=2.0,
                 )
 

@@ -4,14 +4,13 @@
 """
 
 import json
-from pathlib import Path
 
 import pytest
 
 from birdbird.best_clips import (
     BestClip,
-    find_best_clip_for_species,
     find_all_best_clips,
+    find_best_clip_for_species,
 )
 
 

@@ -140,26 +140,18 @@ class TestGenerateBatchId:
 
     def test_existing_batch_create_new_false(self, mock_s3_client):
         """Reuses existing batch ID when create_new=False."""
-        mock_s3_client.list_objects_v2.return_value = {
-            "CommonPrefixes": [{"Prefix": "batches/20260114_01/"}]
-        }
+        mock_s3_client.list_objects_v2.return_value = {"CommonPrefixes": [{"Prefix": "batches/20260114_01/"}]}
 
-        batch_id, exists = generate_batch_id(
-            mock_s3_client, "bucket", "2026-01-14", create_new=False
-        )
+        batch_id, exists = generate_batch_id(mock_s3_client, "bucket", "2026-01-14", create_new=False)
 
         assert batch_id == "20260114_01"
         assert exists is True
 
     def test_existing_batch_create_new_true(self, mock_s3_client):
         """Increments sequence when create_new=True."""
-        mock_s3_client.list_objects_v2.return_value = {
-            "CommonPrefixes": [{"Prefix": "batches/20260114_01/"}]
-        }
+        mock_s3_client.list_objects_v2.return_value = {"CommonPrefixes": [{"Prefix": "batches/20260114_01/"}]}
 
-        batch_id, exists = generate_batch_id(
-            mock_s3_client, "bucket", "2026-01-14", create_new=True
-        )
+        batch_id, exists = generate_batch_id(mock_s3_client, "bucket", "2026-01-14", create_new=True)
 
         assert batch_id == "20260114_02"
         assert exists is False
@@ -171,9 +163,7 @@ class TestGetHighlightsDuration:
     def test_valid_ffprobe_output(self):
         """Returns float duration from ffprobe."""
         with patch("birdbird.publish.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="123.456\n", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="123.456\n", stderr="")
 
             result = get_highlights_duration(Path("highlights.mp4"))
 
@@ -182,9 +172,7 @@ class TestGetHighlightsDuration:
     def test_ffprobe_fails(self):
         """Raises RuntimeError when ffprobe fails."""
         with patch("birdbird.publish.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=1, stdout="", stderr="error"
-            )
+            mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="error")
 
             with pytest.raises(RuntimeError, match="ffprobe failed"):
                 get_highlights_duration(Path("highlights.mp4"))
@@ -196,9 +184,7 @@ class TestCleanupOldBatches:
     def test_five_or_fewer_batches_no_deletion(self, mock_s3_client):
         """No deletion when <= 5 batches exist."""
         mock_s3_client.list_objects_v2.return_value = {
-            "CommonPrefixes": [
-                {"Prefix": f"batches/2026011{i}_01/"} for i in range(5)
-            ]
+            "CommonPrefixes": [{"Prefix": f"batches/2026011{i}_01/"} for i in range(5)]
         }
 
         result = cleanup_old_batches(mock_s3_client, "bucket")
@@ -209,17 +195,9 @@ class TestCleanupOldBatches:
         """> 5 batches, user confirms deletion of oldest."""
         mock_s3_client.list_objects_v2.side_effect = [
             # First call: list_batches
-            {
-                "CommonPrefixes": [
-                    {"Prefix": f"batches/2026011{i}_01/"} for i in range(7)
-                ]
-            },
+            {"CommonPrefixes": [{"Prefix": f"batches/2026011{i}_01/"} for i in range(7)]},
             # Second call: also list_batches (called again inside cleanup)
-            {
-                "CommonPrefixes": [
-                    {"Prefix": f"batches/2026011{i}_01/"} for i in range(7)
-                ]
-            },
+            {"CommonPrefixes": [{"Prefix": f"batches/2026011{i}_01/"} for i in range(7)]},
             # Third+: list_objects for each batch to delete
             {"Contents": [{"Key": "batches/20260111_01/highlights.mp4"}]},
             {"Contents": [{"Key": "batches/20260110_01/highlights.mp4"}]},
@@ -229,9 +207,7 @@ class TestCleanupOldBatches:
             with patch("birdbird.publish.typer.echo"):
                 # Mock get_object for latest.json update
                 mock_s3_client.get_object.return_value = {
-                    "Body": MagicMock(
-                        read=MagicMock(return_value=b'{"latest":"20260116_01","batches":[]}')
-                    )
+                    "Body": MagicMock(read=MagicMock(return_value=b'{"latest":"20260116_01","batches":[]}'))
                 }
 
                 result = cleanup_old_batches(mock_s3_client, "bucket")
@@ -241,9 +217,7 @@ class TestCleanupOldBatches:
     def test_more_than_five_user_declines(self, mock_s3_client):
         """> 5 batches, user declines deletion."""
         mock_s3_client.list_objects_v2.return_value = {
-            "CommonPrefixes": [
-                {"Prefix": f"batches/2026011{i}_01/"} for i in range(7)
-            ]
+            "CommonPrefixes": [{"Prefix": f"batches/2026011{i}_01/"} for i in range(7)]
         }
 
         with patch("birdbird.publish.typer.confirm", return_value=False):

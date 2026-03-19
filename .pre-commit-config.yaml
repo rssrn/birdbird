@@ -1,4 +1,16 @@
 repos:
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        args: ['-r', 'src/birdbird/', '-q', '-c', 'pyproject.toml']
+        pass_filenames: false
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.6
+    hooks:
+      - id: ruff
+        args: ['--fix']
+      - id: ruff-format
   - repo: local
     hooks:
       # Frontend linting (fast, file-scoped)
@@ -26,24 +38,7 @@ repos:
         language: system
         files: \.(html|md)$
         types: [file]
-      # Python style (fast, file-scoped)
-      - id: ruff
-        name: Lint (ruff)
-        entry: .venv/bin/ruff check --fix
-        language: system
-        types: [python]
-      - id: ruff-format
-        name: Format (ruff)
-        entry: .venv/bin/ruff format
-        language: system
-        types: [python]
       # Python analysis (slower, project-scoped)
-      - id: bandit
-        name: Security lint (bandit)
-        entry: .venv/bin/bandit -r src/birdbird/ -q -c pyproject.toml
-        language: system
-        types: [python]
-        pass_filenames: false
       - id: mypy
         name: Type checking (mypy)
         entry: .venv/bin/mypy src/birdbird

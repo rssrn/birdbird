@@ -17,6 +17,7 @@ class BestClip:
 
     @author Claude Sonnet 4.5 Anthropic
     """
+
     species: str
     start_s: float
     end_s: float
@@ -44,10 +45,7 @@ def find_best_clip_for_species(
     @author Claude Sonnet 4.5 Anthropic
     """
     # Filter detections for this species
-    species_detections = [
-        d for d in detections
-        if d["species"] == species
-    ]
+    species_detections = [d for d in detections if d["species"] == species]
 
     if not species_detections:
         return None
@@ -153,7 +151,7 @@ def save_best_clips(
                 "detection_count": clip.detection_count,
             }
             for species, clip in best_clips.items()
-        }
+        },
     }
 
     with open(output_path, "w") as f:

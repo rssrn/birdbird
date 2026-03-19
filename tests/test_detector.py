@@ -58,11 +58,13 @@ class TestDetectInFrameDetailed:
 
     def test_multiple_detections_picks_bird(self, detector, mock_yolo_result):
         """Multiple detections, picks the first matching bird."""
-        detector._mock_model.return_value = mock_yolo_result([
-            (0, 0.95),   # person
-            (16, 0.80),  # dog
-            (14, 0.72),  # bird
-        ])
+        detector._mock_model.return_value = mock_yolo_result(
+            [
+                (0, 0.95),  # person
+                (16, 0.80),  # dog
+                (14, 0.72),  # bird
+            ]
+        )
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
 
         result = detector.detect_in_frame_detailed(frame, timestamp=1.0)

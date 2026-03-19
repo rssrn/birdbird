@@ -4,11 +4,7 @@
 """
 
 import json
-import os
-from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from birdbird.detector import Detection
 from birdbird.filter import create_symlink_or_copy, filter_clips
@@ -106,9 +102,7 @@ class TestFilterClips:
 
         mock_detector = MagicMock()
         mock_detector_cls.return_value = mock_detector
-        mock_detector.detect_in_video_detailed.return_value = Detection(
-            timestamp=1.0, confidence=0.9
-        )
+        mock_detector.detect_in_video_detailed.return_value = Detection(timestamp=1.0, confidence=0.9)
 
         stats = filter_clips(input_dir)
 
@@ -122,9 +116,7 @@ class TestFilterClips:
 
         mock_detector = MagicMock()
         mock_detector_cls.return_value = mock_detector
-        mock_detector.detect_in_video_detailed.return_value = Detection(
-            timestamp=1.0, confidence=0.9
-        )
+        mock_detector.detect_in_video_detailed.return_value = Detection(timestamp=1.0, confidence=0.9)
 
         stats = filter_clips(input_dir, limit=2)
 
@@ -138,9 +130,7 @@ class TestFilterClips:
 
         mock_detector = MagicMock()
         mock_detector_cls.return_value = mock_detector
-        mock_detector.detect_in_video_detailed.return_value = Detection(
-            timestamp=2.5, confidence=0.873
-        )
+        mock_detector.detect_in_video_detailed.return_value = Detection(timestamp=2.5, confidence=0.873)
 
         stats = filter_clips(input_dir)
 
