@@ -300,9 +300,41 @@ class TestConcatenateSegments:
 # TestGenerateHighlights
 # ---------------------------------------------------------------------------
 
+_H = "birdbird.highlights"  # patch target prefix shorthand
+
 
 def _make_segment(clip_path: Path, start: float = 0.0, end: float = 5.0) -> Segment:
     return Segment(clip_path=clip_path, start_time=start, end_time=end)
+
+
+def _fake_tqdm(iterable, **_kwargs):
+    return iterable
+
+
+def _setup_highlights_dir(tmp_path: Path, clips: int = 1):
+    """Create AVI files and a mock BirdbirdPaths; return (input_dir, output_path, mock_paths)."""
+    input_dir = tmp_path / "clips"
+    input_dir.mkdir(exist_ok=True)
+    for i in range(clips):
+        (input_dir / f"clip_{i:02d}.avi").write_bytes(b"fake")
+    mock_paths = MagicMock()
+    mock_paths.detections_json = tmp_path / "detections.json"
+    return input_dir, tmp_path / "highlights.mp4", mock_paths
+
+
+def _patch_highlights(mocker, *, find_return, extract_return=True, concat_return=True, detections=FileNotFoundError):
+    """Apply all standard generate_highlights patches via mocker (flat, no nesting)."""
+    mocker.patch(f"{_H}.detect_hardware_encoder", return_value=None)
+    mocker.patch(f"{_H}.tqdm", side_effect=_fake_tqdm)
+    mocker.patch(f"{_H}.get_video_duration", return_value=10.0)
+    mocker.patch(f"{_H}.concatenate_segments", return_value=concat_return)
+    mocker.patch(f"{_H}.extract_segment", return_value=extract_return)
+    mock_find = mocker.patch(f"{_H}.find_bird_segments", return_value=find_return)
+    if detections is FileNotFoundError:
+        mocker.patch(f"{_H}.load_detections", side_effect=FileNotFoundError)
+    else:
+        mocker.patch(f"{_H}.load_detections", return_value=detections)
+    return mock_find
 
 
 class TestGenerateHighlights:
@@ -311,186 +343,87 @@ class TestGenerateHighlights:
     @author Claude Sonnet 4.6 Anthropic
     """
 
-    def _common_patches(self, find_segments_return=None, extract_return=True, concat_return=True):
-        """Return a dict of patch targets and their return values for the main happy path."""
-        seg = MagicMock()  # a dummy Segment
-        return {
-            "birdbird.highlights.detect_hardware_encoder": None,
-            "birdbird.highlights.load_detections": FileNotFoundError,
-            "birdbird.highlights.find_bird_segments": [seg] if find_segments_return is None else find_segments_return,
-            "birdbird.highlights.extract_segment": extract_return,
-            "birdbird.highlights.concatenate_segments": concat_return,
-            "birdbird.highlights.get_video_duration": 10.0,
-            "birdbird.highlights.tqdm": None,  # replaced with passthrough
-        }
-
-    def _run(self, tmp_path, *, clips=1, find_return=None, extract_return=True, concat_return=True, detections=None):
-        """Create AVI files in tmp_path and call generate_highlights() with all external deps mocked."""
-        input_dir = tmp_path / "clips"
-        input_dir.mkdir()
-        for i in range(clips):
-            (input_dir / f"clip_{i:02d}.avi").write_bytes(b"fake")
-
-        output_path = tmp_path / "highlights.mp4"
-
-        # Build a mock BirdbirdPaths
-        mock_paths = MagicMock()
-        mock_paths.detections_json = tmp_path / "detections.json"
-
-        dummy_segment = _make_segment(input_dir / "clip_00.avi")
-        find_return = [dummy_segment] if find_return is None else find_return
-
-        def fake_tqdm(iterable, **_kwargs):
-            return iterable
-
-        with patch("birdbird.highlights.detect_hardware_encoder", return_value=None):
-            with patch("birdbird.highlights.tqdm", side_effect=fake_tqdm):
-                with patch("birdbird.highlights.find_bird_segments", return_value=find_return):
-                    with patch("birdbird.highlights.extract_segment", return_value=extract_return):
-                        with patch("birdbird.highlights.concatenate_segments", return_value=concat_return):
-                            with patch("birdbird.highlights.get_video_duration", return_value=10.0):
-                                with patch("birdbird.highlights.load_detections") as mock_load:
-                                    if detections is not None:
-                                        mock_load.return_value = detections
-                                    else:
-                                        mock_load.side_effect = FileNotFoundError
-                                    return generate_highlights(
-                                        input_dir=input_dir,
-                                        output_path=output_path,
-                                        paths=mock_paths,
-                                    )
-
     def test_raises_when_no_avi_clips(self, tmp_path):
         """Raises ValueError when input_dir contains no .avi files."""
         empty_dir = tmp_path / "empty"
         empty_dir.mkdir()
-        mock_paths = MagicMock()
 
         with pytest.raises(ValueError, match="No .avi clips found"):
-            generate_highlights(input_dir=empty_dir, output_path=tmp_path / "out.mp4", paths=mock_paths)
+            generate_highlights(input_dir=empty_dir, output_path=tmp_path / "out.mp4", paths=MagicMock())
 
-    def test_raises_when_no_bird_segments(self, tmp_path):
+    def test_raises_when_no_bird_segments(self, tmp_path, mocker):
         """Raises ValueError when find_bird_segments returns empty for all clips."""
+        input_dir, output_path, mock_paths = _setup_highlights_dir(tmp_path)
+        _patch_highlights(mocker, find_return=[])
+
         with pytest.raises(ValueError, match="No bird segments found"):
-            self._run(tmp_path, find_return=[])
+            generate_highlights(input_dir=input_dir, output_path=output_path, paths=mock_paths)
 
-    def test_raises_when_concatenation_fails(self, tmp_path):
+    def test_raises_when_concatenation_fails(self, tmp_path, mocker):
         """Raises RuntimeError when concatenate_segments returns False."""
-        with pytest.raises(RuntimeError, match="Failed to concatenate"):
-            self._run(tmp_path, concat_return=False)
+        input_dir, output_path, mock_paths = _setup_highlights_dir(tmp_path)
+        seg = _make_segment(input_dir / "clip_00.avi")
+        _patch_highlights(mocker, find_return=[seg], concat_return=False)
 
-    def test_returns_highlights_stats(self, tmp_path):
+        with pytest.raises(RuntimeError, match="Failed to concatenate"):
+            generate_highlights(input_dir=input_dir, output_path=output_path, paths=mock_paths)
+
+    def test_returns_highlights_stats(self, tmp_path, mocker):
         """Returns HighlightsStats with populated fields."""
-        stats = self._run(tmp_path, clips=3)
+        input_dir, output_path, mock_paths = _setup_highlights_dir(tmp_path, clips=3)
+        seg = _make_segment(input_dir / "clip_00.avi")
+        _patch_highlights(mocker, find_return=[seg])
+
+        stats = generate_highlights(input_dir=input_dir, output_path=output_path, paths=mock_paths)
 
         assert stats.clip_count == 3
-        assert stats.segment_count == 3  # one segment per clip (mocked)
-        assert stats.final_duration == 10.0  # from get_video_duration mock
+        assert stats.segment_count == 3  # one segment per clip call
+        assert stats.final_duration == 10.0
         assert stats.bird_clips_duration >= 0.0
 
-    def test_uses_cached_detections_known_first_bird(self, tmp_path):
+    def test_uses_cached_detections_known_first_bird(self, tmp_path, mocker):
         """Passes known_first_bird from cached detections to find_bird_segments."""
-        input_dir = tmp_path / "clips"
-        input_dir.mkdir()
-        (input_dir / "clip_00.avi").write_bytes(b"fake")
-
-        output_path = tmp_path / "out.mp4"
-        mock_paths = MagicMock()
-        mock_paths.detections_json = tmp_path / "detections.json"
-
+        input_dir, output_path, mock_paths = _setup_highlights_dir(tmp_path)
+        seg = _make_segment(input_dir / "clip_00.avi")
         cached = {"clip_00.avi": {"first_bird": 3.5}}
-        dummy_segment = _make_segment(input_dir / "clip_00.avi")
-        mock_find = MagicMock(return_value=[dummy_segment])
+        mock_find = _patch_highlights(mocker, find_return=[seg], detections=cached)
 
-        def fake_tqdm(iterable, **_kwargs):
-            return iterable
+        generate_highlights(input_dir=input_dir, output_path=output_path, paths=mock_paths)
 
-        with patch("birdbird.highlights.detect_hardware_encoder", return_value=None):
-            with patch("birdbird.highlights.tqdm", side_effect=fake_tqdm):
-                with patch("birdbird.highlights.find_bird_segments", mock_find):
-                    with patch("birdbird.highlights.extract_segment", return_value=True):
-                        with patch("birdbird.highlights.concatenate_segments", return_value=True):
-                            with patch("birdbird.highlights.get_video_duration", return_value=10.0):
-                                with patch("birdbird.highlights.load_detections", return_value=cached):
-                                    generate_highlights(
-                                        input_dir=input_dir,
-                                        output_path=output_path,
-                                        paths=mock_paths,
-                                    )
+        # known_first_bird is the 5th positional arg to find_bird_segments
+        assert mock_find.call_args[0][4] == 3.5
 
-        # Check that known_first_bird=3.5 was passed (positional arg, index 4)
-        call_args = mock_find.call_args[0]
-        assert call_args[4] == 3.5
+    def test_falls_back_gracefully_when_detections_missing(self, tmp_path, mocker):
+        """Continues without cache when detections.json is absent (FileNotFoundError swallowed)."""
+        input_dir, output_path, mock_paths = _setup_highlights_dir(tmp_path)
+        seg = _make_segment(input_dir / "clip_00.avi")
+        _patch_highlights(mocker, find_return=[seg])  # detections defaults to FileNotFoundError
 
-    def test_falls_back_gracefully_when_detections_missing(self, tmp_path):
-        """Continues without cache when detections.json is absent."""
-        # Should not raise — FileNotFoundError from load_detections is swallowed
-        stats = self._run(tmp_path, detections=None)
+        stats = generate_highlights(input_dir=input_dir, output_path=output_path, paths=mock_paths)
+
         assert stats is not None
 
-    def test_optimize_web_passed_through(self, tmp_path):
-        """optimize_web flag is forwarded to extract_segment."""
-        input_dir = tmp_path / "clips"
-        input_dir.mkdir()
-        (input_dir / "clip_00.avi").write_bytes(b"fake")
-        output_path = tmp_path / "out.mp4"
-        mock_paths = MagicMock()
-        mock_paths.detections_json = tmp_path / "detections.json"
+    def test_optimize_web_passed_through(self, tmp_path, mocker):
+        """optimize_web=True is forwarded as 4th positional arg to extract_segment."""
+        input_dir, output_path, mock_paths = _setup_highlights_dir(tmp_path)
+        seg = _make_segment(input_dir / "clip_00.avi")
+        _patch_highlights(mocker, find_return=[seg])
+        mock_extract = mocker.patch(f"{_H}.extract_segment", return_value=True)
 
-        dummy_segment = _make_segment(input_dir / "clip_00.avi")
-        mock_extract = MagicMock(return_value=True)
+        generate_highlights(input_dir=input_dir, output_path=output_path, paths=mock_paths, optimize_web=True)
 
-        def fake_tqdm(iterable, **_kwargs):
-            return iterable
+        assert mock_extract.call_args[0][3] is True
 
-        with patch("birdbird.highlights.detect_hardware_encoder", return_value=None):
-            with patch("birdbird.highlights.tqdm", side_effect=fake_tqdm):
-                with patch("birdbird.highlights.find_bird_segments", return_value=[dummy_segment]):
-                    with patch("birdbird.highlights.extract_segment", mock_extract):
-                        with patch("birdbird.highlights.concatenate_segments", return_value=True):
-                            with patch("birdbird.highlights.get_video_duration", return_value=10.0):
-                                with patch("birdbird.highlights.load_detections", side_effect=FileNotFoundError):
-                                    generate_highlights(
-                                        input_dir=input_dir,
-                                        output_path=output_path,
-                                        paths=mock_paths,
-                                        optimize_web=True,
-                                    )
-
-        # optimize_web is the 4th positional arg to extract_segment
-        call_args = mock_extract.call_args[0]
-        assert call_args[3] is True
-
-    def test_segment_count_matches_extracted_files(self, tmp_path):
-        """segment_count in stats equals the number of successfully extracted segments."""
-        input_dir = tmp_path / "clips"
-        input_dir.mkdir()
-        (input_dir / "clip_00.avi").write_bytes(b"fake")
-        output_path = tmp_path / "out.mp4"
-        mock_paths = MagicMock()
-        mock_paths.detections_json = tmp_path / "detections.json"
-
-        # Three segments from the single clip
+    def test_segment_count_matches_extracted_files(self, tmp_path, mocker):
+        """segment_count in stats equals total segments found across all clips."""
+        input_dir, output_path, mock_paths = _setup_highlights_dir(tmp_path)
         segments = [
             _make_segment(input_dir / "clip_00.avi", 0.0, 3.0),
             _make_segment(input_dir / "clip_00.avi", 5.0, 8.0),
             _make_segment(input_dir / "clip_00.avi", 10.0, 13.0),
         ]
+        _patch_highlights(mocker, find_return=segments)
 
-        def fake_tqdm(iterable, **_kwargs):
-            return iterable
-
-        with patch("birdbird.highlights.detect_hardware_encoder", return_value=None):
-            with patch("birdbird.highlights.tqdm", side_effect=fake_tqdm):
-                with patch("birdbird.highlights.find_bird_segments", return_value=segments):
-                    with patch("birdbird.highlights.extract_segment", return_value=True):
-                        with patch("birdbird.highlights.concatenate_segments", return_value=True):
-                            with patch("birdbird.highlights.get_video_duration", return_value=10.0):
-                                with patch("birdbird.highlights.load_detections", side_effect=FileNotFoundError):
-                                    stats = generate_highlights(
-                                        input_dir=input_dir,
-                                        output_path=output_path,
-                                        paths=mock_paths,
-                                    )
+        stats = generate_highlights(input_dir=input_dir, output_path=output_path, paths=mock_paths)
 
         assert stats.segment_count == 3
