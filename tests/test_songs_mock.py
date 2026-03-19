@@ -22,12 +22,12 @@ from birdbird.songs import (
 class TestExtractAudio:
     """Tests for extract_audio()."""
 
-    def test_success(self):
+    def test_success(self, mocker):
         """Correct ffmpeg command, returns True on success."""
-        with patch("birdbird.songs.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0)
+        mock_run = mocker.patch("birdbird.songs.subprocess.run")
+        mock_run.return_value = MagicMock(returncode=0)
 
-            result = extract_audio(Path("input.avi"), Path("output.wav"))
+        result = extract_audio(Path("input.avi"), Path("output.wav"))
 
         assert result is True
         cmd = mock_run.call_args[0][0]
@@ -38,12 +38,12 @@ class TestExtractAudio:
         assert "-ar" in cmd
         assert "48000" in cmd
 
-    def test_failure(self):
+    def test_failure(self, mocker):
         """Returns False when ffmpeg fails."""
-        with patch("birdbird.songs.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=1)
+        mock_run = mocker.patch("birdbird.songs.subprocess.run")
+        mock_run.return_value = MagicMock(returncode=1)
 
-            result = extract_audio(Path("input.avi"), Path("output.wav"))
+        result = extract_audio(Path("input.avi"), Path("output.wav"))
 
         assert result is False
 
@@ -51,36 +51,36 @@ class TestExtractAudio:
 class TestExtractAudioSegment:
     """Tests for extract_audio_segment()."""
 
-    def test_with_normalize(self):
+    def test_with_normalize(self, mocker):
         """Includes dynaudnorm filter when normalize=True."""
-        with patch("birdbird.songs.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0)
+        mock_run = mocker.patch("birdbird.songs.subprocess.run")
+        mock_run.return_value = MagicMock(returncode=0)
 
-            extract_audio_segment(
-                Path("input.avi"),
-                Path("out.wav"),
-                start_s=5.0,
-                end_s=8.0,
-                normalize=True,
-            )
+        extract_audio_segment(
+            Path("input.avi"),
+            Path("out.wav"),
+            start_s=5.0,
+            end_s=8.0,
+            normalize=True,
+        )
 
         cmd = mock_run.call_args[0][0]
         assert "-af" in cmd
         af_idx = cmd.index("-af")
         assert "dynaudnorm" in cmd[af_idx + 1]
 
-    def test_without_normalize(self):
+    def test_without_normalize(self, mocker):
         """No audio filter when normalize=False."""
-        with patch("birdbird.songs.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0)
+        mock_run = mocker.patch("birdbird.songs.subprocess.run")
+        mock_run.return_value = MagicMock(returncode=0)
 
-            extract_audio_segment(
-                Path("input.avi"),
-                Path("out.wav"),
-                start_s=5.0,
-                end_s=8.0,
-                normalize=False,
-            )
+        extract_audio_segment(
+            Path("input.avi"),
+            Path("out.wav"),
+            start_s=5.0,
+            end_s=8.0,
+            normalize=False,
+        )
 
         cmd = mock_run.call_args[0][0]
         assert "-af" not in cmd
@@ -89,7 +89,7 @@ class TestExtractAudioSegment:
 class TestExtractSpeciesClips:
     """Tests for extract_species_clips()."""
 
-    def test_picks_highest_confidence_per_species(self, tmp_path):
+    def test_picks_highest_confidence_per_species(self, tmp_path, mocker):
         """Extracts clip for highest confidence detection per species."""
         detections = [
             SongDetection("clip1.avi", "2026-01-14T08:30:15", 0.0, 3.0, "Blue Tit", "Cyanistes caeruleus", 0.7),
@@ -103,8 +103,8 @@ class TestExtractSpeciesClips:
         (input_dir / "clip2.avi").touch()
         output_dir = tmp_path / "output"
 
-        with patch("birdbird.songs.extract_audio_segment", return_value=True):
-            clips = extract_species_clips(detections, input_dir, output_dir)
+        mocker.patch("birdbird.songs.extract_audio_segment", return_value=True)
+        clips = extract_species_clips(detections, input_dir, output_dir)
 
         assert len(clips) == 2
         # Blue Tit should use clip2.avi (higher confidence)
@@ -123,7 +123,7 @@ class TestAnalyzeSongs:
 
     @patch("birdbird.songs.suppress_stdout")
     @patch("birdbird.songs.extract_audio")
-    def test_full_pipeline(self, mock_extract, mock_suppress, tmp_path):
+    def test_full_pipeline(self, mock_extract, mock_suppress, tmp_path, mocker):
         """Full pipeline with mocked BirdNET returns correct structure."""
         # Create input dir with AVI files
         input_dir = tmp_path / "20260114"
@@ -145,9 +145,9 @@ class TestAnalyzeSongs:
                 "0.0,3.0,Cyanistes caeruleus,Eurasian Blue Tit,0.91,test.wav\n"
             )
 
-        with patch("birdnet_analyzer.analyze", fake_analyze):
-            with patch("birdbird.songs.extract_species_clips", return_value=[]):
-                result = analyze_songs(input_dir, min_confidence=0.5, extract_clips=False)
+        mocker.patch("birdnet_analyzer.analyze", fake_analyze)
+        mocker.patch("birdbird.songs.extract_species_clips", return_value=[])
+        result = analyze_songs(input_dir, min_confidence=0.5, extract_clips=False)
 
         assert "detections" in result
         assert "summary" in result

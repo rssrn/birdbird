@@ -49,7 +49,7 @@ def mock_torch_and_bioclip():
 class TestLocalProcessor:
     """Tests for LocalProcessor class."""
 
-    def test_cuda_available(self, tmp_path, mock_torch_and_bioclip, mock_bioclip_predictions):
+    def test_cuda_available(self, tmp_path, mock_torch_and_bioclip, mock_bioclip_predictions, mocker):
         """Uses CUDA device when available."""
         mock_torch, mock_bioclip, mock_classifier = mock_torch_and_bioclip
         labels = ["Blue Tit", "Robin"]
@@ -61,15 +61,17 @@ class TestLocalProcessor:
 
         mock_classifier.predict.return_value = mock_bioclip_predictions([("Blue Tit", 0.9)])
 
-        with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
-            processor = LocalProcessor(labels=labels, min_confidence=0.5)
-            processor.process(frames)
+        mocker.patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x)
+        processor = LocalProcessor(labels=labels, min_confidence=0.5)
+        processor.process(frames)
 
-            # Verify CUDA was checked and classifier initialized with cuda device
-            mock_torch.cuda.is_available.assert_called_once()
-            mock_bioclip.CustomLabelsClassifier.assert_called_once_with(labels, device="cuda")
+        # Verify CUDA was checked and classifier initialized with cuda device
+        mock_torch.cuda.is_available.assert_called_once()
+        mock_bioclip.CustomLabelsClassifier.assert_called_once_with(labels, device="cuda")
 
-    def test_cuda_not_available_falls_back_to_cpu(self, tmp_path, mock_torch_and_bioclip, mock_bioclip_predictions):
+    def test_cuda_not_available_falls_back_to_cpu(
+        self, tmp_path, mock_torch_and_bioclip, mock_bioclip_predictions, mocker
+    ):
         """Falls back to CPU when CUDA not available."""
         mock_torch, mock_bioclip, mock_classifier = mock_torch_and_bioclip
         mock_torch.cuda.is_available.return_value = False
@@ -82,11 +84,11 @@ class TestLocalProcessor:
 
         mock_classifier.predict.return_value = mock_bioclip_predictions([("Robin", 0.8)])
 
-        with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
-            processor = LocalProcessor(labels=labels, min_confidence=0.5)
-            processor.process(frames)
+        mocker.patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x)
+        processor = LocalProcessor(labels=labels, min_confidence=0.5)
+        processor.process(frames)
 
-            mock_bioclip.CustomLabelsClassifier.assert_called_once_with(labels, device="cpu")
+        mock_bioclip.CustomLabelsClassifier.assert_called_once_with(labels, device="cpu")
 
     def test_empty_frames_returns_empty_list(self):
         """Empty frames list returns empty detections."""
@@ -97,7 +99,7 @@ class TestLocalProcessor:
 
         assert result == []
 
-    def test_detection_above_threshold(self, tmp_path, mock_bioclip_predictions, mock_torch_and_bioclip):
+    def test_detection_above_threshold(self, tmp_path, mock_bioclip_predictions, mock_torch_and_bioclip, mocker):
         """Detection above confidence threshold is included."""
         _, _, mock_classifier = mock_torch_and_bioclip
         labels = ["Blue Tit", "Robin", "Blackbird"]
@@ -116,9 +118,9 @@ class TestLocalProcessor:
         )
         mock_classifier.predict.return_value = predictions
 
-        with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
-            processor = LocalProcessor(labels=labels, min_confidence=0.5)
-            detections = processor.process(frames)
+        mocker.patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x)
+        processor = LocalProcessor(labels=labels, min_confidence=0.5)
+        detections = processor.process(frames)
 
         assert len(detections) == 1
         assert detections[0].timestamp_s == 5.0
@@ -127,7 +129,9 @@ class TestLocalProcessor:
         assert len(detections[0].runners_up) == 2
         assert detections[0].runners_up[0] == {"species": "Robin", "confidence": 0.12}
 
-    def test_detection_below_threshold_excluded(self, tmp_path, mock_bioclip_predictions, mock_torch_and_bioclip):
+    def test_detection_below_threshold_excluded(
+        self, tmp_path, mock_bioclip_predictions, mock_torch_and_bioclip, mocker
+    ):
         """Detection below confidence threshold is excluded."""
         _, _, mock_classifier = mock_torch_and_bioclip
         labels = ["Blue Tit", "Robin"]
@@ -145,13 +149,13 @@ class TestLocalProcessor:
         )
         mock_classifier.predict.return_value = predictions
 
-        with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
-            processor = LocalProcessor(labels=labels, min_confidence=0.5)
-            detections = processor.process(frames)
+        mocker.patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x)
+        processor = LocalProcessor(labels=labels, min_confidence=0.5)
+        detections = processor.process(frames)
 
         assert len(detections) == 0
 
-    def test_multiple_frames_processed(self, tmp_path, mock_bioclip_predictions, mock_torch_and_bioclip):
+    def test_multiple_frames_processed(self, tmp_path, mock_bioclip_predictions, mock_torch_and_bioclip, mocker):
         """Multiple frames are processed and return correct detections."""
         _, _, mock_classifier = mock_torch_and_bioclip
         labels = ["Blue Tit", "Robin"]
@@ -176,9 +180,9 @@ class TestLocalProcessor:
             mock_bioclip_predictions([("Robin", 0.75), ("Blue Tit", 0.25)]),
         ]
 
-        with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
-            processor = LocalProcessor(labels=labels, min_confidence=0.5)
-            detections = processor.process(frames)
+        mocker.patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x)
+        processor = LocalProcessor(labels=labels, min_confidence=0.5)
+        detections = processor.process(frames)
 
         # Should get 2 detections (frame 1 and 3, frame 2 below threshold)
         assert len(detections) == 2
@@ -190,7 +194,7 @@ class TestLocalProcessor:
         assert detections[1].species == "Robin"
         assert detections[1].confidence == 0.75
 
-    def test_runners_up_limited_to_three(self, tmp_path, mock_bioclip_predictions, mock_torch_and_bioclip):
+    def test_runners_up_limited_to_three(self, tmp_path, mock_bioclip_predictions, mock_torch_and_bioclip, mocker):
         """Runners-up list is limited to top 3."""
         _, _, mock_classifier = mock_torch_and_bioclip
         labels = ["Blue Tit", "Robin", "Blackbird", "Great Tit", "House Sparrow"]
@@ -210,9 +214,9 @@ class TestLocalProcessor:
         )
         mock_classifier.predict.return_value = predictions
 
-        with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
-            processor = LocalProcessor(labels=labels, min_confidence=0.5)
-            detections = processor.process(frames)
+        mocker.patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x)
+        processor = LocalProcessor(labels=labels, min_confidence=0.5)
+        detections = processor.process(frames)
 
         assert len(detections) == 1
         # Should only have 3 runners-up (Robin, Blackbird, Great Tit)
@@ -221,7 +225,9 @@ class TestLocalProcessor:
         assert detections[0].runners_up[1]["species"] == "Blackbird"
         assert detections[0].runners_up[2]["species"] == "Great Tit"
 
-    def test_confidence_rounded_to_four_decimals(self, tmp_path, mock_bioclip_predictions, mock_torch_and_bioclip):
+    def test_confidence_rounded_to_four_decimals(
+        self, tmp_path, mock_bioclip_predictions, mock_torch_and_bioclip, mocker
+    ):
         """Confidence scores are rounded to 4 decimal places."""
         _, _, mock_classifier = mock_torch_and_bioclip
         labels = ["Blue Tit"]
@@ -237,13 +243,13 @@ class TestLocalProcessor:
         )
         mock_classifier.predict.return_value = predictions
 
-        with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
-            processor = LocalProcessor(labels=labels, min_confidence=0.5)
-            detections = processor.process(frames)
+        mocker.patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x)
+        processor = LocalProcessor(labels=labels, min_confidence=0.5)
+        detections = processor.process(frames)
 
         assert detections[0].confidence == 0.8765
 
-    def test_progress_callback_called(self, tmp_path, mock_torch_and_bioclip, mock_bioclip_predictions):
+    def test_progress_callback_called(self, tmp_path, mock_torch_and_bioclip, mock_bioclip_predictions, mocker):
         """Progress callback is invoked with status messages."""
         _, _, mock_classifier = mock_torch_and_bioclip
         labels = ["Blue Tit"]
@@ -259,8 +265,8 @@ class TestLocalProcessor:
 
         callback = MagicMock()
 
-        with patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x):
-            processor.process(frames, progress_callback=callback)
+        mocker.patch("birdbird.species.tqdm", side_effect=lambda x, **kwargs: x)
+        processor.process(frames, progress_callback=callback)
 
         # Should get two callback calls
         assert callback.call_count == 2

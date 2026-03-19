@@ -6,7 +6,7 @@
 import hashlib
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from botocore.exceptions import ClientError
@@ -164,22 +164,22 @@ class TestGenerateBatchId:
 class TestGetHighlightsDuration:
     """Tests for get_highlights_duration()."""
 
-    def test_valid_ffprobe_output(self):
+    def test_valid_ffprobe_output(self, mocker):
         """Returns float duration from ffprobe."""
-        with patch("birdbird.publish.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout="123.456\n", stderr="")
+        mock_run = mocker.patch("birdbird.publish.subprocess.run")
+        mock_run.return_value = MagicMock(returncode=0, stdout="123.456\n", stderr="")
 
-            result = get_highlights_duration(Path("highlights.mp4"))
+        result = get_highlights_duration(Path("highlights.mp4"))
 
         assert result == pytest.approx(123.456)
 
-    def test_ffprobe_fails(self):
+    def test_ffprobe_fails(self, mocker):
         """Raises RuntimeError when ffprobe fails."""
-        with patch("birdbird.publish.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="error")
+        mock_run = mocker.patch("birdbird.publish.subprocess.run")
+        mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="error")
 
-            with pytest.raises(RuntimeError, match="ffprobe failed"):
-                get_highlights_duration(Path("highlights.mp4"))
+        with pytest.raises(RuntimeError, match="ffprobe failed"):
+            get_highlights_duration(Path("highlights.mp4"))
 
 
 class TestCleanupOldBatches:
@@ -195,7 +195,7 @@ class TestCleanupOldBatches:
 
         assert result == []
 
-    def test_more_than_five_user_confirms(self, mock_s3_client):
+    def test_more_than_five_user_confirms(self, mock_s3_client, mocker):
         """> 5 batches, user confirms deletion of oldest."""
         mock_s3_client.list_objects_v2.side_effect = [
             # First call: list_batches
@@ -207,26 +207,27 @@ class TestCleanupOldBatches:
             {"Contents": [{"Key": "batches/20260110_01/highlights.mp4"}]},
         ]
 
-        with patch("birdbird.publish.typer.confirm", return_value=True):
-            with patch("birdbird.publish.typer.echo"):
-                # Mock get_object for latest.json update
-                mock_s3_client.get_object.return_value = {
-                    "Body": MagicMock(read=MagicMock(return_value=b'{"latest":"20260116_01","batches":[]}'))
-                }
+        mocker.patch("birdbird.publish.typer.confirm", return_value=True)
+        mocker.patch("birdbird.publish.typer.echo")
+        # Mock get_object for latest.json update
+        mock_s3_client.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=b'{"latest":"20260116_01","batches":[]}'))
+        }
 
-                result = cleanup_old_batches(mock_s3_client, "bucket")
+        result = cleanup_old_batches(mock_s3_client, "bucket")
 
         assert len(result) == 2
 
-    def test_more_than_five_user_declines(self, mock_s3_client):
+    def test_more_than_five_user_declines(self, mock_s3_client, mocker):
         """> 5 batches, user declines deletion."""
         mock_s3_client.list_objects_v2.return_value = {
             "CommonPrefixes": [{"Prefix": f"batches/2026011{i}_01/"} for i in range(7)]
         }
 
-        with patch("birdbird.publish.typer.confirm", return_value=False):
-            with patch("birdbird.publish.typer.echo"):
-                result = cleanup_old_batches(mock_s3_client, "bucket")
+        mocker.patch("birdbird.publish.typer.confirm", return_value=False)
+        mocker.patch("birdbird.publish.typer.echo")
+
+        result = cleanup_old_batches(mock_s3_client, "bucket")
 
         assert result == []
         mock_s3_client.delete_object.assert_not_called()
@@ -250,7 +251,7 @@ def _make_paths(tmp_path: Path) -> MagicMock:
     return paths
 
 
-def _call_upload_batch(mock_s3_client, paths, **kwargs):
+def _call_upload_batch(mock_s3_client, paths, mocker, **kwargs):
     """Call upload_batch() with common patches applied."""
     defaults = dict(
         s3_client=mock_s3_client,
@@ -267,11 +268,12 @@ def _call_upload_batch(mock_s3_client, paths, **kwargs):
     tqdm_cm.__enter__ = MagicMock(return_value=MagicMock())
     tqdm_cm.__exit__ = MagicMock(return_value=False)
 
-    with patch("birdbird.publish.extract_date_range", return_value=("2026-01-14", "2026-01-14")):
-        with patch("birdbird.publish.get_highlights_duration", return_value=120.0):
-            with patch("birdbird.publish.tqdm", return_value=tqdm_cm):
-                with patch("birdbird.publish.typer.echo"):
-                    return upload_batch(**defaults)
+    mocker.patch("birdbird.publish.extract_date_range", return_value=("2026-01-14", "2026-01-14"))
+    mocker.patch("birdbird.publish.get_highlights_duration", return_value=120.0)
+    mocker.patch("birdbird.publish.tqdm", return_value=tqdm_cm)
+    mocker.patch("birdbird.publish.typer.echo")
+
+    return upload_batch(**defaults)
 
 
 # ---------------------------------------------------------------------------
@@ -285,10 +287,10 @@ class TestUploadBatch:
     @author Claude Sonnet 4.6 Anthropic
     """
 
-    def test_highlights_uploaded_with_correct_r2_key(self, mock_s3_client, tmp_path):
+    def test_highlights_uploaded_with_correct_r2_key(self, mock_s3_client, tmp_path, mocker):
         """Uploads highlights.mp4 to correct R2 key."""
         paths = _make_paths(tmp_path)
-        _call_upload_batch(mock_s3_client, paths)
+        _call_upload_batch(mock_s3_client, paths, mocker)
 
         mock_s3_client.upload_fileobj.assert_called_once()
         _, positional, keyword = mock_s3_client.upload_fileobj.mock_calls[0]
@@ -296,10 +298,10 @@ class TestUploadBatch:
         assert positional[2] == "batches/20260114_01/highlights.mp4"
         assert keyword["ExtraArgs"]["ContentType"] == "video/mp4"
 
-    def test_metadata_structure(self, mock_s3_client, tmp_path):
+    def test_metadata_structure(self, mock_s3_client, tmp_path, mocker):
         """Returns metadata dict with required fields and correct types."""
         paths = _make_paths(tmp_path)
-        result = _call_upload_batch(mock_s3_client, paths, clip_count=42)
+        result = _call_upload_batch(mock_s3_client, paths, mocker, clip_count=42)
 
         assert result["batch_id"] == "20260114_01"
         assert result["original_date"] == "2026-01-14"
@@ -308,36 +310,34 @@ class TestUploadBatch:
         assert result["clip_count"] == 42
         assert result["highlights_duration"] == 120.0
 
-    def test_upload_stats_tracking(self, mock_s3_client, tmp_path):
+    def test_upload_stats_tracking(self, mock_s3_client, tmp_path, mocker):
         """Records uploaded and skipped files in _upload_stats."""
         paths = _make_paths(tmp_path)
-        result = _call_upload_batch(mock_s3_client, paths)
+        result = _call_upload_batch(mock_s3_client, paths, mocker)
 
         stats = result["_upload_stats"]
         assert "highlights.mp4" in stats["uploaded"]
         assert "metadata.json" in stats["uploaded"]
 
-    def test_skips_highlights_when_unchanged_and_batch_exists(self, mock_s3_client, tmp_path):
+    def test_skips_highlights_when_unchanged_and_batch_exists(self, mock_s3_client, tmp_path, mocker):
         """Skips highlights.mp4 upload when batch_exists=True and file unchanged."""
         paths = _make_paths(tmp_path)
-
-        with patch("birdbird.publish.should_upload_file", return_value=False):
-            result = _call_upload_batch(mock_s3_client, paths, batch_exists=True)
+        mocker.patch("birdbird.publish.should_upload_file", return_value=False)
+        result = _call_upload_batch(mock_s3_client, paths, mocker, batch_exists=True)
 
         mock_s3_client.upload_fileobj.assert_not_called()
         assert "highlights.mp4" in result["_upload_stats"]["skipped"]
 
-    def test_uploads_when_file_changed_and_batch_exists(self, mock_s3_client, tmp_path):
+    def test_uploads_when_file_changed_and_batch_exists(self, mock_s3_client, tmp_path, mocker):
         """Re-uploads highlights.mp4 when batch_exists=True but file has changed."""
         paths = _make_paths(tmp_path)
-
-        with patch("birdbird.publish.should_upload_file", return_value=True):
-            result = _call_upload_batch(mock_s3_client, paths, batch_exists=True)
+        mocker.patch("birdbird.publish.should_upload_file", return_value=True)
+        result = _call_upload_batch(mock_s3_client, paths, mocker, batch_exists=True)
 
         mock_s3_client.upload_fileobj.assert_called_once()
         assert "highlights.mp4" in result["_upload_stats"]["uploaded"]
 
-    def test_songs_json_included_when_present(self, mock_s3_client, tmp_path):
+    def test_songs_json_included_when_present(self, mock_s3_client, tmp_path, mocker):
         """Uploads songs.json and adds summary to metadata when file exists."""
         paths = _make_paths(tmp_path)
         songs_path = tmp_path / "songs.json"
@@ -347,7 +347,7 @@ class TestUploadBatch:
         }
         songs_path.write_text(json.dumps(songs_data))
 
-        result = _call_upload_batch(mock_s3_client, paths, songs_path=songs_path)
+        result = _call_upload_batch(mock_s3_client, paths, mocker, songs_path=songs_path)
 
         # songs.json uploaded to correct key
         put_keys = [c[1]["Key"] for c in mock_s3_client.put_object.call_args_list]
@@ -358,14 +358,14 @@ class TestUploadBatch:
         assert result["songs"]["unique_species"] == 3
         assert result["songs"]["timestamps_reliable"] is True
 
-    def test_songs_json_not_included_when_absent(self, mock_s3_client, tmp_path):
+    def test_songs_json_not_included_when_absent(self, mock_s3_client, tmp_path, mocker):
         """Does not include songs key in metadata when songs_path is None."""
         paths = _make_paths(tmp_path)
-        result = _call_upload_batch(mock_s3_client, paths, songs_path=None)
+        result = _call_upload_batch(mock_s3_client, paths, mocker, songs_path=None)
 
         assert "songs" not in result
 
-    def test_song_clips_metadata_aggregation(self, mock_s3_client, tmp_path):
+    def test_song_clips_metadata_aggregation(self, mock_s3_client, tmp_path, mocker):
         """Aggregates song clip metadata from songs.json clips list."""
         paths = _make_paths(tmp_path)
 
@@ -395,7 +395,7 @@ class TestUploadBatch:
         }
         songs_path.write_text(json.dumps(songs_data))
 
-        result = _call_upload_batch(mock_s3_client, paths, songs_path=songs_path, song_clips_dir=clips_dir)
+        result = _call_upload_batch(mock_s3_client, paths, mocker, songs_path=songs_path, song_clips_dir=clips_dir)
 
         assert "song_clips" in result
         clip_names = [c["filename"] for c in result["song_clips"]]
@@ -406,7 +406,7 @@ class TestUploadBatch:
         assert blue_tit["common_name"] == "Blue Tit"
         assert blue_tit["confidence"] == 0.91
 
-    def test_species_json_included_when_present(self, mock_s3_client, tmp_path):
+    def test_species_json_included_when_present(self, mock_s3_client, tmp_path, mocker):
         """Uploads species.json and adds species summary to metadata."""
         paths = _make_paths(tmp_path)
         species_path = tmp_path / "species.json"
@@ -419,7 +419,7 @@ class TestUploadBatch:
         }
         species_path.write_text(json.dumps(species_data))
 
-        result = _call_upload_batch(mock_s3_client, paths, species_path=species_path)
+        result = _call_upload_batch(mock_s3_client, paths, mocker, species_path=species_path)
 
         put_keys = [c[1]["Key"] for c in mock_s3_client.put_object.call_args_list]
         assert "batches/20260114_01/species.json" in put_keys
@@ -428,7 +428,7 @@ class TestUploadBatch:
         assert result["species"]["unique_species"] == 2
         assert set(result["species"]["species_list"]) == {"Blue Tit", "Robin"}
 
-    def test_best_clips_json_included_when_present(self, mock_s3_client, tmp_path):
+    def test_best_clips_json_included_when_present(self, mock_s3_client, tmp_path, mocker):
         """Uploads best_clips.json and adds summary to metadata."""
         paths = _make_paths(tmp_path)
         best_clips_path = tmp_path / "best_clips.json"
@@ -439,7 +439,7 @@ class TestUploadBatch:
         }
         best_clips_path.write_text(json.dumps(best_clips_data))
 
-        result = _call_upload_batch(mock_s3_client, paths, best_clips_path=best_clips_path)
+        result = _call_upload_batch(mock_s3_client, paths, mocker, best_clips_path=best_clips_path)
 
         put_keys = [c[1]["Key"] for c in mock_s3_client.put_object.call_args_list]
         assert "batches/20260114_01/best_clips.json" in put_keys
@@ -448,11 +448,11 @@ class TestUploadBatch:
         assert result["best_clips"]["species_count"] == 2
         assert set(result["best_clips"]["species_list"]) == {"Blue Tit", "Robin"}
 
-    def test_metadata_json_always_uploaded(self, mock_s3_client, tmp_path):
+    def test_metadata_json_always_uploaded(self, mock_s3_client, tmp_path, mocker):
         """metadata.json is always uploaded regardless of batch_exists."""
         paths = _make_paths(tmp_path)
-        with patch("birdbird.publish.should_upload_file", return_value=False):
-            result = _call_upload_batch(mock_s3_client, paths, batch_exists=True)
+        mocker.patch("birdbird.publish.should_upload_file", return_value=False)
+        result = _call_upload_batch(mock_s3_client, paths, mocker, batch_exists=True)
 
         put_keys = [c[1]["Key"] for c in mock_s3_client.put_object.call_args_list]
         assert "batches/20260114_01/metadata.json" in put_keys
@@ -480,13 +480,13 @@ class TestUpdateLatestJson:
         "highlights_duration": 120.0,
     }
 
-    def test_creates_fresh_when_no_such_key(self, mock_s3_client):
+    def test_creates_fresh_when_no_such_key(self, mock_s3_client, mocker):
         """Creates latest.json from scratch when it does not exist (NoSuchKey)."""
         error = ClientError({"Error": {"Code": "NoSuchKey"}}, "GetObject")
         mock_s3_client.get_object.side_effect = error
 
-        with patch("birdbird.publish.typer.echo"):
-            update_latest_json(mock_s3_client, "test-bucket", self._batch_meta)
+        mocker.patch("birdbird.publish.typer.echo")
+        update_latest_json(mock_s3_client, "test-bucket", self._batch_meta)
 
         mock_s3_client.put_object.assert_called_once()
         body = json.loads(mock_s3_client.put_object.call_args[1]["Body"])
@@ -494,7 +494,7 @@ class TestUpdateLatestJson:
         assert len(body["batches"]) == 1
         assert body["batches"][0]["id"] == "20260114_01"
 
-    def test_prepends_to_existing_batches(self, mock_s3_client):
+    def test_prepends_to_existing_batches(self, mock_s3_client, mocker):
         """Prepends new batch to existing list so newest is first."""
         existing = {
             "latest": "20260113_01",
@@ -504,14 +504,14 @@ class TestUpdateLatestJson:
             "Body": MagicMock(read=MagicMock(return_value=json.dumps(existing).encode()))
         }
 
-        with patch("birdbird.publish.typer.echo"):
-            update_latest_json(mock_s3_client, "test-bucket", self._batch_meta)
+        mocker.patch("birdbird.publish.typer.echo")
+        update_latest_json(mock_s3_client, "test-bucket", self._batch_meta)
 
         body = json.loads(mock_s3_client.put_object.call_args[1]["Body"])
         assert body["batches"][0]["id"] == "20260114_01"
         assert body["batches"][1]["id"] == "20260113_01"
 
-    def test_deduplicates_batch_id(self, mock_s3_client):
+    def test_deduplicates_batch_id(self, mock_s3_client, mocker):
         """Removes old entry with same batch_id before prepending (deduplication)."""
         existing = {
             "latest": "20260114_01",
@@ -524,30 +524,30 @@ class TestUpdateLatestJson:
             "Body": MagicMock(read=MagicMock(return_value=json.dumps(existing).encode()))
         }
 
-        with patch("birdbird.publish.typer.echo"):
-            update_latest_json(mock_s3_client, "test-bucket", self._batch_meta)
+        mocker.patch("birdbird.publish.typer.echo")
+        update_latest_json(mock_s3_client, "test-bucket", self._batch_meta)
 
         body = json.loads(mock_s3_client.put_object.call_args[1]["Body"])
         ids = [b["id"] for b in body["batches"]]
         assert ids.count("20260114_01") == 1
         assert len(body["batches"]) == 2  # updated + old one
 
-    def test_sets_latest_pointer(self, mock_s3_client):
+    def test_sets_latest_pointer(self, mock_s3_client, mocker):
         """Sets the latest field to the new batch_id."""
         mock_s3_client.get_object.side_effect = ClientError({"Error": {"Code": "NoSuchKey"}}, "GetObject")
 
-        with patch("birdbird.publish.typer.echo"):
-            update_latest_json(mock_s3_client, "test-bucket", self._batch_meta)
+        mocker.patch("birdbird.publish.typer.echo")
+        update_latest_json(mock_s3_client, "test-bucket", self._batch_meta)
 
         body = json.loads(mock_s3_client.put_object.call_args[1]["Body"])
         assert body["latest"] == "20260114_01"
 
-    def test_batch_summary_has_required_fields(self, mock_s3_client):
+    def test_batch_summary_has_required_fields(self, mock_s3_client, mocker):
         """Batch summary in latest.json contains all required fields."""
         mock_s3_client.get_object.side_effect = ClientError({"Error": {"Code": "NoSuchKey"}}, "GetObject")
 
-        with patch("birdbird.publish.typer.echo"):
-            update_latest_json(mock_s3_client, "test-bucket", self._batch_meta)
+        mocker.patch("birdbird.publish.typer.echo")
+        update_latest_json(mock_s3_client, "test-bucket", self._batch_meta)
 
         body = json.loads(mock_s3_client.put_object.call_args[1]["Body"])
         summary = body["batches"][0]
@@ -618,7 +618,7 @@ class TestPublishToR2:
         with pytest.raises(ValueError, match="highlights.mp4"):
             publish_to_r2(input_dir, self._r2_config())
 
-    def test_returns_correct_structure(self, mock_s3_client, tmp_path):
+    def test_returns_correct_structure(self, mock_s3_client, tmp_path, mocker):
         """Return dict has all expected keys."""
         input_dir, assets_dir = self._setup_dirs(tmp_path)
 
@@ -633,14 +633,15 @@ class TestPublishToR2:
             "_upload_stats": {"uploaded": ["highlights.mp4", "metadata.json"], "skipped": []},
         }
 
-        with patch("birdbird.publish.create_r2_client", return_value=mock_s3_client):
-            with patch("birdbird.publish.generate_batch_id", return_value=("20260114_01", False)):
-                with patch("birdbird.publish.upload_batch", return_value=batch_meta):
-                    with patch("birdbird.publish.update_latest_json"):
-                        with patch("birdbird.publish.cleanup_old_batches", return_value=[]):
-                            with patch("birdbird.publish.load_detections", return_value=[{}] * 5):
-                                with patch("birdbird.publish.typer.echo"):
-                                    result = publish_to_r2(input_dir, self._r2_config())
+        mocker.patch("birdbird.publish.create_r2_client", return_value=mock_s3_client)
+        mocker.patch("birdbird.publish.generate_batch_id", return_value=("20260114_01", False))
+        mocker.patch("birdbird.publish.upload_batch", return_value=batch_meta)
+        mocker.patch("birdbird.publish.update_latest_json")
+        mocker.patch("birdbird.publish.cleanup_old_batches", return_value=[])
+        mocker.patch("birdbird.publish.load_detections", return_value=[{}] * 5)
+        mocker.patch("birdbird.publish.typer.echo")
+
+        result = publish_to_r2(input_dir, self._r2_config())
 
         expected_keys = {
             "batch_id",
@@ -655,7 +656,7 @@ class TestPublishToR2:
         }
         assert expected_keys.issubset(result.keys())
 
-    def test_batch_replaced_false_for_new_batch(self, mock_s3_client, tmp_path):
+    def test_batch_replaced_false_for_new_batch(self, mock_s3_client, tmp_path, mocker):
         """batch_replaced is False when batch did not previously exist."""
         input_dir, _ = self._setup_dirs(tmp_path)
 
@@ -670,18 +671,19 @@ class TestPublishToR2:
             "_upload_stats": {"uploaded": ["highlights.mp4"], "skipped": []},
         }
 
-        with patch("birdbird.publish.create_r2_client", return_value=mock_s3_client):
-            with patch("birdbird.publish.generate_batch_id", return_value=("20260114_01", False)):
-                with patch("birdbird.publish.upload_batch", return_value=batch_meta):
-                    with patch("birdbird.publish.update_latest_json"):
-                        with patch("birdbird.publish.cleanup_old_batches", return_value=[]):
-                            with patch("birdbird.publish.load_detections", return_value=[]):
-                                with patch("birdbird.publish.typer.echo"):
-                                    result = publish_to_r2(input_dir, self._r2_config())
+        mocker.patch("birdbird.publish.create_r2_client", return_value=mock_s3_client)
+        mocker.patch("birdbird.publish.generate_batch_id", return_value=("20260114_01", False))
+        mocker.patch("birdbird.publish.upload_batch", return_value=batch_meta)
+        mocker.patch("birdbird.publish.update_latest_json")
+        mocker.patch("birdbird.publish.cleanup_old_batches", return_value=[])
+        mocker.patch("birdbird.publish.load_detections", return_value=[])
+        mocker.patch("birdbird.publish.typer.echo")
+
+        result = publish_to_r2(input_dir, self._r2_config())
 
         assert result["batch_replaced"] is False
 
-    def test_detects_optional_songs_json(self, mock_s3_client, tmp_path):
+    def test_detects_optional_songs_json(self, mock_s3_client, tmp_path, mocker):
         """Passes songs_path to upload_batch when songs.json is present."""
         input_dir, assets_dir = self._setup_dirs(tmp_path)
         songs_json = assets_dir / "songs.json"
@@ -700,19 +702,20 @@ class TestPublishToR2:
 
         mock_upload_batch = MagicMock(return_value=batch_meta)
 
-        with patch("birdbird.publish.create_r2_client", return_value=mock_s3_client):
-            with patch("birdbird.publish.generate_batch_id", return_value=("20260114_01", False)):
-                with patch("birdbird.publish.upload_batch", mock_upload_batch):
-                    with patch("birdbird.publish.update_latest_json"):
-                        with patch("birdbird.publish.cleanup_old_batches", return_value=[]):
-                            with patch("birdbird.publish.load_detections", return_value=[]):
-                                with patch("birdbird.publish.typer.echo"):
-                                    publish_to_r2(input_dir, self._r2_config())
+        mocker.patch("birdbird.publish.create_r2_client", return_value=mock_s3_client)
+        mocker.patch("birdbird.publish.generate_batch_id", return_value=("20260114_01", False))
+        mocker.patch("birdbird.publish.upload_batch", mock_upload_batch)
+        mocker.patch("birdbird.publish.update_latest_json")
+        mocker.patch("birdbird.publish.cleanup_old_batches", return_value=[])
+        mocker.patch("birdbird.publish.load_detections", return_value=[])
+        mocker.patch("birdbird.publish.typer.echo")
+
+        publish_to_r2(input_dir, self._r2_config())
 
         _, kwargs = mock_upload_batch.call_args
         assert kwargs["songs_path"] == songs_json
 
-    def test_clip_count_from_detections(self, mock_s3_client, tmp_path):
+    def test_clip_count_from_detections(self, mock_s3_client, tmp_path, mocker):
         """clip_count in return dict reflects detections.json entry count."""
         input_dir, _ = self._setup_dirs(tmp_path)
 
@@ -727,13 +730,14 @@ class TestPublishToR2:
             "_upload_stats": {"uploaded": [], "skipped": []},
         }
 
-        with patch("birdbird.publish.create_r2_client", return_value=mock_s3_client):
-            with patch("birdbird.publish.generate_batch_id", return_value=("20260114_01", False)):
-                with patch("birdbird.publish.upload_batch", return_value=batch_meta):
-                    with patch("birdbird.publish.update_latest_json"):
-                        with patch("birdbird.publish.cleanup_old_batches", return_value=[]):
-                            with patch("birdbird.publish.load_detections", return_value=[{}] * 7):
-                                with patch("birdbird.publish.typer.echo"):
-                                    result = publish_to_r2(input_dir, self._r2_config())
+        mocker.patch("birdbird.publish.create_r2_client", return_value=mock_s3_client)
+        mocker.patch("birdbird.publish.generate_batch_id", return_value=("20260114_01", False))
+        mocker.patch("birdbird.publish.upload_batch", return_value=batch_meta)
+        mocker.patch("birdbird.publish.update_latest_json")
+        mocker.patch("birdbird.publish.cleanup_old_batches", return_value=[])
+        mocker.patch("birdbird.publish.load_detections", return_value=[{}] * 7)
+        mocker.patch("birdbird.publish.typer.echo")
+
+        result = publish_to_r2(input_dir, self._r2_config())
 
         assert result["clip_count"] == 7

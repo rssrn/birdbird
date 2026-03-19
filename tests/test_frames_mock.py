@@ -4,7 +4,7 @@
 """
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
@@ -22,24 +22,24 @@ from birdbird.frames import (
 class TestCalculateSharpness:
     """Tests for calculate_sharpness()."""
 
-    def test_synthetic_frame(self):
+    def test_synthetic_frame(self, mocker):
         """Returns Laplacian variance for a synthetic frame."""
         # Create a frame with edges (high sharpness)
         frame = np.zeros((100, 100, 3), dtype=np.uint8)
         frame[40:60, 40:60] = 255  # White square creates edges
 
-        with patch("birdbird.frames.cv2") as mock_cv2:
-            # Simulate grayscale conversion and Laplacian
-            gray = np.mean(frame, axis=2)
-            mock_cv2.COLOR_BGR2GRAY = 6
-            mock_cv2.CV_64F = 6
-            mock_cv2.cvtColor.return_value = gray
+        mock_cv2 = mocker.patch("birdbird.frames.cv2")
+        # Simulate grayscale conversion and Laplacian
+        gray = np.mean(frame, axis=2)
+        mock_cv2.COLOR_BGR2GRAY = 6
+        mock_cv2.CV_64F = 6
+        mock_cv2.cvtColor.return_value = gray
 
-            laplacian = MagicMock()
-            laplacian.var.return_value = 42.5
-            mock_cv2.Laplacian.return_value = laplacian
+        laplacian = MagicMock()
+        laplacian.var.return_value = 42.5
+        mock_cv2.Laplacian.return_value = laplacian
 
-            result = calculate_sharpness(frame)
+        result = calculate_sharpness(frame)
 
         assert result == 42.5
         mock_cv2.cvtColor.assert_called_once()
@@ -202,7 +202,7 @@ class TestNormalizeScores:
 class TestExtractAndScoreFrames:
     """Tests for extract_and_score_frames()."""
 
-    def test_multiple_clips(self, tmp_path):
+    def test_multiple_clips(self, tmp_path, mocker):
         """Returns sorted FrameScores for multiple clips."""
         # Set up paths structure
         input_dir = tmp_path / "20260114"
@@ -256,27 +256,27 @@ class TestExtractAndScoreFrames:
         mock_cap.get.side_effect = lambda prop: 30.0 if prop == 5 else 0.0
         mock_cap.read.return_value = (True, dummy_frame)
 
-        with patch("birdbird.frames.cv2") as mock_cv2:
-            mock_cv2.VideoCapture.return_value = mock_cap
-            mock_cv2.CAP_PROP_FPS = 5
-            mock_cv2.COLOR_BGR2GRAY = 6
-            mock_cv2.CV_64F = 6
-            mock_cv2.cvtColor.return_value = np.zeros((480, 640), dtype=np.uint8)
+        mock_cv2 = mocker.patch("birdbird.frames.cv2")
+        mock_cv2.VideoCapture.return_value = mock_cap
+        mock_cv2.CAP_PROP_FPS = 5
+        mock_cv2.COLOR_BGR2GRAY = 6
+        mock_cv2.CV_64F = 6
+        mock_cv2.cvtColor.return_value = np.zeros((480, 640), dtype=np.uint8)
 
-            laplacian = MagicMock()
-            laplacian.var.return_value = 100.0
-            mock_cv2.Laplacian.return_value = laplacian
+        laplacian = MagicMock()
+        laplacian.var.return_value = 100.0
+        mock_cv2.Laplacian.return_value = laplacian
 
-            from birdbird.paths import BirdbirdPaths
+        from birdbird.paths import BirdbirdPaths
 
-            paths = BirdbirdPaths.from_input_dir(input_dir)
+        paths = BirdbirdPaths.from_input_dir(input_dir)
 
-            scored, timing = extract_and_score_frames(
-                input_dir,
-                detector,
-                weights,
-                paths=paths,
-            )
+        scored, timing = extract_and_score_frames(
+            input_dir,
+            detector,
+            weights,
+            paths=paths,
+        )
 
         assert len(scored) == 2
         # Should be sorted by combined score (descending)

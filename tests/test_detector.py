@@ -103,52 +103,52 @@ class TestDetectInFrame:
 class TestDetectInVideoDetailed:
     """Tests for detect_in_video_detailed()."""
 
-    def test_bird_found_at_frame(self, detector, mock_yolo_result, mock_video_capture):
+    def test_bird_found_at_frame(self, detector, mock_yolo_result, mock_video_capture, mocker):
         """Bird found at a sampled frame returns Detection with correct timestamp."""
         cap = mock_video_capture(fps=30.0, frame_count=300)
 
         # Bird detected on first frame check (frame 0)
         detector._mock_model.return_value = mock_yolo_result([(14, 0.9)])
 
-        with patch("birdbird.detector.cv2") as mock_cv2:
-            mock_cv2.VideoCapture.return_value = cap
-            mock_cv2.CAP_PROP_FPS = 5
-            mock_cv2.CAP_PROP_FRAME_COUNT = 7
+        mock_cv2 = mocker.patch("birdbird.detector.cv2")
+        mock_cv2.VideoCapture.return_value = cap
+        mock_cv2.CAP_PROP_FPS = 5
+        mock_cv2.CAP_PROP_FRAME_COUNT = 7
 
-            result = detector.detect_in_video_detailed(Path("test.avi"))
+        result = detector.detect_in_video_detailed(Path("test.avi"))
 
         assert result is not None
         assert result.confidence == 0.9
         assert result.timestamp == 0.0
 
-    def test_no_bird_in_any_frame(self, detector, mock_yolo_result, mock_video_capture):
+    def test_no_bird_in_any_frame(self, detector, mock_yolo_result, mock_video_capture, mocker):
         """No bird in any sampled frame returns None."""
         cap = mock_video_capture(fps=30.0, frame_count=300)
 
         # No bird ever
         detector._mock_model.return_value = mock_yolo_result([(0, 0.95)])
 
-        with patch("birdbird.detector.cv2") as mock_cv2:
-            mock_cv2.VideoCapture.return_value = cap
-            mock_cv2.CAP_PROP_FPS = 5
-            mock_cv2.CAP_PROP_FRAME_COUNT = 7
+        mock_cv2 = mocker.patch("birdbird.detector.cv2")
+        mock_cv2.VideoCapture.return_value = cap
+        mock_cv2.CAP_PROP_FPS = 5
+        mock_cv2.CAP_PROP_FRAME_COUNT = 7
 
-            result = detector.detect_in_video_detailed(Path("test.avi"))
+        result = detector.detect_in_video_detailed(Path("test.avi"))
 
         assert result is None
 
-    def test_video_wont_open(self, detector, mock_video_capture):
+    def test_video_wont_open(self, detector, mock_video_capture, mocker):
         """Video that won't open returns None."""
         cap = mock_video_capture(is_opened=False)
 
-        with patch("birdbird.detector.cv2") as mock_cv2:
-            mock_cv2.VideoCapture.return_value = cap
+        mock_cv2 = mocker.patch("birdbird.detector.cv2")
+        mock_cv2.VideoCapture.return_value = cap
 
-            result = detector.detect_in_video_detailed(Path("missing.avi"))
+        result = detector.detect_in_video_detailed(Path("missing.avi"))
 
         assert result is None
 
-    def test_weighted_sampling_intervals(self, detector, mock_yolo_result, mock_video_capture):
+    def test_weighted_sampling_intervals(self, detector, mock_yolo_result, mock_video_capture, mocker):
         """Verifies denser sampling in first second (every ~0.25s) then 1fps."""
         # Use 30fps, 300 frames (10 seconds)
         dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -159,12 +159,12 @@ class TestDetectInVideoDetailed:
         # Never detect a bird so it scans all frames
         detector._mock_model.return_value = mock_yolo_result([(0, 0.5)])
 
-        with patch("birdbird.detector.cv2") as mock_cv2:
-            mock_cv2.VideoCapture.return_value = cap
-            mock_cv2.CAP_PROP_FPS = 5
-            mock_cv2.CAP_PROP_FRAME_COUNT = 7
+        mock_cv2 = mocker.patch("birdbird.detector.cv2")
+        mock_cv2.VideoCapture.return_value = cap
+        mock_cv2.CAP_PROP_FPS = 5
+        mock_cv2.CAP_PROP_FRAME_COUNT = 7
 
-            detector.detect_in_video_detailed(Path("test.avi"))
+        detector.detect_in_video_detailed(Path("test.avi"))
 
         # Model should be called for sampled frames:
         # First second (frames 0-29): every 7 frames (30/4=7) -> frames 0,7,14,21 = 4 calls
@@ -177,14 +177,14 @@ class TestDetectInVideoDetailed:
 class TestDetectInVideo:
     """Tests for detect_in_video()."""
 
-    def test_delegates_to_detailed(self, detector, mock_yolo_result, mock_video_capture):
+    def test_delegates_to_detailed(self, detector, mock_yolo_result, mock_video_capture, mocker):
         """Returns bool based on detect_in_video_detailed."""
         cap = mock_video_capture(fps=30.0, frame_count=300)
         detector._mock_model.return_value = mock_yolo_result([(14, 0.9)])
 
-        with patch("birdbird.detector.cv2") as mock_cv2:
-            mock_cv2.VideoCapture.return_value = cap
-            mock_cv2.CAP_PROP_FPS = 5
-            mock_cv2.CAP_PROP_FRAME_COUNT = 7
+        mock_cv2 = mocker.patch("birdbird.detector.cv2")
+        mock_cv2.VideoCapture.return_value = cap
+        mock_cv2.CAP_PROP_FPS = 5
+        mock_cv2.CAP_PROP_FRAME_COUNT = 7
 
-            assert detector.detect_in_video(Path("test.avi")) is True
+        assert detector.detect_in_video(Path("test.avi")) is True

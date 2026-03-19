@@ -24,14 +24,14 @@ class TestCreateSymlinkOrCopy:
         assert dst.is_symlink()
         assert dst.resolve() == src.resolve()
 
-    def test_symlink_fails_falls_back_to_copy(self, tmp_path):
+    def test_symlink_fails_falls_back_to_copy(self, tmp_path, mocker):
         """Falls back to copy when symlink raises OSError."""
         src = tmp_path / "source.avi"
         src.write_bytes(b"test data")
         dst = tmp_path / "copy.avi"
 
-        with patch("birdbird.filter.os.symlink", side_effect=OSError("not supported")):
-            create_symlink_or_copy(src, dst)
+        mocker.patch("birdbird.filter.os.symlink", side_effect=OSError("not supported"))
+        create_symlink_or_copy(src, dst)
 
         assert dst.exists()
         assert not dst.is_symlink()
