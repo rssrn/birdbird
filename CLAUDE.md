@@ -105,6 +105,10 @@ pytest -m slow
 3. **Run tests** with `pytest -m "not slow"` to verify
 4. Follow existing patterns: mock external dependencies, test edge cases, verify logic
 
+**Mocking style**: Use `mocker.patch(...)` from the `pytest-mock` `mocker` fixture (flat, no nesting) rather than nested `with patch(...):` context managers.
+
+**Before committing test files**: Run `ruff format tests/` first — ruff will reformat long lines in test assertions, causing the pre-commit hook to fail on the first attempt and requiring a second commit.
+
 **Test layers:**
 - Layer 1 (pure unit tests): No marker needed - tests that don't require any external dependencies
 - Layer 2 (mocked unit tests): No marker unless unusually slow - mock external dependencies (torch, bioclip, ffmpeg, etc.)
