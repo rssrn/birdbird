@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 birdbird - Bird feeder video analysis pipeline. See README.md for full project description and milestones.
 
+- **GitHub repo**: public, at `rssrn/birdbird`
+
 ## Directory Structure
 
 **Important for file operations**: This project uses Python src-layout:

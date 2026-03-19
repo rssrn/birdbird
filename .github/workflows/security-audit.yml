@@ -1,0 +1,30 @@
+name: Security Audit
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Every Monday at 06:00 UTC (~07:00 UK time)
+  workflow_dispatch:
+
+jobs:
+  pip-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --no-deps -e .
+          pip install \
+            pip-audit \
+            "typer>=0.9.0" "tqdm>=4.66.0" "boto3>=1.42.0" "pillow>=12.1.1" "opencv-python>=4.8.0"
+
+      - name: Run pip-audit
+        run: pip-audit

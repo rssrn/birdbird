@@ -76,6 +76,7 @@
     "expanduser",
     "fromisoformat",
     "isoformat",
-    "linters"
+    "linters",
+    "rssrn"
   ]
 }
