@@ -11,6 +11,7 @@ from birdbird.best_clips import (
     BestClip,
     find_all_best_clips,
     find_best_clip_for_species,
+    save_best_clips,
 )
 
 
@@ -226,3 +227,53 @@ class TestFindAllBestClips:
         # With 40s window, both detections fit
         result_long = find_all_best_clips(species_json, window_duration_s=40.0)
         assert result_long["Blue Tit"].detection_count == 2
+
+
+class TestSaveBestClips:
+    """Tests for save_best_clips().
+
+    @author Claude Opus 4.6 Anthropic
+    """
+
+    def test_json_structure(self, tmp_path):
+        """Written JSON has window_duration_s, species_count, and clips keys."""
+        best_clips = {
+            "Blue Tit": BestClip(species="Blue Tit", start_s=5.0, end_s=19.0, score=1.75, detection_count=2),
+        }
+        output = tmp_path / "best_clips.json"
+
+        save_best_clips(best_clips, output, window_duration_s=14.0)
+
+        data = json.loads(output.read_text())
+        assert data["window_duration_s"] == 14.0
+        assert data["species_count"] == 1
+        assert "Blue Tit" in data["clips"]
+        clip = data["clips"]["Blue Tit"]
+        assert clip["start_s"] == 5.0
+        assert clip["end_s"] == 19.0
+        assert clip["score"] == 1.75
+        assert clip["detection_count"] == 2
+
+    def test_multiple_species(self, tmp_path):
+        """Serialises multiple species correctly."""
+        best_clips = {
+            "Blue Tit": BestClip(species="Blue Tit", start_s=0.0, end_s=14.0, score=1.5, detection_count=2),
+            "Robin": BestClip(species="Robin", start_s=50.0, end_s=64.0, score=2.7, detection_count=3),
+        }
+        output = tmp_path / "best_clips.json"
+
+        save_best_clips(best_clips, output)
+
+        data = json.loads(output.read_text())
+        assert data["species_count"] == 2
+        assert set(data["clips"].keys()) == {"Blue Tit", "Robin"}
+
+    def test_empty_clips(self, tmp_path):
+        """Empty dict produces species_count=0 and empty clips."""
+        output = tmp_path / "best_clips.json"
+
+        save_best_clips({}, output)
+
+        data = json.loads(output.read_text())
+        assert data["species_count"] == 0
+        assert data["clips"] == {}

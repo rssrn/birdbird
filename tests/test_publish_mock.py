@@ -741,3 +741,81 @@ class TestPublishToR2:
         result = publish_to_r2(input_dir, self._r2_config())
 
         assert result["clip_count"] == 7
+
+    def _setup_existing_batch(self, mock_s3_client, tmp_path, mocker, user_choice):
+        """Helper: set up publish_to_r2 with an existing batch and user prompt."""
+        input_dir, _ = self._setup_dirs(tmp_path)
+
+        batch_meta = {
+            "batch_id": "20260114_01",
+            "uploaded": "2026-01-14T12:00:00+00:00",
+            "original_date": "2026-01-14",
+            "start_date": "2026-01-14",
+            "end_date": "2026-01-14",
+            "clip_count": 5,
+            "highlights_duration": 60.0,
+            "_upload_stats": {"uploaded": ["highlights.mp4"], "skipped": []},
+        }
+
+        mocker.patch("birdbird.publish.create_r2_client", return_value=mock_s3_client)
+        # batch_exists=True triggers the prompt
+        mocker.patch("birdbird.publish.generate_batch_id", return_value=("20260114_01", True))
+        mocker.patch("birdbird.publish.upload_batch", return_value=batch_meta)
+        mocker.patch("birdbird.publish.update_latest_json")
+        mocker.patch("birdbird.publish.cleanup_old_batches", return_value=[])
+        mocker.patch("birdbird.publish.load_detections", return_value=[{}] * 5)
+        mocker.patch("birdbird.publish.typer.echo")
+        mocker.patch("birdbird.publish.typer.prompt", return_value=user_choice)
+
+        return input_dir
+
+    def test_existing_batch_option1_reuse(self, mock_s3_client, tmp_path, mocker):
+        """User chooses option 1 to re-use existing batch."""
+        input_dir = self._setup_existing_batch(mock_s3_client, tmp_path, mocker, user_choice=1)
+
+        result = publish_to_r2(input_dir, self._r2_config())
+
+        assert result["batch_id"] == "20260114_01"
+        assert result["batch_replaced"] is True
+
+    def test_existing_batch_option2_create_new(self, mock_s3_client, tmp_path, mocker):
+        """User chooses option 2 to create a new batch sequence."""
+        input_dir, _ = self._setup_dirs(tmp_path)
+
+        batch_meta_new = {
+            "batch_id": "20260114_02",
+            "uploaded": "2026-01-14T12:00:00+00:00",
+            "original_date": "2026-01-14",
+            "start_date": "2026-01-14",
+            "end_date": "2026-01-14",
+            "clip_count": 5,
+            "highlights_duration": 60.0,
+            "_upload_stats": {"uploaded": ["highlights.mp4"], "skipped": []},
+        }
+
+        mocker.patch("birdbird.publish.create_r2_client", return_value=mock_s3_client)
+        # First call returns existing batch, second call (create_new=True) returns new ID
+        mocker.patch(
+            "birdbird.publish.generate_batch_id",
+            side_effect=[("20260114_01", True), ("20260114_02", False)],
+        )
+        mocker.patch("birdbird.publish.upload_batch", return_value=batch_meta_new)
+        mocker.patch("birdbird.publish.update_latest_json")
+        mocker.patch("birdbird.publish.cleanup_old_batches", return_value=[])
+        mocker.patch("birdbird.publish.load_detections", return_value=[{}] * 5)
+        mocker.patch("birdbird.publish.typer.echo")
+        mocker.patch("birdbird.publish.typer.prompt", return_value=2)
+
+        result = publish_to_r2(input_dir, self._r2_config())
+
+        assert result["batch_id"] == "20260114_02"
+        assert result["batch_replaced"] is False
+
+    def test_existing_batch_option3_cancel(self, mock_s3_client, tmp_path, mocker):
+        """User chooses option 3 to cancel."""
+        import typer
+
+        input_dir = self._setup_existing_batch(mock_s3_client, tmp_path, mocker, user_choice=3)
+
+        with pytest.raises(typer.Exit):
+            publish_to_r2(input_dir, self._r2_config())

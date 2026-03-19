@@ -12,6 +12,7 @@ import pytest
 from birdbird.species import (
     Detection,
     LocalProcessor,
+    RemoteProcessor,
     SpeciesResults,
     aggregate_species_summary,
     check_remote_connection,
@@ -547,3 +548,46 @@ class TestIdentifySpeciesValidation:
 
         with pytest.raises(ValueError, match="Local processing requires"):
             identify_species(highlights, config=config)
+
+
+class TestWindowsToWslPath:
+    """Tests for RemoteProcessor._windows_to_wsl_path().
+
+    @author Claude Opus 4.6 Anthropic
+    """
+
+    def _make_processor(self):
+        from birdbird.config import RemoteConfig
+
+        config = RemoteConfig(host="user@host", shell="wsl", python_env="~/env", timeout=300)
+        return RemoteProcessor(config=config, labels=["Blue Tit"])
+
+    def test_backslash_path(self):
+        """Converts C:\\Users\\user\\AppData to /mnt/c/Users/user/AppData."""
+        proc = self._make_processor()
+        result = proc._windows_to_wsl_path("C:\\Users\\user\\AppData")
+        assert result == "/mnt/c/Users/user/AppData"
+
+    def test_forward_slash_path(self):
+        """Converts C:/Users/user/AppData to /mnt/c/Users/user/AppData."""
+        proc = self._make_processor()
+        result = proc._windows_to_wsl_path("C:/Users/user/AppData")
+        assert result == "/mnt/c/Users/user/AppData"
+
+    def test_lowercase_drive_letter(self):
+        """Drive letter is lowercased in WSL path."""
+        proc = self._make_processor()
+        result = proc._windows_to_wsl_path("D:\\Data\\temp")
+        assert result == "/mnt/d/Data/temp"
+
+    def test_no_drive_letter_passthrough(self):
+        """Path without drive letter is returned as-is."""
+        proc = self._make_processor()
+        result = proc._windows_to_wsl_path("/already/wsl/path")
+        assert result == "/already/wsl/path"
+
+    def test_mixed_separators(self):
+        """Handles mixed forward and backslash separators."""
+        proc = self._make_processor()
+        result = proc._windows_to_wsl_path("C:\\Users/user\\temp")
+        assert result == "/mnt/c/Users/user/temp"
