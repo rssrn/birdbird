@@ -39,7 +39,7 @@ jobs:
 
       - name: Create pull request
         if: steps.diff.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: pre-commit-autoupdate
           commit-message: "Update pre-commit hooks"
