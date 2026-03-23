@@ -49,3 +49,4 @@ jobs:
 
             Review the version bumps in `.pre-commit-config.yaml` and merge when ready.
           labels: dependencies
+          reviewers: rssrn
