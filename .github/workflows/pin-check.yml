@@ -1,0 +1,43 @@
+name: Check Redundant Pins
+
+# Runs monthly to flag CVE-motivated minimum-version pins that are no longer necessary
+# because upstream packages have raised their own requirements to cover the fix.
+
+on:
+  schedule:
+    - cron: "0 7 1 * *"  # 1st of each month at 07:00 UTC (~08:00 UK time)
+  workflow_dispatch:
+
+jobs:
+  check-pins:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      # Install direct deps with --no-deps so we get their package metadata
+      # (Requires-Dist) without pulling in multi-GB ML transitive dependencies.
+      - name: Install direct dependencies (metadata only)
+        run: |
+          pip install packaging
+          pip install --no-deps -e .
+          pip install --no-deps \
+            ultralytics \
+            birdnet-analyzer \
+            typer \
+            tqdm \
+            boto3 \
+            opencv-python \
+            pillow \
+            pygments \
+            requests
+
+      - name: Check for redundant CVE pins
+        run: python scripts/check_redundant_pins.py
