@@ -18,6 +18,10 @@ dependencies = [
     "birdnet-analyzer>=2.4.0",
     # pillow: min version pinned to avoid CVE-2026-25990 (transitive dep via ultralytics et al.)
     "pillow>=12.1.1",
+    # pygments: min version pinned to avoid CVE-2026-4539 (transitive dep)
+    "pygments>=2.20.0",
+    # requests: min version pinned to avoid CVE-2026-25645 (transitive dep)
+    "requests>=2.33.0",
 ]
 
 [project.scripts]
