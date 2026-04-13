@@ -19,3 +19,7 @@ updates:
       timezone: "Europe/London"
     reviewers:
       - "rssrn"
+    groups:
+      pip-all:
+        patterns:
+          - "*"
