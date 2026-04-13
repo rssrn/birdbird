@@ -10,18 +10,18 @@ readme = "README.md"
 license = "GPL-3.0-or-later"
 requires-python = ">=3.10"
 dependencies = [
-    "ultralytics>=8.0.0",
-    "opencv-python>=4.8.0",
-    "typer>=0.9.0",
-    "tqdm>=4.66.0",
-    "boto3>=1.42.0",
+    "ultralytics>=8.4.37",
+    "opencv-python>=4.13.0.92",
+    "typer>=0.24.1",
+    "tqdm>=4.67.3",
+    "boto3>=1.42.88",
     "birdnet-analyzer>=2.4.0",
     # pillow: min version pinned to avoid CVE-2026-25990 (transitive dep via ultralytics et al.)
-    "pillow>=12.1.1",
+    "pillow>=12.2.0",
     # pygments: min version pinned to avoid CVE-2026-4539 (transitive dep)
     "pygments>=2.20.0",
     # requests: min version pinned to avoid CVE-2026-25645 (transitive dep)
-    "requests>=2.33.0",
+    "requests>=2.33.1",
 ]
 
 [project.scripts]
@@ -29,18 +29,18 @@ birdbird = "birdbird.cli:app"
 
 [project.optional-dependencies]
 test = [
-    "pytest>=8.0",
+    "pytest>=9.0.3",
     "pytest-cov",
     "pytest-mock",
-    "mypy>=1.13",
+    "mypy>=1.20.1",
     "types-tqdm",
     "boto3-stubs[essential]",
-    "bandit>=1.7",
-    "pip-audit>=2.7",
-    "ruff>=0.9.0",
+    "bandit>=1.9.4",
+    "pip-audit>=2.10.0",
+    "ruff>=0.15.10",
 ]
 gpu = [
-    "torch>=2.0.0",
+    "torch>=2.11.0",
     "bioclip>=0.1.0",
 ]
 
