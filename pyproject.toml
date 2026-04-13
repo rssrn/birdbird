@@ -14,7 +14,7 @@ dependencies = [
     "opencv-python>=4.8.0",
     "typer>=0.9.0",
     "tqdm>=4.66.0",
-    "boto3>=1.42.0",
+    "boto3>=1.42.88",
     "birdnet-analyzer>=2.4.0",
     # pillow: min version pinned to avoid CVE-2026-25990 (transitive dep via ultralytics et al.)
     "pillow>=12.1.1",
