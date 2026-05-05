@@ -25,4 +25,4 @@ jobs:
           pip install -e ".[test]"
 
       - name: Run pip-audit
-        run: pip-audit
+        run: pip-audit --skip-editable
