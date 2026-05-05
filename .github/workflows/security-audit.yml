@@ -22,10 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install --no-deps -e .
-          pip install \
-            pip-audit \
-            "typer>=0.9.0" "tqdm>=4.66.0" "boto3>=1.42.0" "pillow>=12.2.0" "opencv-python>=4.8.0"
+          pip install -e ".[test]"
 
       - name: Run pip-audit
         run: pip-audit
