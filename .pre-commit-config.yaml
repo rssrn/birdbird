@@ -38,6 +38,12 @@ repos:
         language: system
         files: \.(html|md)$
         types: [file]
+      - id: pip-compile
+        name: Sync requirements.lock (pip-compile)
+        entry: bash -c '.venv/bin/pip-compile --extra=test --no-emit-index-url --output-file=requirements.lock pyproject.toml --quiet && git add requirements.lock'
+        language: system
+        files: ^pyproject\.toml$
+        pass_filenames: false
       # Python analysis (slower, project-scoped)
       - id: mypy
         name: Type checking (mypy)
