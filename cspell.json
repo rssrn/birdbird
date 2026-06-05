@@ -7,6 +7,7 @@
   "ignorePaths": [
     "node_modules",
     ".venv",
+    ".claude",
     "*.json",
     "*.lock"
   ],
@@ -14,6 +15,7 @@
     "/BirdNET-Analyzer/gi"
   ],
   "words": [
+    "tagline",
     "birdbird",
     "rossarn",
     "BirdNET",
