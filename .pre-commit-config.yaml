@@ -39,8 +39,8 @@ repos:
         files: \.(html|md)$
         types: [file]
       - id: pip-compile
-        name: Sync requirements.lock (pip-compile)
-        entry: bash -c '.venv/bin/pip-compile --extra=test --no-emit-index-url --output-file=requirements.lock pyproject.toml --quiet && git add requirements.lock'
+        name: Sync requirements.txt (pip-compile)
+        entry: bash -c '.venv/bin/pip-compile --extra=test --no-emit-index-url --output-file=requirements.txt pyproject.toml --quiet && git add requirements.txt'
         language: system
         files: ^pyproject\.toml$
         pass_filenames: false
