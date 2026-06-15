@@ -40,7 +40,7 @@ repos:
         types: [file]
       - id: pip-compile
         name: Sync requirements.txt (pip-compile)
-        entry: bash -c '.venv/bin/pip-compile --extra=test --no-emit-index-url --output-file=requirements.txt pyproject.toml --quiet && git add requirements.txt'
+        entry: bash -c '.venv/bin/pip-compile --extra=test --no-emit-index-url --output-file=requirements.txt pyproject.toml --quiet --max-rounds=20 && git add requirements.txt'
         language: system
         files: ^pyproject\.toml$
         pass_filenames: false
@@ -69,7 +69,8 @@ repos:
         name: Security audit (pip-audit)
         # CVE-2026-1669 (keras): no fix available; transitive dep via birdnet-analyzer->tensorflow->keras; not loading untrusted models
         # PYSEC-2026-139 (torch): no fix available; not exposed to untrusted input
-        entry: bash -c 'MARKER=.venv/.pip-audit-last-run; if [ -f "$MARKER" ] && [ "$(date -r "$MARKER" +%Y%m%d)" = "$(date +%Y%m%d)" ]; then echo "pip-audit already ran today, skipping"; exit 0; fi; .venv/bin/pip-audit --vulnerability-service osv --skip-editable --ignore-vuln CVE-2026-1669 --ignore-vuln PYSEC-2026-139 && touch "$MARKER"'
+        # PYSEC-2025-194 (torch): no fix available; not exposed to untrusted input
+        entry: bash -c 'MARKER=.venv/.pip-audit-last-run; if [ -f "$MARKER" ] && [ "$(date -r "$MARKER" +%Y%m%d)" = "$(date +%Y%m%d)" ]; then echo "pip-audit already ran today, skipping"; exit 0; fi; .venv/bin/pip-audit --vulnerability-service osv --skip-editable --ignore-vuln CVE-2026-1669 --ignore-vuln PYSEC-2026-139 --ignore-vuln PYSEC-2025-194 && touch "$MARKER"'
         language: system
         stages: [pre-push]
         always_run: true
