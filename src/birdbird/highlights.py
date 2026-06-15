@@ -381,6 +381,8 @@ def concatenate_segments(
             str(segment_files[0]),
             "-c",
             "copy",
+            "-movflags",
+            "+faststart",
             "-loglevel",
             "error",
             str(output_path),
