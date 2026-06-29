@@ -22,11 +22,11 @@ birdnet-analyzer==2.4.0
     # via birdbird (pyproject.toml)
 boolean-py==5.0
     # via license-expression
-boto3==1.43.34
+boto3==1.43.36
     # via birdbird (pyproject.toml)
-boto3-stubs[essential]==1.43.34
+boto3-stubs[essential]==1.43.36
     # via birdbird (pyproject.toml)
-botocore==1.43.34
+botocore==1.43.36
     # via
     #   boto3
     #   s3transfer
@@ -44,11 +44,11 @@ cffi==2.0.0
     # via soundfile
 charset-normalizer==3.4.7
     # via requests
-click==8.4.1
+click==8.4.2
     # via pip-tools
 contourpy==1.3.3
     # via matplotlib
-coverage[toml]==7.14.2
+coverage[toml]==7.14.3
     # via pytest-cov
 cuda-bindings==13.3.1
     # via torch
@@ -148,9 +148,9 @@ mypy-boto3-cloudformation==1.43.23
     # via boto3-stubs
 mypy-boto3-dynamodb==1.43.0
     # via boto3-stubs
-mypy-boto3-ec2==1.43.33
+mypy-boto3-ec2==1.43.35
     # via boto3-stubs
-mypy-boto3-lambda==1.43.33
+mypy-boto3-lambda==1.43.35
     # via boto3-stubs
 mypy-boto3-rds==1.43.30
     # via boto3-stubs
@@ -282,9 +282,9 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-polars==1.41.2
+polars==1.42.0
     # via ultralytics
-polars-runtime-32==1.41.2
+polars-runtime-32==1.42.0
     # via polars
 pooch==1.9.0
     # via librosa
@@ -348,7 +348,7 @@ rich==15.0.0
     #   keras
     #   pip-audit
     #   typer
-ruff==0.15.18
+ruff==0.15.20
     # via birdbird (pyproject.toml)
 s3transfer==0.19.0
     # via boto3
@@ -358,7 +358,6 @@ scipy==1.17.1
     # via
     #   librosa
     #   scikit-learn
-    #   ultralytics
 shellingham==1.5.4
     # via typer
 six==1.17.0
@@ -401,7 +400,7 @@ tqdm==4.68.3
     #   kagglehub
 triton==3.7.1
     # via torch
-typer==0.26.7
+typer==0.26.8
     # via birdbird (pyproject.toml)
 types-awscrt==0.34.1
     # via botocore-stubs
@@ -421,7 +420,7 @@ typing-extensions==4.15.0
     #   soundfile
     #   tensorflow
     #   torch
-ultralytics==8.4.75
+ultralytics==8.4.82
     # via birdbird (pyproject.toml)
 ultralytics-thop==2.0.20
     # via ultralytics
