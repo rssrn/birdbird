@@ -463,7 +463,7 @@ def frames(
     """Extract and rank best bird frames from filtered clips.
 
     Note: Run 'birdbird filter' first to detect and filter clips.
-    This command is hidden as frame scoring is not part of the main pipeline.
+    Hidden: superseded by best_clips (video seek), removed from pipeline in favour of clip-based species seek.
 
     @author Claude Sonnet 4.5 Anthropic
     """
