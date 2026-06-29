@@ -82,6 +82,7 @@ grpcio==1.81.1
     # via tensorflow
 h5py==3.14.0
     # via
+    #   birdbird (pyproject.toml)
     #   keras
     #   tensorflow
 idna==3.18
