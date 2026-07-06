@@ -4,13 +4,13 @@
 #
 #    pip-compile --extra=test --max-rounds=20 --no-emit-index-url --output-file=requirements.txt pyproject.toml
 #
-absl-py==2.4.0
+absl-py==2.5.0
     # via
     #   keras
     #   tensorflow
 annotated-doc==0.0.4
     # via typer
-ast-serialize==0.5.0
+ast-serialize==0.6.0
     # via mypy
 astunparse==1.6.3
     # via tensorflow
@@ -22,11 +22,11 @@ birdnet-analyzer==2.4.0
     # via birdbird (pyproject.toml)
 boolean-py==5.0
     # via license-expression
-boto3==1.43.36
+boto3==1.43.40
     # via birdbird (pyproject.toml)
-boto3-stubs[essential]==1.43.36
+boto3-stubs[essential]==1.43.40
     # via birdbird (pyproject.toml)
-botocore==1.43.36
+botocore==1.43.40
     # via
     #   boto3
     #   s3transfer
@@ -48,7 +48,7 @@ click==8.4.2
     # via pip-tools
 contourpy==1.3.3
     # via matplotlib
-coverage[toml]==7.14.3
+coverage[toml]==7.15.0
     # via pytest-cov
 cuda-bindings==13.3.1
     # via torch
@@ -64,7 +64,7 @@ decorator==5.3.1
     # via librosa
 defusedxml==0.7.1
     # via py-serializable
-filelock==3.29.4
+filelock==3.29.5
     # via
     #   cachecontrol
     #   torch
@@ -78,7 +78,7 @@ gast==0.7.0
     # via tensorflow
 google-pasta==0.2.0
     # via tensorflow
-grpcio==1.81.1
+grpcio==1.82.0
     # via tensorflow
 h5py==3.14.0
     # via
@@ -113,11 +113,11 @@ libclang==18.1.1
     # via tensorflow
 librosa==0.11.0
     # via birdnet-analyzer
-librt==0.11.0
+librt==0.12.0
     # via mypy
 license-expression==30.4.4
     # via cyclonedx-python-lib
-llvmlite==0.47.0
+llvmlite==0.48.0
     # via numba
 markdown-it-py==4.2.0
     # via rich
@@ -144,13 +144,13 @@ msgpack==1.2.1
     #   librosa
 mypy==2.1.0
     # via birdbird (pyproject.toml)
-mypy-boto3-cloudformation==1.43.23
+mypy-boto3-cloudformation==1.43.38
     # via boto3-stubs
 mypy-boto3-dynamodb==1.43.0
     # via boto3-stubs
-mypy-boto3-ec2==1.43.35
+mypy-boto3-ec2==1.43.39
     # via boto3-stubs
-mypy-boto3-lambda==1.43.35
+mypy-boto3-lambda==1.43.37
     # via boto3-stubs
 mypy-boto3-rds==1.43.30
     # via boto3-stubs
@@ -162,11 +162,11 @@ mypy-extensions==1.1.0
     # via mypy
 namex==0.1.0
     # via keras
-narwhals==2.22.1
+narwhals==2.23.0
     # via scikit-learn
 networkx==3.6.1
     # via torch
-numba==0.65.1
+numba==0.66.0
     # via
     #   librosa
     #   resampy
@@ -260,7 +260,7 @@ pandas==3.0.3
     # via birdnet-analyzer
 pathspec==1.1.1
     # via mypy
-pillow==12.2.0
+pillow==12.3.0
     # via
     #   birdbird (pyproject.toml)
     #   matplotlib
@@ -282,9 +282,9 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-polars==1.42.0
+polars==1.42.1
     # via ultralytics
-polars-runtime-32==1.42.0
+polars-runtime-32==1.42.1
     # via polars
 pooch==1.9.0
     # via librosa
@@ -410,7 +410,7 @@ types-s3transfer==0.16.0
     # via boto3-stubs
 types-tqdm==4.68.0.20260608
     # via birdbird (pyproject.toml)
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   cyclonedx-python-lib
     #   grpcio
@@ -420,7 +420,7 @@ typing-extensions==4.15.0
     #   soundfile
     #   tensorflow
     #   torch
-ultralytics==8.4.82
+ultralytics==8.4.89
     # via birdbird (pyproject.toml)
 ultralytics-thop==2.0.20
     # via ultralytics
