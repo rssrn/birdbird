@@ -38,6 +38,15 @@ updates:
         versions: [">=1.4.0"]
       - dependency-name: "h5py"
         versions: [">=3.15.0"]
+      # TEMPORARY (added 2026-07-13): hold torch on 2.12.x. The 2.13.0 bump
+      # (PR #44) re-pinned cuda-toolkit to 13.3.1 and 17 nvidia-* packages,
+      # but torch 2.13.0 itself declares cuda-toolkit==13.0.3 as a
+      # requirement — a hard lockfile conflict flagged by labro-bot's review
+      # of that PR. Remove this ignore once torch publishes a point release
+      # whose declared cuda-toolkit/nvidia-* pins are internally consistent,
+      # and re-verify the resolved lockfile installs cleanly before merging.
+      - dependency-name: "torch"
+        versions: [">=2.13.0"]
     groups:
       pip-all:
         patterns:
