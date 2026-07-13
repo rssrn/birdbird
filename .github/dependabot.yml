@@ -19,6 +19,25 @@ updates:
       timezone: "Europe/London"
     reviewers:
       - "rssrn"
+    # TEMPORARY (added 2026-07-13): hold opencv-python on the 4.x line while the
+    # brand-new 5.0.0 major (released 2026-07-02, removed the legacy C API,
+    # requires C++17) settles and gets its first point releases. 4.13.0 has no
+    # known CVEs. Remove this ignore once a 5.0.x fix release lands and we've
+    # tested cv2.VideoCapture / frame decoding against real AVI footage — at
+    # which point dependabot will re-propose the 5.x bump automatically.
+    ignore:
+      - dependency-name: "opencv-python"
+        versions: [">=5.0.0"]
+      # mpmath / h5py: transitive deps we pin explicitly in pyproject.toml to
+      # match upstream's declared ceilings. sympy 1.14.0 requires mpmath<1.4 and
+      # tensorflow 2.21.0 requires h5py<3.15.0 (verified via PyPI metadata
+      # 2026-07-13). Dependabot otherwise bumps past these AND relaxes our
+      # pyproject bounds, installing officially-unsupported combos. Hold until
+      # sympy/tensorflow themselves raise their ceilings, then bump in lockstep.
+      - dependency-name: "mpmath"
+        versions: [">=1.4.0"]
+      - dependency-name: "h5py"
+        versions: [">=3.15.0"]
     groups:
       pip-all:
         patterns:
