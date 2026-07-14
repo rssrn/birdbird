@@ -22,17 +22,17 @@ birdnet-analyzer==2.4.0
     # via birdbird (pyproject.toml)
 boolean-py==5.0
     # via license-expression
-boto3==1.43.40
+boto3==1.43.47
     # via birdbird (pyproject.toml)
-boto3-stubs[essential]==1.43.40
+boto3-stubs[essential]==1.43.47
     # via birdbird (pyproject.toml)
-botocore==1.43.40
+botocore==1.43.47
     # via
     #   boto3
     #   s3transfer
 botocore-stubs==1.43.14
     # via boto3-stubs
-build==1.5.0
+build==1.5.1
     # via pip-tools
 cachecontrol[filecache]==0.14.4
     # via
@@ -40,21 +40,21 @@ cachecontrol[filecache]==0.14.4
     #   pip-audit
 certifi==2026.6.17
     # via requests
-cffi==2.0.0
+cffi==2.1.0
     # via soundfile
-charset-normalizer==3.4.7
+charset-normalizer==3.4.9
     # via requests
 click==8.4.2
     # via pip-tools
 contourpy==1.3.3
     # via matplotlib
-coverage[toml]==7.15.0
+coverage[toml]==7.15.1
     # via pytest-cov
 cuda-bindings==13.3.1
     # via torch
-cuda-pathfinder==1.5.5
+cuda-pathfinder==1.5.6
     # via cuda-bindings
-cuda-toolkit[cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2
+cuda-toolkit[cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.3.0
     # via torch
 cycler==0.12.1
     # via matplotlib
@@ -64,7 +64,7 @@ decorator==5.3.1
     # via librosa
 defusedxml==0.7.1
     # via py-serializable
-filelock==3.29.5
+filelock==3.29.7
     # via
     #   cachecontrol
     #   torch
@@ -78,7 +78,7 @@ gast==0.7.0
     # via tensorflow
 google-pasta==0.2.0
     # via tensorflow
-grpcio==1.82.0
+grpcio==1.82.1
     # via tensorflow
 h5py==3.14.0
     # via
@@ -113,7 +113,7 @@ libclang==18.1.1
     # via tensorflow
 librosa==0.11.0
     # via birdnet-analyzer
-librt==0.12.0
+librt==0.13.0
     # via mypy
 license-expression==30.4.4
     # via cyclonedx-python-lib
@@ -142,15 +142,15 @@ msgpack==1.2.1
     #   birdbird (pyproject.toml)
     #   cachecontrol
     #   librosa
-mypy==2.1.0
+mypy==2.3.0
     # via birdbird (pyproject.toml)
 mypy-boto3-cloudformation==1.43.38
     # via boto3-stubs
 mypy-boto3-dynamodb==1.43.0
     # via boto3-stubs
-mypy-boto3-ec2==1.43.39
+mypy-boto3-ec2==1.43.46
     # via boto3-stubs
-mypy-boto3-lambda==1.43.37
+mypy-boto3-lambda==1.43.47
     # via boto3-stubs
 mypy-boto3-rds==1.43.30
     # via boto3-stubs
@@ -162,7 +162,7 @@ mypy-extensions==1.1.0
     # via mypy
 namex==0.1.0
     # via keras
-narwhals==2.23.0
+narwhals==2.24.0
     # via scikit-learn
 networkx==3.6.1
     # via torch
@@ -348,9 +348,9 @@ rich==15.0.0
     #   keras
     #   pip-audit
     #   typer
-ruff==0.15.20
+ruff==0.15.21
     # via birdbird (pyproject.toml)
-s3transfer==0.19.0
+s3transfer==0.19.1
     # via boto3
 scikit-learn==1.9.0
     # via librosa
@@ -393,7 +393,7 @@ torch==2.12.1
     #   ultralytics-thop
 torchvision==0.27.1
     # via ultralytics
-tqdm==4.68.3
+tqdm==4.68.4
     # via
     #   birdbird (pyproject.toml)
     #   birdnet-analyzer
@@ -404,7 +404,7 @@ typer==0.26.8
     # via birdbird (pyproject.toml)
 types-awscrt==0.34.1
     # via botocore-stubs
-types-requests==2.33.0.20260518
+types-requests==2.33.0.20260712
     # via types-tqdm
 types-s3transfer==0.16.0
     # via boto3-stubs
@@ -420,7 +420,7 @@ typing-extensions==4.16.0
     #   soundfile
     #   tensorflow
     #   torch
-ultralytics==8.4.89
+ultralytics==8.4.95
     # via birdbird (pyproject.toml)
 ultralytics-thop==2.0.20
     # via ultralytics
