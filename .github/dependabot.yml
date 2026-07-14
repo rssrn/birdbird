@@ -47,19 +47,22 @@ updates:
       # and re-verify the resolved lockfile installs cleanly before merging.
       - dependency-name: "torch"
         versions: [">=2.13.0"]
-      # TEMPORARY (added 2026-07-14): hold torchvision and the cuda-toolkit/
-      # nvidia-* transitive deps at their current versions. PR #45 showed the
-      # torch ignore rule above doesn't stop these from bumping independently:
-      # torchvision 0.28.0 requires torch==2.13.0 exactly (conflicts with the
-      # torch<2.13.0 hold), and torch 2.12.1 declares its own exact/narrow pins
-      # on cuda-toolkit and the nvidia-* packages that this PR's bumps violated
-      # (flagged by labro-bot's review). Remove these ignores once torch moves
-      # to 2.13.x (see the ignore above), then bump torchvision/cuda-toolkit/
-      # nvidia-* back in lockstep and re-verify the lockfile resolves.
+      # TEMPORARY (added 2026-07-14, corrected 2026-07-14 after PR #46 slipped
+      # a cuda-toolkit 13.3.0 bump past the first version of this rule): hold
+      # torchvision and the cuda-toolkit/nvidia-* transitive deps at their
+      # current versions. PR #45 showed the torch ignore rule above doesn't
+      # stop these from bumping independently: torchvision 0.28.0 requires
+      # torch==2.13.0 exactly (conflicts with the torch<2.13.0 hold), and
+      # torch 2.12.1 declares an EXACT pin on cuda-toolkit==13.0.2 (any bump
+      # above that, not just >=13.3.1, breaks resolution — confirmed via
+      # `pip install --dry-run` against PR #46's lockfile). Remove these
+      # ignores once torch moves to 2.13.x (see the ignore above), then bump
+      # torchvision/cuda-toolkit/nvidia-* back in lockstep and re-verify the
+      # lockfile resolves.
       - dependency-name: "torchvision"
         versions: [">=0.28.0"]
       - dependency-name: "cuda-toolkit"
-        versions: [">=13.3.1"]
+        versions: [">=13.0.3"]
       - dependency-name: "nvidia-*"
         versions: [">=0"]
     groups:
