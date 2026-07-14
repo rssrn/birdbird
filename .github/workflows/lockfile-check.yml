@@ -1,0 +1,32 @@
+name: Lockfile Check
+
+# Dependabot-only PRs touch requirements.txt but not src/**, tests/**, or
+# pyproject.toml, so tests.yml never runs on them (see PR #45: dependabot
+# bumped torchvision/nvidia-*/cuda-toolkit into a combination that pip
+# couldn't resolve, and no CI caught it before merge). tests.yml also
+# installs deps with --no-deps to avoid pulling in multi-GB ML frameworks,
+# so it wouldn't have caught this even if triggered. This workflow runs
+# pip's real resolver against the full lockfile (dry-run, nothing is
+# actually installed) whenever requirements.txt changes.
+
+on:
+  push:
+    paths:
+      - "requirements.txt"
+  workflow_dispatch:
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Verify lockfile resolves
+        run: pip install --dry-run --no-cache-dir -r requirements.txt
