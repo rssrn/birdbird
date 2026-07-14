@@ -70,7 +70,8 @@ repos:
         # CVE-2026-1669 (keras): no fix available; transitive dep via birdnet-analyzer->tensorflow->keras; not loading untrusted models
         # PYSEC-2026-139 (torch): no fix available; not exposed to untrusted input
         # PYSEC-2025-194 (torch): no fix available; not exposed to untrusted input
-        entry: bash -c 'MARKER=.venv/.pip-audit-last-run; if [ -f "$MARKER" ] && [ "$(date -r "$MARKER" +%Y%m%d)" = "$(date +%Y%m%d)" ]; then echo "pip-audit already ran today, skipping"; exit 0; fi; .venv/bin/pip-audit --vulnerability-service osv --skip-editable --ignore-vuln CVE-2026-1669 --ignore-vuln PYSEC-2026-139 --ignore-vuln PYSEC-2025-194 && touch "$MARKER"'
+        # PYSEC-2026-3447 (setuptools): fix (83.0.0) conflicts with torch 2.12.1's setuptools<82 pin; not exposed to untrusted input
+        entry: bash -c 'MARKER=.venv/.pip-audit-last-run; if [ -f "$MARKER" ] && [ "$(date -r "$MARKER" +%Y%m%d)" = "$(date +%Y%m%d)" ]; then echo "pip-audit already ran today, skipping"; exit 0; fi; .venv/bin/pip-audit --vulnerability-service osv --skip-editable --ignore-vuln CVE-2026-1669 --ignore-vuln PYSEC-2026-139 --ignore-vuln PYSEC-2025-194 --ignore-vuln PYSEC-2026-3447 && touch "$MARKER"'
         language: system
         stages: [pre-push]
         always_run: true
