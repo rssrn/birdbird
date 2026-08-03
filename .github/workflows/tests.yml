@@ -1,12 +1,16 @@
 name: Tests
 
-# Triggers: run on push only when source code or tests change
+# Triggers: run on push only when source code, tests, or the workflows
+# themselves change. Including .github/workflows/** means CI edits (e.g. action
+# version bumps) get smoke-tested on merge instead of first running unattended
+# on a schedule.
 on:
   push:
     paths:
       - "src/**"
       - "tests/**"
       - "pyproject.toml"
+      - ".github/workflows/**"
   workflow_dispatch:  # Allows manual triggering from the GitHub Actions tab
 
 jobs:
