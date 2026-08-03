@@ -1,4 +1,21 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      # Screenshots in docs/ and ux-reviews/ run up to ~470kB; 1MB leaves room
+      # while still blocking accidentally committed clips (~27MB each).
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
   - repo: https://github.com/PyCQA/bandit
     rev: 1.9.4
     hooks:
