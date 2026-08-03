@@ -79,6 +79,10 @@
     "fromisoformat",
     "isoformat",
     "linters",
-    "rssrn"
+    "rssrn",
+    "IPCC",
+    "softmax",
+    "softmaxed",
+    "uncalibrated"
   ]
 }

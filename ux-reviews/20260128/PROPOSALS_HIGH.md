@@ -134,7 +134,7 @@ I don't necessarily agree with "Users likely care most about frequent visitors" 
 
 ### HIGH-05: Simplify Confidence Range Display
 
-**Status:** 🔵 Proposed / QuickWin
+**Status:** ✅ Accepted with modifications / QuickWin
 
 **Description:**
 Replace percentage ranges (e.g., "53-100%") with simpler confidence visualization: show median confidence with min/max on hover, or use qualitative labels (High/Medium/Low confidence).
@@ -159,7 +159,21 @@ Replace percentage ranges (e.g., "53-100%") with simpler confidence visualizatio
 
 **Response:**
 
-It's a fair point, although as a technical user I'd find it hard to accept the loss of nuance. Maybe needs some more thought. Who are our audience?
+Partially accepted — reject the substitution (Options A/B/D as written), accept the decluttering.
+
+Qualitative labels don't survive transmission between people: "my high" isn't "your high". This is measured, not just intuition — Kent's *Words of Estimative Probability* found readers map words like "probable" to numeric ranges spanning ~25 points. Which is why every standard that uses such words (IPCC AR5 likelihood scale, ICD-203) publishes a fixed numeric table *alongside* the word rather than replacing it.
+
+Worse, those bands assume calibrated probabilities and BioCLIP's aren't. It's zero-shot CLIP: cosine similarity softmaxed over the 67 labels in `uk_garden_birds.txt`. That's a relative ranking within a closed set, not P(species | image), and it's label-set dependent — adding more tit-like species would lower every Blue Tit score without the image changing. So 80% does *not* mean "right 4 times in 5", and labelling it "Probable" would make an uncalibrated score look calibrated. Same caveat applies to BirdNET scores.
+
+Also note Option A (median) is backwards for ID — it penalises a species mostly seen badly but once seen clearly, which is precisely the case where we're most sure.
+
+Actions:
+
+- **Keep the raw percentages.** The loss of nuance isn't justified, and showing both numbers and words is what the standards actually do.
+- **Fix the real inconsistency:** the Highlights tab has a count-vs-confidence tier vocabulary and the two stats tabs don't. Extend the existing tiers to the stats tabs as a badge *alongside* the number. This also gives HIGH-04 its "highlight high-confidence rare detections" mechanism for free (count &lt;=2 but max &gt;=0.80 = the interesting rare bird).
+- **Drop the range, keep the number:** replace "53-100%" with max prominent, count adjacent, full range on hover. Removes the clutter without losing the detail.
+
+This also answers my "who are our audience?" question above — it dissolves. The words-vs-numbers trade-off only bites if we hide the numbers. Show both: technical readers get nuance, casual readers get the scan.
 
 ---
 
@@ -192,6 +206,8 @@ Add a prominent context header above the video player showing the current specie
 **Response:**
 
 This is partly a misunderstanding i.e. Batch Information does NOT show the current species, it's just stats for the whole tab (I didn't show them a screenshot of it expanded, my mistake). Asking for "clip duration" also doesn't make sense because we are seeking to points, not navigating to different clips. What I think we should do is highlight whatever button was clicked on - currently there's no indication. Even consider removing the highlight once the player has passed outside the 14-second window we identified for that species. Moving batch information to make it obvious it relates to the whole batch would be a good idea too - I just noticed the batch info only appears in the highlights tab so the confusion is understandable.
+
+"Date/time stamp is baked into video feed" is a good point but it's baked by the original hardware and hard for us to put elsewhere.
 
 ---
 
