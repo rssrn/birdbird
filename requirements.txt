@@ -425,7 +425,7 @@ ultralytics==8.4.118
     # via birdbird (pyproject.toml)
 ultralytics-thop==2.1.6
     # via ultralytics
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   botocore
     #   requests
