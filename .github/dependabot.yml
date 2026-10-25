@@ -69,6 +69,11 @@ updates:
       # Remove alongside the torch hold above and bump in lockstep.
       - dependency-name: "triton"
         versions: [">=3.8.0"]
+      # python-dateutil (added 2026-10-25): botocore 1.43.x requires
+      # python-dateutil<3.0.0, but PR #69 bumped it to 3.0.0 and the lockfile
+      # failed to resolve. Remove once botocore raises its ceiling.
+      - dependency-name: "python-dateutil"
+        versions: [">=3.0.0"]
     groups:
       pip-all:
         patterns:
