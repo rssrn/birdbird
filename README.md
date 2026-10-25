@@ -3,7 +3,7 @@
 > Automated bird feeder video analysis - turn hundreds of motion-triggered clips into highlight reels with species identification
 
 [![Tests](https://github.com/rssrn/birdbird/actions/workflows/tests.yml/badge.svg)](https://github.com/rssrn/birdbird/actions/workflows/tests.yml)
-![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
+![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
@@ -86,7 +86,7 @@ This will create:
 ### Installation
 
 **System Requirements:**
-- Python 3.10 or later
+- Python 3.11 or later
 - ffmpeg (for video processing)
 
 **Supported Platforms:**
@@ -99,10 +99,10 @@ This will create:
 sudo apt install python3 python3-venv ffmpeg
 
 # macOS
-brew install python@3.10 ffmpeg
+brew install python@3.11 ffmpeg
 
 # Verify
-python3 --version  # Should be 3.10+
+python3 --version  # Should be 3.11+
 ffmpeg -version
 ```
 

@@ -64,8 +64,9 @@ decorator==5.3.1
     # via librosa
 defusedxml==0.7.1
     # via py-serializable
-filelock==3.32.2
+filelock==4.2.4
     # via
+    #   birdbird (pyproject.toml)
     #   cachecontrol
     #   torch
     #   ultralytics
@@ -263,7 +264,7 @@ pandas==3.0.3
     # via birdnet-analyzer
 pathspec==1.1.1
     # via mypy
-pillow==12.3.0
+pillow==13.0.0
     # via
     #   birdbird (pyproject.toml)
     #   matplotlib
@@ -405,8 +406,6 @@ triton==3.7.1
     # via torch
 typer==0.27.1
     # via birdbird (pyproject.toml)
-types-awscrt==0.36.2
-    # via botocore-stubs
 types-s3transfer==0.16.0
     # via boto3-stubs
 types-tqdm==4.70.0.20260805
