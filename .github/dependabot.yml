@@ -63,6 +63,12 @@ updates:
         versions: [">=13.0.3"]
       - dependency-name: "nvidia-*"
         versions: [">=0"]
+      # TEMPORARY (added 2026-10-25): hold triton with the torch stack. PR #62
+      # bumped triton to 3.8.0 independently, but torch 2.12.1 declares an
+      # EXACT pin on triton==3.7.1 (Linux), so the lockfile failed to resolve.
+      # Remove alongside the torch hold above and bump in lockstep.
+      - dependency-name: "triton"
+        versions: [">=3.8.0"]
     groups:
       pip-all:
         patterns:
