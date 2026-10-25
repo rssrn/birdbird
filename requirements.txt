@@ -10,6 +10,8 @@ absl-py==2.5.1
     #   tensorflow
 annotated-doc==0.0.5
     # via typer
+anyio==4.15.1
+    # via httpx
 ast-serialize==0.13.1
     # via mypy
 astunparse==1.6.3
@@ -39,13 +41,20 @@ cachecontrol[filecache]==0.14.4
     #   cachecontrol
     #   pip-audit
 certifi==2026.10.19
-    # via requests
+    # via
+    #   httpcore
+    #   httpx
+    #   kagglehub
+    #   kagglesdk
+    #   requests
 cffi==2.1.1
     # via soundfile
 charset-normalizer==3.5.2
     # via requests
 click==8.5.0
     # via pip-tools
+cloudpickle==3.1.2
+    # via joblib
 contourpy==1.3.3
     # via matplotlib
 coverage[toml]==7.17.0
@@ -54,7 +63,7 @@ cuda-bindings==13.4.4
     # via torch
 cuda-pathfinder==1.8.4
     # via cuda-bindings
-cuda-toolkit[cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2
+cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3.0
     # via torch
 cycler==0.12.1
     # via matplotlib
@@ -69,7 +78,6 @@ filelock==4.2.4
     #   birdbird (pyproject.toml)
     #   cachecontrol
     #   torch
-    #   ultralytics
 flatbuffers==25.12.19
     # via tensorflow
 fonttools==4.67.0
@@ -82,13 +90,22 @@ google-pasta==0.2.0
     # via tensorflow
 grpcio==1.84.1
     # via tensorflow
+h11==0.16.0
+    # via httpcore
 h5py==3.14.0
     # via
     #   birdbird (pyproject.toml)
     #   keras
     #   tensorflow
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via ultralytics-platform
 idna==3.20
-    # via requests
+    # via
+    #   anyio
+    #   httpx
+    #   requests
 iniconfig==2.3.1
     # via pytest
 jinja2==3.1.6
@@ -196,9 +213,9 @@ numpy==2.4.6
     #   ultralytics-thop
 nvidia-cublas==13.1.1.3
     # via
+    #   cuda-toolkit
     #   nvidia-cudnn-cu13
     #   nvidia-cusolver
-    #   torch
 nvidia-cuda-cupti==13.0.85
     # via cuda-toolkit
 nvidia-cuda-nvrtc==13.0.88
@@ -207,7 +224,7 @@ nvidia-cuda-nvrtc==13.0.88
     #   nvidia-cublas
 nvidia-cuda-runtime==13.0.96
     # via cuda-toolkit
-nvidia-cudnn-cu13==9.20.0.48
+nvidia-cudnn-cu13==9.24.0.43
     # via torch
 nvidia-cufft==12.0.0.61
     # via cuda-toolkit
@@ -223,11 +240,11 @@ nvidia-cusparse==12.6.3.3
     #   nvidia-cusolver
 nvidia-cusparselt-cu13==0.8.1
     # via torch
-nvidia-ml-py==13.610.43
+nvidia-ml-py==13.615.71
     # via ultralytics
-nvidia-nccl-cu13==2.29.7
+nvidia-nccl-cu13==2.30.7
     # via torch
-nvidia-nvjitlink==13.0.88
+nvidia-nvjitlink==13.4.92
     # via
     #   cuda-toolkit
     #   nvidia-cufft
@@ -390,19 +407,19 @@ tomli==2.5.0
     # via pip-audit
 tomli-w==1.2.0
     # via pip-audit
-torch==2.12.1
+torch==2.14.1
     # via
     #   torchvision
     #   ultralytics
     #   ultralytics-thop
-torchvision==0.27.1
+torchvision==0.29.1
     # via ultralytics
 tqdm==4.70.1
     # via
     #   birdbird (pyproject.toml)
     #   birdnet-analyzer
     #   kagglehub
-triton==3.7.1
+triton==3.8.0
     # via torch
 typer==0.27.3
     # via birdbird (pyproject.toml)
@@ -412,6 +429,7 @@ types-tqdm==4.70.0.20260906
     # via birdbird (pyproject.toml)
 typing-extensions==4.16.0
     # via
+    #   anyio
     #   cyclonedx-python-lib
     #   grpcio
     #   librosa
@@ -422,6 +440,8 @@ typing-extensions==4.16.0
     #   torch
 ultralytics==8.4.184
     # via birdbird (pyproject.toml)
+ultralytics-platform==0.1.94
+    # via ultralytics
 ultralytics-thop==2.2.3
     # via ultralytics
 urllib3==2.8.0

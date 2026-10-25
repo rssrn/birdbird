@@ -36,39 +36,20 @@ updates:
         versions: [">=1.4.0"]
       - dependency-name: "h5py"
         versions: [">=3.15.0"]
-      # TEMPORARY (added 2026-07-13): hold torch on 2.12.x. The 2.13.0 bump
-      # (PR #44) re-pinned cuda-toolkit to 13.3.1 and 17 nvidia-* packages,
-      # but torch 2.13.0 itself declares cuda-toolkit==13.0.3 as a
-      # requirement — a hard lockfile conflict flagged by labro-bot's review
-      # of that PR. Remove this ignore once torch publishes a point release
-      # whose declared cuda-toolkit/nvidia-* pins are internally consistent,
-      # and re-verify the resolved lockfile installs cleanly before merging.
+      # PERMANENT (2026-10-25): Dependabot never bumps the torch stack. torch
+      # pins its CUDA deps EXACTLY (cuda-toolkit, nvidia-cudnn/nccl/nvshmem/
+      # cusparselt, triton) and torchvision pins torch, so bumping any one of
+      # them alone breaks the lockfile. Dependabot did exactly that in #44,
+      # #45, #46 (cuda-toolkit/nvidia-*) and #62 (triton). Upgrade the stack
+      # deliberately by re-running the pip-compile command in requirements.txt's
+      # header with --upgrade-package for torch, torchvision, triton, cuda-* and
+      # each nvidia-* package, then sync .venv and smoke-test `birdbird filter`.
+      # Last done 2026-10-25: torch 2.12.1 -> 2.14.1 (closes #48).
       - dependency-name: "torch"
-        versions: [">=2.13.0"]
-      # TEMPORARY (added 2026-07-14, corrected 2026-07-14 after PR #46 slipped
-      # a cuda-toolkit 13.3.0 bump past the first version of this rule): hold
-      # torchvision and the cuda-toolkit/nvidia-* transitive deps at their
-      # current versions. PR #45 showed the torch ignore rule above doesn't
-      # stop these from bumping independently: torchvision 0.28.0 requires
-      # torch==2.13.0 exactly (conflicts with the torch<2.13.0 hold), and
-      # torch 2.12.1 declares an EXACT pin on cuda-toolkit==13.0.2 (any bump
-      # above that, not just >=13.3.1, breaks resolution — confirmed via
-      # `pip install --dry-run` against PR #46's lockfile). Remove these
-      # ignores once torch moves to 2.13.x (see the ignore above), then bump
-      # torchvision/cuda-toolkit/nvidia-* back in lockstep and re-verify the
-      # lockfile resolves.
       - dependency-name: "torchvision"
-        versions: [">=0.28.0"]
-      - dependency-name: "cuda-toolkit"
-        versions: [">=13.0.3"]
-      - dependency-name: "nvidia-*"
-        versions: [">=0"]
-      # TEMPORARY (added 2026-10-25): hold triton with the torch stack. PR #62
-      # bumped triton to 3.8.0 independently, but torch 2.12.1 declares an
-      # EXACT pin on triton==3.7.1 (Linux), so the lockfile failed to resolve.
-      # Remove alongside the torch hold above and bump in lockstep.
       - dependency-name: "triton"
-        versions: [">=3.8.0"]
+      - dependency-name: "cuda-*"
+      - dependency-name: "nvidia-*"
       # python-dateutil (added 2026-10-25): botocore 1.43.x requires
       # python-dateutil<3.0.0, but PR #69 bumped it to 3.0.0 and the lockfile
       # failed to resolve. Remove once botocore raises its ceiling.
