@@ -76,7 +76,8 @@ birdbird best_clips /path/to/clips
 npx serve -l 3000 src/birdbird/templates
 # Then open: http://localhost:3000/index.html
 # Edit src/birdbird/templates/index.html and refresh browser to see changes
-# Note: R2 bucket CORS must include http://localhost:3000
+# Note: config.local.js points at production media (https://birdbird.rossarnold.uk/media);
+# the birdbird-website Worker sends CORS headers for localhost:3000
 ```
 
 ## Testing
@@ -154,7 +155,7 @@ src/birdbird/
 
 **Publish approach**: Uploads highlights.mp4 to Cloudflare R2 with YYYYMMDD-NN batch naming. Maintains latest.json index for web viewer. Prompts before deleting old batches (>5). Static HTML viewer fetches from R2 via client-side JavaScript.
 
-**Viewer development**: Use `npx serve -l 3000 src/birdbird/templates` to test viewer changes locally without deploying. Viewer fetches directly from R2 bucket (requires CORS configuration allowing localhost:3000). After confirming changes, run `deploy-birdbird-viewer` (`~/bin/deploy-birdbird-viewer`) to rsync templates to the website repo and push to deploy.
+**Viewer development**: Use `npx serve -l 3000 src/birdbird/templates` to test viewer changes locally without deploying. Locally the viewer reads production media from `https://birdbird.rossarnold.uk/media` (set in gitignored `config.local.js`); the Worker in `birdbird-website/src/worker.js` serves the R2 bucket there and sends CORS headers for `localhost:3000`. The rate-limited `r2.dev` public URL is no longer used. After confirming changes, run `deploy-birdbird-viewer` (`~/bin/deploy-birdbird-viewer`) to rsync templates to the website repo and push to deploy.
 
 **Chrome headless screenshots**: When evaluating viewer designs or capturing UI state, use Chrome headless mode:
 ```bash

@@ -394,6 +394,8 @@ npx serve -l 3000 src/birdbird/templates
 ]
 ```
 
+**Recommended for production:** the `r2.dev` public URL is rate-limited and not intended for production use (in practice it intermittently resets or stalls connections and throttles video bandwidth). Instead, attach a custom domain to the bucket, or serve the bucket same-origin from a Cloudflare Worker with an R2 binding and set `r2BaseUrl` to a relative path such as `'/media'` (no CORS needed). See [birdbird-website](https://github.com/rssrn/birdbird-website) (`src/worker.js`) for a working example with Range and ETag support.
+
 ---
 
 ## For Developers: Contributing

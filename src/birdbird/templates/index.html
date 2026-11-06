@@ -13,12 +13,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Lato:wght@400;500;700&family=EB+Garamond:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script>
+      // Local dev only: load the gitignored config.local.js override. document.write keeps
+      // it synchronous so it runs before config.js (which defers to an existing config).
       if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-        var s = document.createElement('script');
-        s.src = 'config.local.js';
-        s.async = false;
-        s.onerror = function() { this.remove(); };
-        document.head.appendChild(s);
+        document.write('<script src="config.local.js"><\/script>');
       }
     </script>
     <script src="config.js"></script>
@@ -1375,6 +1373,49 @@
         // Track current active tab for persistence across batch changes
         let currentActiveTab = urlParams.get('tab') || 'highlights';
 
+        /**
+         * fetch() with a per-attempt timeout and retries, for the small JSON files.
+         *
+         * A bare fetch() has no timeout, so a stalled connection left the page stuck on
+         * "Loading highlights..." indefinitely. Each attempt (including reading the body,
+         * where a stall can also happen) is aborted after timeoutMs. Network errors,
+         * timeouts, 429 and 5xx are retried with backoff; other statuses (e.g. 404 for an
+         * optional file) are returned immediately so callers' response.ok checks still work.
+         * Returns a buffered Response, so callers use .ok / .json() as before.
+         *
+         * @author Claude Opus 5.5 Anthropic
+         */
+        async function fetchWithRetry(url, { timeoutMs = 10000, retries = 2 } = {}) {
+            let lastError;
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                if (attempt > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 500 * 3 ** (attempt - 1)));
+                }
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), timeoutMs);
+                try {
+                    const response = await fetch(url, { signal: controller.signal });
+                    if (response.status === 429 || response.status >= 500) {
+                        lastError = new Error(`${response.status} ${response.statusText}`.trim());
+                        continue;
+                    }
+                    const body = await response.text();
+                    return new Response([204, 205, 304].includes(response.status) ? null : body, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: response.headers
+                    });
+                } catch (error) {
+                    lastError = error.name === 'AbortError'
+                        ? new Error(`request timed out after ${timeoutMs / 1000}s`)
+                        : error;
+                } finally {
+                    clearTimeout(timer);
+                }
+            }
+            throw lastError;
+        }
+
         async function loadBatch(batchId = null) {
             const loadingEl = document.getElementById('loading');
             const errorEl = document.getElementById('error');
@@ -1382,7 +1423,7 @@
 
             try {
                 // Fetch latest.json
-                const response = await fetch(`${R2_BASE_URL}/latest.json`);
+                const response = await fetchWithRetry(`${R2_BASE_URL}/latest.json`);
                 if (!response.ok) {
                     throw new Error(`Failed to load batch index: ${response.statusText}`);
                 }
@@ -1398,7 +1439,7 @@
                 }
 
                 // Load batch metadata
-                const metadataResponse = await fetch(`${R2_BASE_URL}/batches/${displayBatchId}/metadata.json`);
+                const metadataResponse = await fetchWithRetry(`${R2_BASE_URL}/batches/${displayBatchId}/metadata.json`);
                 if (!metadataResponse.ok) {
                     throw new Error(`Failed to load batch metadata: ${metadataResponse.statusText}`);
                 }
@@ -1415,7 +1456,7 @@
             } catch (error) {
                 console.error('Error loading batch:', error);
                 loadingEl.style.display = 'none';
-                errorEl.textContent = `Error loading highlights: ${error.message}`;
+                errorEl.textContent = `Error loading highlights: ${error.message}. Please refresh the page to try again.`;
                 errorEl.style.display = 'block';
             }
         }
@@ -1474,8 +1515,8 @@
             try {
                 // Fetch both best_clips.json and species.json
                 const [bestClipsResponse, speciesResponse] = await Promise.all([
-                    fetch(`${R2_BASE_URL}/batches/${batchId}/best_clips.json`),
-                    fetch(`${R2_BASE_URL}/batches/${batchId}/species.json`)
+                    fetchWithRetry(`${R2_BASE_URL}/batches/${batchId}/best_clips.json`),
+                    fetchWithRetry(`${R2_BASE_URL}/batches/${batchId}/species.json`)
                 ]);
 
                 if (!bestClipsResponse.ok) {
@@ -1712,7 +1753,7 @@
             });
 
             try {
-                const response = await fetch(`${R2_BASE_URL}/batches/${batchId}/songs.json`);
+                const response = await fetchWithRetry(`${R2_BASE_URL}/batches/${batchId}/songs.json`);
 
                 if (!response.ok) {
                     audioContainer.innerHTML = '<div class="no-audio-message">No audio analysis available for this batch</div>';
@@ -1803,7 +1844,7 @@
             const videoStatsContainer = document.getElementById('video-stats-container');
 
             try {
-                const response = await fetch(`${R2_BASE_URL}/batches/${batchId}/species.json`);
+                const response = await fetchWithRetry(`${R2_BASE_URL}/batches/${batchId}/species.json`);
 
                 if (!response.ok) {
                     videoStatsContainer.innerHTML = '<div class="no-audio-message">No species detection data available for this batch</div>';

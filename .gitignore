@@ -32,3 +32,6 @@ package-lock.json
 
 # Migration backups (large video files)
 scripts/faststart_originals/
+
+# Playwright MCP browser logs/screenshots
+.playwright-mcp/

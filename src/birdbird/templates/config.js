@@ -10,7 +10,9 @@ if (typeof window.BIRDBIRD_CONFIG === 'undefined') {
   window.BIRDBIRD_CONFIG = {
   // REQUIRED: Your R2/S3 bucket public URL
   // Find this in your Cloudflare R2 dashboard under Settings → Public Access
-  // Example: 'https://pub-abc123def456.r2.dev'
+  // Example: 'https://pub-abc123def456.r2.dev' (rate-limited; fine for testing only)
+  // Production: a custom bucket domain, or a same-origin path such as '/media'
+  // served by a Worker with an R2 binding (see README)
   r2BaseUrl: 'https://REPLACE-WITH-YOUR-BUCKET.r2.dev',
 
   // Site title displayed in header and browser tab
